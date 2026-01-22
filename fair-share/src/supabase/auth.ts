@@ -7,10 +7,12 @@ export const signInWithGoogle = async () => {
     const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-           queryParams: {
-          access_type: 'offline',
-          prompt: 'consent',
-        },
+            scopes: YOUTUBE_SCOPE,
+            queryParams: {
+                access_type: 'offline',
+                prompt: 'consent',
+            },
+            redirectTo: window.location.origin,
         },
     });
 
@@ -32,4 +34,10 @@ export const signOut = async () => {
     }
 
     return true;
+};
+
+export const getCurrentSession = async () =>{
+  const {data :{session},error} =await supabase.auth.getSession();
+  if(error) return null;
+  return session;
 };
