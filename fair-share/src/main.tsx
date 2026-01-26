@@ -1,8 +1,10 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './App.jsx';
+import App from './components/loginGoogle/loginGoogle.js';
 import './index.css'; // Falls du Standard-Styles hast
-import { AuthProvider } from './supabase/useAuth.tsx';
+import { AuthProvider } from './hooks/auth/useAuth.tsx';
+import ShowVideoList from './components/showVideos/showVideoList.tsx';
+import LoadVideosButton from './components/showVideos/loadVideosButton.tsx';
 
 // ReactDOM.createRoot initialisiert den Rendering-Prozess im DOM-Element 'root'
 ReactDOM.createRoot(document.getElementById('root')!).render(
@@ -12,6 +14,8 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     */}
     <AuthProvider>
       <App />
+      <LoadVideosButton />
+      <ShowVideoList />
     </AuthProvider>
   </React.StrictMode>,
 );

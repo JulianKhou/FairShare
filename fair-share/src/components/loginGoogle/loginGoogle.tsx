@@ -1,5 +1,5 @@
-import { useAuth } from './supabase/useAuth';
-import { signInWithGoogle, signOut } from './supabase/auth';
+import { useAuth } from '../../hooks/auth/useAuth';
+import { signInWithGoogle, signOut } from '../../services/supabase/auth';
 
 function App() {
   const { user, loading } = useAuth();

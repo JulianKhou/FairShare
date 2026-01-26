@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { supabase } from "./client";
+import { supabase } from "../../services/supabase/client";
 import {User,Session} from "@supabase/supabase-js";
 
 
