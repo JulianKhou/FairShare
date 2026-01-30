@@ -42,12 +42,35 @@ export const saveVideosToSupabase = async (userId: string, videos: any[]) => {
   }
 };
 
-export const getVideosFromSupabase = async (userId: string) => {
-  console.log("Fetching videos from Supabase for user:", userId);
-  const { data, error } = await supabase
-    .from("videos")
-    .select("*")
-    .eq("creator_id", userId);
+export const getVideosFromSupabase = async (
+  userId: string,
+  videoType: "all" | "licensed" | "myVideos" = "myVideos",
+) => {
+  console.log(
+    `Fetching videos from Supabase for user: ${userId}, type: ${videoType}`,
+  );
+  let query = supabase.from("videos").select("*");
+
+  if (videoType === "myVideos") {
+    // Zeige nur Videos, die diesem User gehören
+    query = query.eq("creator_id", userId);
+  } else if (videoType === "licensed") {
+    // Zeige nur lizenzierten Videos (vom aktuellen User oder allgemein?
+    // Hier gehe ich davon aus: Lizenziert VOM User)
+    query = query.eq("creator_id", userId).eq("islicensed", true);
+  } else if (videoType === "all") {
+    // "Explore": Zeige alle lizenzierten Videos, die NICHT mir gehören
+    query = query.neq("creator_id", userId).eq("islicensed", true);
+  }
+  // Bei "all" keinen Filter anwenden (zeigt alle Videos) -> VERALTET, jetzt angepasst
+
+  const { data, error } = await query;
+
+  if (!error) {
+    console.log(
+      `Query Result for ${videoType}: Found ${data?.length || 0} videos.`,
+    );
+  }
 
   if (error) throw error;
   return data;

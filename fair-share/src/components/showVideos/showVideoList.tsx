@@ -1,8 +1,15 @@
 import { useVideos } from "../../hooks/youtube/useVideos";
 import { VideoItem } from "./videoItem";
+interface ShowVideoListProps {
+  videoType?: "all" | "licensed" | "myVideos";
+  userId?: string;
+}
 
-export default function ShowVideoList() {
-  const { videos, isLoading } = useVideos();
+export default function ShowVideoList({
+  videoType = "myVideos",
+  userId,
+}: ShowVideoListProps) {
+  const { videos, isLoading } = useVideos(videoType, userId);
   if (isLoading) {
     return <div>Laden...</div>;
   }
