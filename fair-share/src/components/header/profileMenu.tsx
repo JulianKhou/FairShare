@@ -1,6 +1,6 @@
 // src/components/UserMenu.tsx
 import React from "react";
-import { handleLogout, handleLogin } from "../../hooks/useHandleAuth";
+import { handleLogout, handleLogin } from "../../hooks/auth/useHandleAuth";
 
 interface UserMenuProps {
   isOpen: boolean;
