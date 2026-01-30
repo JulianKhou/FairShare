@@ -5,6 +5,9 @@ import { UserMenu } from "./profileMenu";
 import { useToggle } from "../../hooks/useToggle.ts";
 import { useAuth } from "../../hooks/auth/useAuth";
 import { NavLink } from "react-router-dom";
+import { Switch } from "../ui/switch";
+import { useToggleDarkmode } from "../../lib/useToggleDarkmode.ts";
+import { IconMoon, IconSun } from "@tabler/icons-react";
 
 function Header() {
   const { user } = useAuth();
@@ -13,22 +16,23 @@ function Header() {
     toggle: toggleMenu,
     close: closeMenu,
   } = useToggle();
+  const { isDarkMode, toggleDarkMode } = useToggleDarkmode();
 
   // Gemeinsame Styles für alle Nav-Links
   const navLinkClasses = ({ isActive }: { isActive: boolean }) =>
     `flex items-center h-full px-2 border-b-2 transition-all ${
       isActive
-        ? "border-fair-teal text-fair-teal"
-        : "border-transparent text-fair-text hover:text-fair-teal hover:border-fair-teal"
+        ? "border-primary text-primary"
+        : "border-transparent text-card-foreground bg-background hover:text-primary hover:border-primary"
     }`;
 
   return (
-    <header className="flex justify-between bg-fair-surface px-4 h-20 items-center fixed top-0 left-0 right-0 z-50 shadow-md">
+    <header className="flex justify-between bg-background px-4 h-20 items-center fixed top-0 left-0 right-0 shadow-md z-50">
       {/* Logo Sektion */}
       <div className="flex gap-4 items-center">
         <FairShareLogo size={40} />
         <h1 className="text-2xl font-bold tracking-tight">
-          Fair<span className="text-fair-teal">Share</span>
+          Fair<span className="text-fair-purple">Share</span>
         </h1>
       </div>
 
@@ -58,7 +62,11 @@ function Header() {
       </div>
 
       {/* Profil Bereich */}
-      <div className="relative">
+      <div className="relative flex gap-2 items-center">
+        <div className="flex gap-2 items-center">
+          {isDarkMode ? <IconMoon size={20} /> : <IconSun size={20} />}
+          <Switch onCheckedChange={toggleDarkMode} checked={isDarkMode} />
+        </div>
         <button
           className="flex items-center justify-center p-1 rounded-full hover:bg-white/5 transition-colors"
           onClick={toggleMenu}

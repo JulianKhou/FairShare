@@ -26,6 +26,7 @@ export const saveVideosToSupabase = async (userId: string, videos: any[]) => {
       // Algorithmus-Startwerte
       estimated_cpm: 0,
       final_price: 0,
+      islicensed: false,
     }));
 
     const { error } = await supabase.from("videos").upsert(rowsToInsert, {
@@ -67,4 +68,44 @@ export const updateVideoStatistics = async (
     .eq("id", videoId);
 
   if (error) throw error;
+};
+
+export const deleteVideoFromSupabase = async (videoId: string) => {
+  console.log("Deleting video from Supabase for video:", videoId);
+  const { error } = await supabase.from("videos").delete().eq("id", videoId);
+
+  if (error) throw error;
+};
+
+export const licenseVideo = async (videoId: string, license: boolean) => {
+  console.log("Licensing video from Supabase for video:", videoId);
+  const { error } = await supabase
+    .from("videos")
+    .update({
+      islicensed: license,
+    })
+    .eq("id", videoId);
+  console.log("Video licensed:", videoId, "to", license);
+  if (error) throw error;
+};
+
+export const getVideoFromSupabaseById = async (videoId: string) => {
+  console.log("Fetching video from Supabase for video:", videoId);
+  const { data, error } = await supabase
+    .from("videos")
+    .select("*")
+    .eq("id", videoId);
+
+  if (error) throw error;
+  return data;
+};
+
+export const getLicensedVideosFromSupabase = async () => {
+  const { data, error } = await supabase
+    .from("videos")
+    .select("*")
+    .eq("islicensed", true);
+
+  if (error) throw error;
+  return data;
 };

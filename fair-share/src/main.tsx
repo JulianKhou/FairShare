@@ -7,22 +7,25 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Explore from "./pages/explore.tsx";
 import Upload from "./pages/upload.tsx";
 import MyVideos from "./pages/myVideos.tsx";
+import { ThemeProvider } from "./components/utility/theme-provider.tsx";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <AuthProvider>
-      <BrowserRouter>
-        {/* Der Header muss INNERHALB des BrowserRouter liegen */}
-        <Header />
+    <ThemeProvider>
+      <AuthProvider>
+        <BrowserRouter>
+          {/* Der Header muss INNERHALB des BrowserRouter liegen */}
+          <Header />
 
-        <Routes>
-          {/* Saubere URLs ohne .tsx oder /pages/ Präfix */}
-          <Route path="/" element={<Explore />} /> {/* Standardseite */}
-          <Route path="/explore" element={<Explore />} />
-          <Route path="/upload" element={<Upload />} />
-          <Route path="/my-videos" element={<MyVideos />} />
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+          <Routes>
+            {/* Saubere URLs ohne .tsx oder /pages/ Präfix */}
+            <Route path="/" element={<Explore />} /> {/* Standardseite */}
+            <Route path="/explore" element={<Explore />} />
+            <Route path="/upload" element={<Upload />} />
+            <Route path="/my-videos" element={<MyVideos />} />
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
+    </ThemeProvider>
   </React.StrictMode>,
 );
