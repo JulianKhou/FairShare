@@ -1,7 +1,7 @@
 import { useVideos } from "../../hooks/youtube/useVideos";
 import { VideoItem } from "./videoItem";
 interface ShowVideoListProps {
-  videoType?: "all" | "licensed" | "myVideos";
+  videoType?: "licensed" | "licensedByMe" | "myVideos";
   userId?: string;
 }
 
@@ -17,7 +17,7 @@ export default function ShowVideoList({
   return (
     <div className="video-list flex items-center justify-center gap-4 flex-wrap">
       {videos.map((video) => (
-        <VideoItem video={video} />
+        <VideoItem video={video} userId={userId} />
       ))}
     </div>
   );

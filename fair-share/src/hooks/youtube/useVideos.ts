@@ -3,12 +3,11 @@ import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../auth/useAuth";
 import { getVideosFromSupabase } from "../../services/supabase/database";
 import { useSyncVideos } from "./syncVideos";
-// Import fetchAllVideos because we use it as a fallback
-import { fetchAllVideos } from "../../services/youtube";
+
 import { supabase } from "../../services/supabase/client";
 
 export function useVideos(
-  videoType: "all" | "licensed" | "myVideos" = "myVideos",
+  videoType: "licensed" | "licensedByMe" | "myVideos",
   userId?: string,
 ) {
   const { user } = useAuth();
@@ -23,8 +22,10 @@ export function useVideos(
     // Wenn wir "myVideos" laden wollen, brauchen wir eine User-ID (entweder übergeben oder vom Auth)
     const targetUserId = userId || user?.id;
 
-    // Bei "all" brauchen wir nicht zwingend eine UserID, bei anderen schon
-    if (videoType !== "all" && !targetUserId) return;
+    // Safety check: Cannot fetch user-specific videos without a user ID
+    if (!targetUserId && videoType !== "licensed") {
+      return;
+    }
 
     setIsLoading(true);
     try {
@@ -54,32 +55,85 @@ export function useVideos(
 
   // 2. Realtime Subscription: Hört auf Änderungen in der DB
   useEffect(() => {
-    if (!user?.id) return;
+    // Wir brechen hier NICHT mehr ab, damit auch "licensed" (Public) funktioniert.
+    // Aber wir müssen sicherstellen, dass wir für user-spezifische Dinge eine ID haben.
 
-    console.log("Setting up Realtime subscription for user:", user.id);
+    let channel = supabase.channel("video-updates");
 
-    const channel = supabase
-      .channel("video-updates")
-      .on(
-        "postgres_changes",
-        {
-          event: "*", // Hört auf alle Events (INSERT, UPDATE, DELETE)
-          schema: "public",
-          table: "videos",
-          filter: `user_id=eq.${user.id}`, // Nur Änderungen für diesen User
-        },
-        (payload: any) => {
-          console.log("Realtime change received!", payload);
-          loadVideos(); // Liste neu laden
-        },
-      )
-      .subscribe();
+    if (videoType === "myVideos" && user?.id) {
+      console.log(
+        "Setting up Realtime subscription for myVideos (User:",
+        user.id,
+        ")",
+      );
+      channel = channel
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "videos",
+            filter: `user_id=eq.${user.id}`,
+          },
+          (payload: any) => {
+            console.log("Realtime change received!", payload);
+            loadVideos();
+          },
+        )
+        .subscribe();
+    } else if (videoType === "licensed") {
+      console.log(
+        "Setting up Realtime subscription for licensed videos (Public)",
+      );
+      channel = channel
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "videos",
+            filter: `islicensed=eq.true`,
+          },
+          (payload: any) => {
+            // Optimierung: Wenn das Event von mir selbst kommt, ignorieren wir es,
+            // da meine Videos auf "Explore" ohnehin nicht angezeigt werden sollen.
+            if (user?.id && payload.new && payload.new.creator_id === user.id) {
+              return;
+            }
+            console.log("Realtime change received!", payload);
+            loadVideos();
+          },
+        )
+        .subscribe();
+    } else if (videoType === "licensedByMe" && user?.id) {
+      console.log(
+        "Setting up Realtime subscription for licensedByMe (User:",
+        user.id,
+        ")",
+      );
+      channel = channel
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "videos",
+            filter: `creator_id=eq.${user.id}`,
+          },
+          (payload: any) => {
+            console.log("Realtime change received!", payload);
+            loadVideos();
+          },
+        )
+        .subscribe();
+    }
 
     return () => {
+      // Cleanup nur, wenn wir auch subscribed haben (channel ist aber immer definiert, also unbedenklich)
       console.log("Cleaning up Realtime subscription");
       supabase.removeChannel(channel);
     };
-  }, [user?.id, loadVideos]);
+  }, [user?.id, loadVideos, videoType]);
 
   // 2. Sync-Wrapper, der danach die lokale Liste aktualisiert
   const syncAndRefresh = async () => {

@@ -1,4 +1,4 @@
-import { FairShareLogo } from "../fairShareLogo.tsx";
+import { FairShareLogo } from "../ui/fairShareLogo.tsx";
 import lupe from "../../assets/lupeIcon.svg";
 import ProfileIcon from "./profileIcon";
 import { UserMenu } from "./profileMenu";

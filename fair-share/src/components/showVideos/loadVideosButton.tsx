@@ -4,7 +4,7 @@ import { useUpdateVideos } from "../../hooks/youtube/useUpdateVideos";
 
 function LoadVideosButton() {
   // 1. Alle Hooks ganz oben "auspacken"
-  const { hasVideos, isSyncing, sync, videos } = useVideos();
+  const { hasVideos, isSyncing, sync, videos } = useVideos("myVideos", "");
   // 2. Den neuen Update-Hook verwenden
   const { updateVideos, loading: isUpdating } = useUpdateVideos();
   const buttonClasses =

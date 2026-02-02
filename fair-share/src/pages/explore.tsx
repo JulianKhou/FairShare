@@ -11,13 +11,13 @@ function Explore() {
       <div className="w-full max-w-6xl px-4">
         <h1 className="text-2xl font-bold mb-4">My Licensed Videos</h1>
         {/* Zeige nur lizenzierte Videos des aktuellen Users */}
-        <ShowVideoList videoType="licensed" userId={user?.id} />
+        <ShowVideoList videoType="licensedByMe" userId={user?.id} />
       </div>
 
       <div className="w-full max-w-6xl px-4">
         <h1 className="text-2xl font-bold mb-4">Explore</h1>
         {/* Zeige alle Videos (oder zumindest eine öffentliche Auswahl) */}
-        <ShowVideoList videoType="all" />
+        <ShowVideoList videoType="licensed" userId={user?.id} />
       </div>
     </div>
   );

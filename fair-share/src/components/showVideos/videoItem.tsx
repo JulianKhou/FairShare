@@ -7,7 +7,13 @@ const videoClasses =
 const videoClassesHover =
   "hover:bg-accent transition-colors hover:cursor-pointer";
 const imgClasses = "w-48 h-40 object-cover rounded-2xl p-2";
-export const VideoItem = ({ video }: { video: any }) => {
+export const VideoItem = ({
+  video,
+  userId,
+}: {
+  video: any;
+  userId?: string;
+}) => {
   const {
     value: isMenuOpen,
     toggle: toggleMenu,
@@ -37,6 +43,7 @@ export const VideoItem = ({ video }: { video: any }) => {
                 video={video}
                 isOpen={isMenuOpen}
                 onClose={closeMenu}
+                mode={userId === video.creator_id ? "owner" : "public"}
               />
             </Backdrop>,
             document.getElementById("modal-root")!,

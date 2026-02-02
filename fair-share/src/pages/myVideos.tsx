@@ -14,7 +14,7 @@ function MyVideos() {
   return (
     <div className="flex flex-col items-center justify-center relative top-23 gap-4">
       <LoadVideosButton />
-      <ShowVideoList />
+      <ShowVideoList videoType="myVideos" userId={user.id} />
     </div>
   );
 }
