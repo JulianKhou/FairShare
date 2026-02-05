@@ -10,6 +10,7 @@ export const saveVideosToSupabase = async (userId: string, videos: any[]) => {
     const rowsToInsert = videos.map((video) => ({
       id: video.id, // Primary Key (YouTube ID)
       creator_id: userId, // Verknüpfung zum User
+      yt_link: `https://www.youtube.com/watch?v=${video.id}`,
       title: video.title,
       thumbnail: video.thumbnail,
       published_at: video.publishedAt,

@@ -11,6 +11,15 @@ import { Switch } from "@/components/ui/switch";
 import { useVideoDetails } from "../../hooks/videoDetails/useVideoDetails";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Button } from "@/components/ui/button";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group";
+import { Search } from "lucide-react";
+import { useFindVideo } from "@/hooks/videoDetails/useFindVideo";
+import { useState } from "react";
+import { VideoItem } from "./videoItem";
 interface VideoDetailsProps {
   video: any;
   isOpen: boolean;
@@ -25,8 +34,18 @@ export const VideoDetails = ({
   onClose,
   mode,
 }: VideoDetailsProps) => {
-  if (!isOpen) return null;
+  const [videoUrl, setVideoUrl] = useState("");
   const { isLicensed, toggleLicense } = useVideoDetails(video);
+  const { video: foundVideo, findVideo, isLoading } = useFindVideo();
+
+  if (!isOpen) return null;
+
+  const handleSearch = () => {
+    if (videoUrl) {
+      findVideo(videoUrl);
+    }
+  };
+
   return (
     <div className={videoDetailCss} onClick={(e) => e.stopPropagation()}>
       <div className="video-details-left">
@@ -43,7 +62,7 @@ export const VideoDetails = ({
           </h2>
         </div>
       </div>
-      {mode === "owner" ? (
+      {mode === "owner" && (
         <div className="video-details-right flex flex-col w-full">
           <Field orientation="horizontal" className="max-w-sm">
             <FieldContent>
@@ -56,8 +75,36 @@ export const VideoDetails = ({
             </FieldContent>
             <Switch onCheckedChange={toggleLicense} checked={isLicensed} />
           </Field>
+          <div className="flex flex-col">
+            <h2>Link Video</h2>
+            <InputGroup className="max-w-xs">
+              <InputGroupInput
+                placeholder="Search..."
+                value={videoUrl}
+                onChange={(e) => setVideoUrl(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleSearch();
+                }}
+              />
+              <InputGroupAddon>
+                <Search className="w-fit max-w-xs" />
+              </InputGroupAddon>
+              <InputGroupAddon align="inline-end">
+                {/* Optional: Show status or results count here if needed */}
+                {isLoading ? "Searching..." : foundVideo ? "1 result" : ""}
+              </InputGroupAddon>
+            </InputGroup>
+
+            <Button className="w-fit max-w-xs" onClick={handleSearch}>
+              Link Video
+            </Button>
+
+            {/* Optional: Feedback if a video is found */}
+            {foundVideo && <VideoItem video={foundVideo} />}
+          </div>
         </div>
-      ) : mode === "public" ? (
+      )}
+      {mode === "public" && (
         <div className="video-details-right flex flex-col w-full">
           <FieldSet className="w-full max-w-xs">
             <FieldLegend variant="label">Subscription Plan</FieldLegend>
@@ -87,7 +134,7 @@ export const VideoDetails = ({
           </FieldSet>
           <Button>Buy</Button>
         </div>
-      ) : null}
+      )}
       <CloseBtn onClose={onClose} />
     </div>
   );
