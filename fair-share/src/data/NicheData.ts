@@ -8,6 +8,7 @@ export interface NicheData {
   youtubeCategoryIds: number[]; // Verknüpfung zur YT-API
 }
 //basierend auf 6 euro durchnitts CPM
+
 export const NICHE_DATA: NicheData[] = [
   {
     id: "online-money",
@@ -190,6 +191,17 @@ export const NICHE_DATA: NicheData[] = [
     youtubeCategoryIds: [10], // Music
   },
 ];
+
+export const DEFAULT_NICHE_DATA: NicheData = {
+  id: "default",
+  name_de: "Allgemein",
+  name_en: "General",
+  factor: 1.0,
+  rpm: 3.0, // Konservativer Durchschnittswert
+  earningsPer100k: 300.0,
+  youtubeCategoryIds: [],
+};
+
 // Monatliche Faktoren (0 = Januar, 11 = Dezember)
 const MONTHLY_SEASONALITY: Record<number, number> = {
   0: 0.75, // Januar (sehr niedrig)
@@ -221,3 +233,18 @@ export const findNicheByYouTubeId = (
     niche.youtubeCategoryIds.includes(categoryId),
   );
 };
+
+export function getNicheRPM(youtubeCategoryId: number) {
+  let niche = findNicheByYouTubeId(youtubeCategoryId);
+  if (!niche) {
+    console.warn(`Niche for Category ID ${youtubeCategoryId} not found. Using default.`);
+    niche = DEFAULT_NICHE_DATA;
+  }
+
+  const seasonalityFactor = getSeasonalityFactor();
+  const nicheFactor = niche.factor;
+  const nicheRPM = niche.rpm;
+
+  return nicheRPM * seasonalityFactor;
+}
+

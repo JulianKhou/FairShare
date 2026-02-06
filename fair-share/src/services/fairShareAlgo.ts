@@ -76,6 +76,15 @@ export const calculateFairShare = (params: FairShareParams): number => {
   // 5. Finalisierung
   const finalShare = contentScore * discountFactor;
 
+  console.group("FairShare Calculation Debug");
+  console.log("Params:", params);
+  console.log("Time Factor:", timeFactor, "(Days:", daysSinceUpload, ")");
+  console.log("Transform Factor:", transformFactor, "(Creator:", durationCreatorMinutes, "/ Reactor:", safeReactDuration, ")");
+  console.log("Content Score:", contentScore);
+  console.log("Discount Factor:", discountFactor, "(Ratio:", ratio, ")");
+  console.log("Final Share (Uncapped):", finalShare);
+  console.groupEnd();
+
   // Capping: Ergebnis strikt zwischen 0.0 und 1.0 halten
   return Math.min(Math.max(finalShare, 0), 1);
 };
