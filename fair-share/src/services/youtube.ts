@@ -1,9 +1,11 @@
 import { supabase } from './supabase/client';
+import { parseISO8601Duration } from '../lib/utils';
+
 
 export const fetchAllVideos = async () => {
   const { data: { session } } = await supabase.auth.getSession();
   const token = session?.provider_token;
-;
+  ;
 
   if (!token) throw new Error("Kein Access-Token vorhanden.");
 
@@ -12,7 +14,7 @@ export const fetchAllVideos = async () => {
     'https://www.googleapis.com/youtube/v3/channels?part=contentDetails&mine=true',
     { headers: { Authorization: `Bearer ${token}` } }
   );
-  
+
   const channelData = await channelRes.json();
 
   const uploadsId = channelData.items[0].contentDetails.relatedPlaylists.uploads;
@@ -25,22 +27,22 @@ export const fetchAllVideos = async () => {
   const videosData = await videosRes.json();
   const videoIds = videosData.items.map((v: any) => v.snippet.resourceId.videoId);
   const statisticsRes = await fetch(
-    `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&id=${videoIds}`,
+    `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&id=${videoIds}`,
     { headers: { Authorization: `Bearer ${token}` } }
   );
   const statisticsData = await statisticsRes.json();
 
   console.log("Videos fetched from YouTube:", statisticsData);
-  
+
 
   return statisticsData.items.map((item: any) => ({
-   id: item.id,
-   creator_id: item.snippet.channelId,
-  title: item.snippet.title,
-  thumbnail: item.snippet.thumbnails.high?.url,
-  publishedAt: item.snippet.publishedAt,
-  viewCount: item.statistics.viewCount,         // Aus den statistics
-  categoryId: item.snippet.categoryId,
-  duration_seconds: item.snippet.duration,
+    id: item.id,
+    creator_id: item.snippet.channelId,
+    title: item.snippet.title,
+    thumbnail: item.snippet.thumbnails.high?.url,
+    publishedAt: item.snippet.publishedAt,
+    viewCount: item.statistics.viewCount,         // Aus den statistics
+    categoryId: item.snippet.categoryId,
+    duration_seconds: parseISO8601Duration(item.contentDetails.duration),
   }));
 };

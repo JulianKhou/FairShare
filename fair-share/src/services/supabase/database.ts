@@ -1,4 +1,5 @@
 import { supabase } from "./client";
+import { parseISO8601Duration } from "../../lib/utils";
 
 /**
  * Speichert oder aktualisiert YouTube-Videos in der Supabase-Datenbank.
@@ -10,19 +11,18 @@ export const saveVideosToSupabase = async (userId: string, videos: any[]) => {
     const rowsToInsert = videos.map((video) => ({
       id: video.id, // Primary Key (YouTube ID)
       creator_id: userId, // Verknüpfung zum User
-      yt_link: `https://www.youtube.com/watch?v=${video.id}`,
-      title: video.title,
-      thumbnail: video.thumbnail,
-      published_at: video.publishedAt,
+      title: video.snippet?.title || video.title, // Fallback falls API structure varies
+      thumbnail: video.snippet?.thumbnails?.high?.url || video.thumbnail,
+      published_at: video.snippet?.publishedAt || video.publishedAt,
 
       // Metriken & Statistiken (Strings zu Zahlen konvertieren)
-      view_count_at_listing: parseInt(video.viewCount || "0"),
-      last_view_count: parseInt(video.viewCount || "0"),
+      view_count_at_listing: parseInt(video.statistics?.viewCount || video.viewCount || "0"),
+      last_view_count: parseInt(video.statistics?.viewCount || video.viewCount || "0"),
       last_view_count_update: new Date().toISOString(),
 
       // Kategorien & Dauer
-      category_id: video.categoryId,
-      duration_seconds: video.durationSeconds || 0,
+      category_id: video.snippet?.categoryId || video.categoryId || video.category_id,
+      duration_seconds: video.duration_seconds || 0,
 
       // Algorithmus-Startwerte
       estimated_cpm: 0,

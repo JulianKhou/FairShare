@@ -17,8 +17,8 @@ const FAIR_SHARE_CONFIG = {
 export interface FairShareParams {
   viewsReactor: number; // Ø Views des React-Kanals
   viewsCreator: number; // Ø Views des Original-Creators
-  durationReactorMinutes: number; // Länge der Reaction
-  durationCreatorMinutes: number; // Länge des Originals
+  durationReactorSeconds: number; // Länge der Reaction
+  durationCreatorSeconds: number; // Länge des Originals
   percentShown: number; // Anteil des Originals (0.0 bis 1.0)
   daysSinceUpload: number; // Zeitdifferenz in Tagen
 }
@@ -33,15 +33,15 @@ export const calculateFairShare = (params: FairShareParams): number => {
   const {
     viewsReactor,
     viewsCreator,
-    durationReactorMinutes,
-    durationCreatorMinutes,
+    durationReactorSeconds,
+    durationCreatorSeconds,
     percentShown,
     daysSinceUpload,
   } = params;
 
   // 1. Validierung / Sanity Checks
   // Verhindert Division durch Null und negative Werte
-  const safeReactDuration = Math.max(durationReactorMinutes, 0.1);
+  const safeReactDuration = Math.max(durationReactorSeconds, 0.1);
   const safeCreatorViews = Math.max(viewsCreator, 1);
   const safeReactViews = Math.max(viewsReactor, 0);
 
@@ -55,7 +55,7 @@ export const calculateFairShare = (params: FairShareParams): number => {
 
   // 3. Content Score berechnen
   // Formel: Basis * Nutzung * (LängeOrig / LängeReact) * Zeit
-  const transformFactor = durationCreatorMinutes / safeReactDuration;
+  const transformFactor = durationCreatorSeconds / safeReactDuration;
 
   const contentScore =
     FAIR_SHARE_CONFIG.BASE_SHARE * percentShown * transformFactor * timeFactor;
@@ -79,7 +79,7 @@ export const calculateFairShare = (params: FairShareParams): number => {
   console.group("FairShare Calculation Debug");
   console.log("Params:", params);
   console.log("Time Factor:", timeFactor, "(Days:", daysSinceUpload, ")");
-  console.log("Transform Factor:", transformFactor, "(Creator:", durationCreatorMinutes, "/ Reactor:", safeReactDuration, ")");
+  console.log("Transform Factor:", transformFactor, "(Creator:", durationCreatorSeconds, "/ Reactor:", safeReactDuration, ")");
   console.log("Content Score:", contentScore);
   console.log("Discount Factor:", discountFactor, "(Ratio:", ratio, ")");
   console.log("Final Share (Uncapped):", finalShare);

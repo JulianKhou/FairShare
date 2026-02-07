@@ -26,8 +26,8 @@ interface VideoCreator {
 interface fairShareParams {
   viewsReactor: number;
   viewsCreator: number;
-  durationReactorMinutes: number;
-  durationCreatorMinutes: number;
+  durationReactorSeconds: number;
+  durationCreatorSeconds: number;
   percentShown: number;
   daysSinceUpload: number;
 }
@@ -41,12 +41,12 @@ export function getPrices(videoReactor: any, videoCreator: any) {
   const fairShareParams: fairShareParams = {
     viewsReactor: videoReactor.views || 0,
     viewsCreator: videoCreator.views || 0,
-    durationReactorMinutes: videoReactor.duration || 10, // Fallback to 10 min to avoid div/0
-    durationCreatorMinutes: videoCreator.duration || 10,
-    percentShown: videoCreator.percentShown || 0.5, // Default 50%
+    durationReactorSeconds: videoReactor.duration_seconds || 10, // Fallback to 10 min to avoid div/0
+    durationCreatorSeconds: videoCreator.duration_seconds || 10,
+    percentShown: videoReactor.duration_seconds / videoCreator.duration_seconds || 1, // Default 50%
     daysSinceUpload: videoCreator.daysSinceUpload || 0,
   };
-  const nicheRPM = getNicheRPM(Number(videoReactor.categoryId));
+  const nicheRPM = getNicheRPM(Number(videoReactor.category_id));
   const fairShare = calculateFairShare(fairShareParams);
 
   console.group("getPrices Debug");
