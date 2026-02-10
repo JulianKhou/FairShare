@@ -1,6 +1,6 @@
-import { licenseVideo } from "../../services/supabase/database";
+import { licenseVideo } from "../../services/supabaseCollum/database";
 import { useState, useEffect } from "react";
-import { getVideoFromSupabaseById } from "../../services/supabase/database";
+import { getVideoFromSupabaseById } from "../../services/supabaseCollum/database";
 // Wir definieren einen Typ für bessere Sicherheit (wie wir besprochen haben : )
 interface Video {
   id: string;

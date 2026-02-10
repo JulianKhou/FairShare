@@ -1,0 +1,7 @@
+# Lokale Environment-Variablen (NIEMALS committen!)
+.env
+.env.local
+
+# Temporäre Dateien
+.temp/
+*.log

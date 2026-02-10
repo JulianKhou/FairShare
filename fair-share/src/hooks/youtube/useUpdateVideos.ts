@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "../auth/useAuth";
-import { getVideosFromSupabase, updateVideoStatistics, saveVideosToSupabase } from "../../services/supabase/database";
+import { getVideosFromSupabase, updateVideoStatistics, saveVideosToSupabase } from "../../services/supabaseCollum/database";
 import { fetchAllVideos } from "../../services/youtube";
 
 export const useUpdateVideos = () => {

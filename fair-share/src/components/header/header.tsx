@@ -8,9 +8,32 @@ import { NavLink } from "react-router-dom";
 import { Switch } from "../ui/switch";
 import { useToggleDarkmode } from "../../lib/useToggleDarkmode.ts";
 import { IconMoon, IconSun } from "@tabler/icons-react";
+import { getProfile, isProfileComplete, Profile, updateProfile } from "../../services/supabaseCollum/profiles.ts";
+import { useEffect, useState } from "react";
+import { fetchChannelId } from "../../services/youtube";
 
 function Header() {
   const { user } = useAuth();
+  const [userProfile, setUserProfile] = useState<Profile | null>(null);
+
+  useEffect(() => {
+    if (user) {
+      getProfile(user.id).then(async (profile) => {
+        setUserProfile(profile);
+
+        // Auto-fetch channel ID if missing
+        if (profile && !profile.youtube_channel_id) {
+          const channelId = await fetchChannelId();
+          if (channelId) {
+            await updateProfile(user.id, { youtube_channel_id: channelId });
+            // Update local state to remove warning if this was the only missing field
+            setUserProfile(prev => prev ? ({ ...prev, youtube_channel_id: channelId }) : null);
+          }
+        }
+      });
+    }
+  }, [user]);
+
   const {
     value: isMenuOpen,
     toggle: toggleMenu,
@@ -20,10 +43,9 @@ function Header() {
 
   // Gemeinsame Styles für alle Nav-Links
   const navLinkClasses = ({ isActive }: { isActive: boolean }) =>
-    `flex items-center h-full px-2 border-b-2 transition-all ${
-      isActive
-        ? "border-primary text-primary"
-        : "border-transparent text-card-foreground bg-background hover:text-primary hover:border-primary"
+    `flex items-center h-full px-2 border-b-2 transition-all ${isActive
+      ? "border-primary text-primary"
+      : "border-transparent text-card-foreground bg-background hover:text-primary hover:border-primary"
     }`;
 
   return (
@@ -35,6 +57,12 @@ function Header() {
           Fair<span className="text-fair-purple">Share</span>
         </h1>
       </div>
+      {userProfile && !isProfileComplete(userProfile) && (
+        <div className="hidden lg:flex fixed top-20 left-0 right-0 bg-yellow-100 border-b border-yellow-200 text-yellow-800 px-4 py-2 justify-center items-center gap-2 z-40 text-sm">
+          <span>Your profile is incomplete. Please update it to use all features.</span>
+          <NavLink to="/profile" className="font-semibold underline">Complete Profile</NavLink>
+        </div>
+      )}
 
       {/* Navigation */}
       <nav className="flex gap-8 h-full">

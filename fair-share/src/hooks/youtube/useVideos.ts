@@ -1,10 +1,10 @@
 // src/hooks/youtube/useVideos.ts
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../auth/useAuth";
-import { getVideosFromSupabase } from "../../services/supabase/database";
+import { getVideosFromSupabase } from "../../services/supabaseCollum/database";
 import { useSyncVideos } from "./syncVideos";
 
-import { supabase } from "../../services/supabase/client";
+import { supabase } from "../../services/supabaseCollum/client";
 
 export function useVideos(
   videoType: "licensed" | "licensedByMe" | "myVideos",

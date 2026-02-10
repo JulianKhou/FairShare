@@ -1,6 +1,7 @@
-// src/components/UserMenu.tsx
-import React from "react";
+import React, { useState } from "react";
 import { handleLogout, handleLogin } from "../../hooks/auth/useHandleAuth";
+import { SettingsModal } from "./settingsModal";
+import { useNavigate } from "react-router-dom";
 
 interface UserMenuProps {
   isOpen: boolean;
@@ -9,6 +10,9 @@ interface UserMenuProps {
 }
 
 export const UserMenu = ({ isOpen, onClose, user }: UserMenuProps) => {
+  const [showSettings, setShowSettings] = useState(false);
+  const navigate = useNavigate();
+
   if (!isOpen) return null;
 
   return (
@@ -38,10 +42,19 @@ export const UserMenu = ({ isOpen, onClose, user }: UserMenuProps) => {
         </div>
         {user ? (
           <div className="space-y-1">
-            <button className="w-full text-left px-3 py-2 rounded-lg hover:bg-accent transition-colors text-sm">
+            <button
+              className="w-full text-left px-3 py-2 rounded-lg hover:bg-accent transition-colors text-sm"
+              onClick={() => {
+                onClose();
+                navigate("/profile");
+              }}
+            >
               Mein Profil
             </button>
-            <button className="w-full text-left px-3 py-2 rounded-lg hover:bg-accent transition-colors text-sm">
+            <button
+              className="w-full text-left px-3 py-2 rounded-lg hover:bg-accent transition-colors text-sm"
+              onClick={() => setShowSettings(true)}
+            >
               Einstellungen
             </button>
             <hr className="border-border my-2" />
@@ -63,6 +76,14 @@ export const UserMenu = ({ isOpen, onClose, user }: UserMenuProps) => {
           </div>
         )}
       </div>
+
+      {/* Settings Modal */}
+      {showSettings && (
+        <SettingsModal
+          isOpen={showSettings}
+          onClose={() => setShowSettings(false)}
+        />
+      )}
     </>
   );
 };

@@ -23,6 +23,7 @@ export const saveVideosToSupabase = async (userId: string, videos: any[]) => {
       // Kategorien & Dauer
       category_id: video.snippet?.categoryId || video.categoryId || video.category_id,
       duration_seconds: video.duration_seconds || 0,
+      channel_title: video.snippet?.channelTitle || video.channel_title || "Unknown Channel",
 
       // Algorithmus-Startwerte
       estimated_cpm: 0,

@@ -1,6 +1,25 @@
-import { supabase } from './supabase/client';
+import { supabase } from './supabaseCollum/client';
 import { parseISO8601Duration } from '../lib/utils';
 
+
+export const fetchChannelId = async () => {
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.provider_token;
+
+  if (!token) return null; // Silent fail if no token
+
+  try {
+    const channelRes = await fetch(
+      'https://www.googleapis.com/youtube/v3/channels?part=id&mine=true',
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    const channelData = await channelRes.json();
+    return channelData.items?.[0]?.id || null;
+  } catch (e) {
+    console.error("Error fetching channel ID:", e);
+    return null;
+  }
+};
 
 export const fetchAllVideos = async () => {
   const { data: { session } } = await supabase.auth.getSession();
@@ -44,5 +63,6 @@ export const fetchAllVideos = async () => {
     viewCount: item.statistics.viewCount,         // Aus den statistics
     categoryId: item.snippet.categoryId,
     duration_seconds: parseISO8601Duration(item.contentDetails.duration),
+    channel_title: item.snippet.channelTitle,
   }));
 };

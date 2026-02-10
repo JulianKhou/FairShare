@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { getIDsFromLink } from "@/lib/getIDsFromLinkt";
-import { getLicensedVideosFromSupabase } from "@/services/supabase/database";
+import { getLicensedVideosFromSupabase } from "@/services/supabaseCollum/database";
 export const useFindVideo = () => {
   const [video, setVideo] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);

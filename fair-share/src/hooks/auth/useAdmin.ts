@@ -1,6 +1,6 @@
 // hooks/useAdmin.ts
 import { useEffect, useState } from 'react';
-import { supabase } from '../../services/supabase/client';
+import { supabase } from '../../services/supabaseCollum/client';
 import { useAuth } from './useAuth'; // Dein existierender Auth-Hook
 
 export const useAdmin = () => {

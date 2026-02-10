@@ -1,4 +1,4 @@
-import { signOut, signInWithGoogle } from "../../services/supabase/auth";
+import { signOut, signInWithGoogle } from "../../services/supabaseCollum/auth";
 
 export const handleLogout = async () => {
   await signOut();

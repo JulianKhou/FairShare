@@ -8,6 +8,7 @@ import Explore from "./pages/explore.tsx";
 import Upload from "./pages/upload.tsx";
 import MyVideos from "./pages/myVideos.tsx";
 import { ThemeProvider } from "./components/utility/theme-provider.tsx";
+import ProfilePage from "./pages/profile.tsx";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
@@ -23,6 +24,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             <Route path="/explore" element={<Explore />} />
             <Route path="/upload" element={<Upload />} />
             <Route path="/my-videos" element={<MyVideos />} />
+            <Route path="/profile" element={<ProfilePage />} />
           </Routes>
         </BrowserRouter>
       </AuthProvider>
