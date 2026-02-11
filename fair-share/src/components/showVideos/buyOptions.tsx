@@ -8,15 +8,13 @@ import {
 } from "@/components/ui/field";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Button } from "@/components/ui/button";
-import { prepareContractData } from "@/utils/prepareContract";
 import { getPrices } from "@/hooks/videoDetails/getPrices";
-import { createReactionContract } from "@/services/supabaseCollum/reactionContract";
-import { useState, useEffect } from "react";
-import { getProfile, isProfileComplete, Profile } from "@/services/supabaseCollum/profiles";
-import { generateLicensePDF } from "@/services/supabaseFunctions";
 import { useAuth } from "@/hooks/auth/useAuth";
-
-
+import {
+  createReactionContract,
+  ReactionContract,
+} from "@/services/supabaseCollum/reactionContract";
+import { useState } from "react";
 
 interface BuyOptionsProps {
   videoCreator: any;
@@ -25,49 +23,72 @@ interface BuyOptionsProps {
 
 export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
   const prices = getPrices(videoReactor, videoCreator);
-  const [selectedPlan, setSelectedPlan] = useState("monthly");
-  const [reactorProfile, setReactorProfile] = useState<Profile | null>(null);
   const { user } = useAuth();
-
-  useEffect(() => {
-    if (user) {
-      getProfile(user.id).then((profile) => {
-        if (profile) setReactorProfile(profile);
-      });
-    }
-  }, [user]);
+  const [selectedPlan, setSelectedPlan] = useState<
+    "monthly" | "yearly" | "lifetime"
+  >("monthly");
+  const [loading, setLoading] = useState(false);
 
   const handleBuy = async () => {
-    if (!reactorProfile || !isProfileComplete(reactorProfile)) {
-      alert("Please complete your profile details (Address, Name, Channel ID) before purchasing a license.");
+    if (!user) {
+      alert("Please log in to purchase a license.");
       return;
     }
 
-    const contractData = prepareContractData({
-      videoCreator,
-      videoReactor,
-      selectedPlan,
-      prices
-    });
-    console.log("Creating contract with data:", contractData);
+    setLoading(true);
     try {
-      const createdContract = await createReactionContract(contractData);
-      
-      // If contract was auto-accepted, generate and send PDF
-      if (createdContract?.accepted_by_licensor) {
-        try {
-          await generateLicensePDF(createdContract.id);
-          alert("Contract created and emailed to both parties! ✅");
-        } catch (pdfError) {
-          console.error("Failed to generate PDF:", pdfError);
-          alert("Contract created, but PDF generation failed. Please contact support.");
-        }
-      } else {
-        alert("Contract request sent! Waiting for creator approval.");
+      // Map selection to model type and price
+      let modelType: 1 | 2 | 3 = 1; // Default Fixed
+      let price = prices.oneTime;
+
+      if (selectedPlan === "yearly") {
+        modelType = 2; // Views
+        price = prices.payPerViews;
+      } else if (selectedPlan === "lifetime") {
+        modelType = 3; // CPM
+        price = prices.payPerCpm;
       }
-    } catch (e) {
-      console.error("Failed to create contract:", e);
-      alert("Failed to create contract. See console.");
+
+      const newContract: ReactionContract = {
+        id: crypto.randomUUID(), // Generate client-side ID
+        created_at: new Date().toISOString(),
+        licensor_id: videoCreator.creator_id || videoCreator.id, // Fallback if creator_id missing? usually string
+        licensee_id: user.id,
+        licensor_name: videoCreator.channel_title || "Unknown Creator",
+        licensee_name: user.email || "Unknown User",
+        original_video_title: videoCreator.title,
+        original_video_url: `https://www.youtube.com/watch?v=${videoCreator.id}`,
+        original_video_id: videoCreator.id,
+        original_video_duration:
+          videoCreator.duration_seconds?.toString() || "0",
+        pricing_model_type: modelType,
+        pricing_value: price,
+        pricing_currency: "EUR",
+        fairshare_score: 0.5, // Mock default
+        fairshare_metadata: {
+          marktmacht_score: 0,
+          schoepferische_leistung: 0,
+          parameter_dokumentation_url: "",
+        },
+        accepted_by_licensor: false,
+        accepted_by_licensee: true,
+        contract_version: "1.0",
+      };
+
+      const customContract = await createReactionContract(newContract);
+      const contractId = customContract?.id || newContract.id;
+
+      // Call Webhook
+      // Using existing webhook URL
+      const webhookUrl = `https://n8n.srv1356974.hstgr.cloud/webhook/generate-license-pdf?id=${contractId}`;
+      await fetch(webhookUrl, { method: "GET" });
+
+      alert("License purchased successfully! PDF is being generated.");
+    } catch (error) {
+      console.error("Purchase failed:", error);
+      alert("Purchase failed. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -78,7 +99,12 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
         <FieldDescription>
           Yearly and lifetime plans offer significant savings.
         </FieldDescription>
-        <RadioGroup value={selectedPlan} onValueChange={setSelectedPlan}>
+        <RadioGroup
+          value={selectedPlan}
+          onValueChange={(val: "monthly" | "yearly" | "lifetime") =>
+            setSelectedPlan(val)
+          }
+        >
           <Field orientation="horizontal">
             <RadioGroupItem value="monthly" id="plan-monthly" />
             <FieldLabel htmlFor="plan-monthly" className="font-normal">
@@ -99,7 +125,9 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
           </Field>
         </RadioGroup>
       </FieldSet>
-      <Button onClick={handleBuy}>Buy</Button>
+      <Button onClick={handleBuy} disabled={loading} className="mt-4">
+        {loading ? "Processing..." : "Buy"}
+      </Button>
     </div>
-  )
-}
+  );
+};
