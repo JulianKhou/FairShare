@@ -36,6 +36,10 @@ export interface ReactionContract {
     licensee_accepted_at?: string;
 
     contract_version: string; // Wichtig für die Textform-Referenz [cite: 483]
+    
+    // Stripe Payment
+    stripe_session_id?: string;
+    status?: "PENDING" | "PAID" | "FAILED";
 }
 
 import { getProfile } from "./profiles";
@@ -112,6 +116,17 @@ export const getContractsForVideo = async (videoId: string) => {
         .from("reaction_contracts")
         .select("*")
         .eq("original_video_id", videoId);
+    if (error) throw error;
+    return data;
+};
+export const getPurchasedContracts = async (userId: string) => {
+    const { data, error } = await supabase
+        .from("reaction_contracts")
+        .select("*")
+        .eq("licensee_id", userId)
+        // .in("status", ["PAID"]) // DEBUG: Allow all statuses to see PENDING
+        .order("created_at", { ascending: false });
+
     if (error) throw error;
     return data;
 };

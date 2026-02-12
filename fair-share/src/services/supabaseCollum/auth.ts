@@ -3,6 +3,7 @@ import { supabase } from "./client";
 const YOUTUBE_SCOPE = "https://www.googleapis.com/auth/youtube.readonly";
 
 export const signInWithGoogle = async () => {
+  console.log("DEBUG: Redirecting to:", window.location.origin);
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {

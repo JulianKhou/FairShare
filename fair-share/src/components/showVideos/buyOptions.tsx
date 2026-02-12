@@ -15,6 +15,7 @@ import {
   ReactionContract,
 } from "@/services/supabaseCollum/reactionContract";
 import { useState } from "react";
+import { generateUUID } from "@/lib/utils";
 
 interface BuyOptionsProps {
   videoCreator: any;
@@ -41,18 +42,18 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
       let modelType: 1 | 2 | 3 = 1; // Default Fixed
       let price = prices.oneTime;
 
-      if (selectedPlan === "yearly") {
-        modelType = 2; // Views
-        price = prices.payPerViews;
-      } else if (selectedPlan === "lifetime") {
-        modelType = 3; // CPM
-        price = prices.payPerCpm;
+      // START: ONLY ONE-TIME PAYMENT SUPPORTED FOR NOW
+      if (selectedPlan !== "monthly") {
+        alert("Momentan werden nur Einmalzahlungen unterstützt.");
+        setLoading(false);
+        return;
       }
+      // END
 
       const newContract: ReactionContract = {
-        id: crypto.randomUUID(), // Generate client-side ID
+        id: generateUUID(), // Generate client-side ID (supports http/ip)
         created_at: new Date().toISOString(),
-        licensor_id: videoCreator.creator_id || videoCreator.id, // Fallback if creator_id missing? usually string
+        licensor_id: videoCreator.creator_id || videoCreator.id,
         licensee_id: user.id,
         licensor_name: videoCreator.channel_title || "Unknown Creator",
         licensee_name: user.email || "Unknown User",
@@ -73,17 +74,24 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
         accepted_by_licensor: false,
         accepted_by_licensee: true,
         contract_version: "1.0",
+        status: "PENDING", // Initial status
       };
 
+      // 1. Create Contract in DB
       const customContract = await createReactionContract(newContract);
       const contractId = customContract?.id || newContract.id;
 
-      // Call Webhook
-      // Using existing webhook URL
-      const webhookUrl = `https://n8n.srv1356974.hstgr.cloud/webhook/generate-license-pdf?id=${contractId}`;
-      await fetch(webhookUrl, { method: "GET" });
+      // 2. Create Stripe Checkout Session
+      const { url } = await import("@/services/stripeFunctions").then((mod) =>
+        mod.createStripeCheckoutSession(contractId),
+      );
 
-      alert("License purchased successfully! PDF is being generated.");
+      // 3. Redirect to Stripe
+      if (url) {
+        window.location.href = url;
+      } else {
+        alert("Fehler beim Erstellen der Checkout-Session.");
+      }
     } catch (error) {
       console.error("Purchase failed:", error);
       alert("Purchase failed. Please try again.");

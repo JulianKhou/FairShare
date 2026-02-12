@@ -9,7 +9,7 @@ export interface Profile {
     address_city?: string;
     address_zip?: string;
     youtube_channel_id?: string;
-
+    stripe_connect_id?: string;
 }
 
 export const getProfile = async (userId: string) => {
