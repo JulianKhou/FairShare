@@ -1,0 +1,76 @@
+{
+  "name": "Supabase License to PDF",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "generate-license-pdf",
+        "options": {}
+      },
+      "id": "1",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [400, 300]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "table": "licenses",
+        "id": "={{ $json.body.record.id }}",
+        "options": {}
+      },
+      "id": "2",
+      "name": "Supabase Get",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [620, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.item.json;\n\nconst html = `\n<!DOCTYPE html>\n<html lang=\"de\">\n<head>\n<meta charset=\"UTF-8\">\n<style>\n  body { font-family: 'Helvetica', sans-serif; padding: 40px; color: #333; }\n  .container { border: 1px solid #eee; padding: 30px; border-radius: 8px; }\n  .header { border-bottom: 2px solid #3e5eba; padding-bottom: 10px; margin-bottom: 20px; }\n  .license-box { background: #f9f9f9; padding: 15px; border-radius: 4px; font-family: monospace; font-size: 1.2em; }\n  .footer { margin-top: 50px; font-size: 0.8em; color: #777; }\n</style>\n</head>\n<body>\n  <div class=\"container\">\n    <div class=\"header\"><h1>Lizenzbestätigung</h1></div>\n    <p>Hallo <strong>${data.customer_name}</strong>,</p>\n    <p>vielen Dank für Ihr Vertrauen. Hiermit erhalten Sie Ihre offizielle Lizenz:</p>\n    <div class=\"license-box\">${data.license_key}</div>\n    <p>Gültig bis: ${data.expiry_date || 'Unbegrenzt'}</p>\n    <div class=\"footer\">Generiert am ${new Date().toLocaleDateString('de-DE')}</div>\n  </div>\n</body>\n</html>\n`;\n\nreturn { \n  html: html, \n  fileName: `Lizenz_${data.id || 'export'}.pdf` \n};"
+      },
+      "id": "3",
+      "name": "HTML Template",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [840, 300]
+    },
+    {
+      "parameters": {
+        "operation": "convert",
+        "inputFormat": "html",
+        "outputFormat": "pdf",
+        "html": "={{ $json.html }}",
+        "options": {
+          "fileName": "={{ $json.fileName }}"
+        }
+      },
+      "id": "4",
+      "name": "CloudConvert",
+      "type": "n8n-nodes-base.cloudConvert",
+      "typeVersion": 1,
+      "position": [1060, 300]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $node[\"Supabase Get\"].json.email }}",
+        "subject": "Ihre Lizenzunterlagen",
+        "message": "Guten Tag,\n\nanbei finden Sie Ihre Lizenz als PDF-Dokument.\n\nBeste Grüße",
+        "appendAttachements": true,
+        "options": {}
+      },
+      "id": "5",
+      "name": "Send Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [1280, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": { "main": [[{ "node": "Supabase Get", "type": "main", "index": 0 }]] },
+    "Supabase Get": { "main": [[{ "node": "HTML Template", "type": "main", "index": 0 }]] },
+    "HTML Template": { "main": [[{ "node": "CloudConvert", "type": "main", "index": 0 }]] },
+    "CloudConvert": { "main": [[{ "node": "Send Email", "type": "main", "index": 0 }]] }
+  }
+}

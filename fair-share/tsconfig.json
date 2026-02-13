@@ -27,7 +27,7 @@
     "noFallthroughCasesInSwitch": true,
     
     /* Vite types */
-    "types": ["vite/client"]
+    "types": ["vite/client", "react", "react-dom"]
   },
   "include": ["src"]
 }

@@ -1,6 +1,5 @@
 import {
   Field,
-  FieldContent,
   FieldDescription,
   FieldLabel,
   FieldSet,
@@ -14,8 +13,9 @@ import {
   createReactionContract,
   ReactionContract,
 } from "@/services/supabaseCollum/reactionContract";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { generateUUID } from "@/lib/utils";
+import { useVideos } from "@/hooks/youtube/useVideos";
 
 interface BuyOptionsProps {
   videoCreator: any;
@@ -23,17 +23,38 @@ interface BuyOptionsProps {
 }
 
 export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
-  const prices = getPrices(videoReactor, videoCreator);
   const { user } = useAuth();
   const [selectedPlan, setSelectedPlan] = useState<
     "monthly" | "yearly" | "lifetime"
   >("monthly");
   const [loading, setLoading] = useState(false);
 
+  // Fetch user's videos for selection
+  const { videos: myVideos, isLoading: isLoadingVideos } = useVideos("myVideos", user?.id);
+  const [selectedReactionVideoId, setSelectedReactionVideoId] = useState<string>("");
+
+  // Pre-select first video if available
+  useEffect(() => {
+    if (myVideos.length > 0 && !selectedReactionVideoId) {
+      setSelectedReactionVideoId(myVideos[0].id);
+    }
+  }, [myVideos, selectedReactionVideoId]);
+
+  // Determine which video is selected
+  const selectedVideo = myVideos.find(v => v.id === selectedReactionVideoId) || videoReactor;
+  
+  // Recalculate prices based on the selected video
+  const prices = getPrices(selectedVideo, videoCreator);
+
   const handleBuy = async () => {
     if (!user) {
       alert("Please log in to purchase a license.");
       return;
+    }
+
+    if (!selectedReactionVideoId) {
+        alert("Please select a video to license.");
+        return;
     }
 
     setLoading(true);
@@ -75,6 +96,7 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
         accepted_by_licensee: true,
         contract_version: "1.0",
         status: "PENDING", // Initial status
+        reaction_video_id: selectedReactionVideoId,
       };
 
       // 1. Create Contract in DB
@@ -101,7 +123,30 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
   };
 
   return (
-    <div className="video-details-right flex flex-col w-full">
+    <div className="video-details-right flex flex-col w-full gap-6">
+      <FieldSet className="w-full max-w-xs">
+        <FieldLegend variant="label">Select your Reaction Video</FieldLegend>
+        {isLoadingVideos ? (
+            <FieldDescription>Loading videos...</FieldDescription>
+        ) : myVideos.length > 0 ? (
+            <select
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                value={selectedReactionVideoId}
+                onChange={(e) => setSelectedReactionVideoId(e.target.value)}
+            >
+                {myVideos.map((video) => (
+                    <option key={video.id} value={video.id}>
+                        {video.title}
+                    </option>
+                ))}
+            </select>
+        ) : (
+            <FieldDescription className="text-destructive">
+                You have no uploaded videos to link.
+            </FieldDescription>
+        )}
+      </FieldSet>
+
       <FieldSet className="w-full max-w-xs">
         <FieldLegend variant="label">Subscription Plan</FieldLegend>
         <FieldDescription>
@@ -133,7 +178,7 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
           </Field>
         </RadioGroup>
       </FieldSet>
-      <Button onClick={handleBuy} disabled={loading} className="mt-4">
+      <Button onClick={handleBuy} disabled={loading || isLoadingVideos || !selectedReactionVideoId} className="mt-4">
         {loading ? "Processing..." : "Buy"}
       </Button>
     </div>

@@ -26,7 +26,7 @@ serve(async (req) => {
           autoRefreshToken: false,
           persistSession: false,
         },
-      }
+      },
     );
 
     // 1. Fetch Contract Details
@@ -38,13 +38,15 @@ serve(async (req) => {
       .single();
 
     if (contractError) {
-        console.error("Contract Fetch Error:", contractError);
-        throw new Error(`Contract Fetch Failed: ${JSON.stringify(contractError)}`);
+      console.error("Contract Fetch Error:", contractError);
+      throw new Error(
+        `Contract Fetch Failed: ${JSON.stringify(contractError)}`,
+      );
     }
-    
+
     if (!contract) {
-       console.error("No contract returned for ID:", contractId);
-       throw new Error(`Contract not found (ID: ${contractId})`);
+      console.error("No contract returned for ID:", contractId);
+      throw new Error(`Contract not found (ID: ${contractId})`);
     }
 
     console.log("Contract found:", contract.id);
@@ -52,18 +54,18 @@ serve(async (req) => {
 
     // 2. Fetch Licensor's Connect ID
     const { data: licensorProfile, error: licensorError } = await supabaseClient
-        .from("profiles")
-        .select("stripe_connect_id")
-        .eq("id", contract.licensor_id)
-        .single();
-    
+      .from("profiles")
+      .select("stripe_connect_id")
+      .eq("id", contract.licensor_id)
+      .single();
+
     if (licensorError) {
-        console.error("Licensor Fetch Error:", licensorError);
+      console.error("Licensor Fetch Error:", licensorError);
     }
 
     if (!licensorProfile?.stripe_connect_id) {
-       console.error("Licensor has no Stripe Connect ID");
-       throw new Error("Licensor has not connected Stripe account");
+      console.error("Licensor has no Stripe Connect ID");
+      throw new Error("Licensor has not connected Stripe account");
     }
 
     const stripeConnectId = licensorProfile.stripe_connect_id;
@@ -71,7 +73,7 @@ serve(async (req) => {
     // 3. Calculate Amounts
     // Assuming pricing_value is in EUR currency unit (e.g. 50.00)
     // Stripe expects amounts in cents.
-    const amount = Math.round(contract.pricing_value * 100); 
+    const amount = Math.round(contract.pricing_value * 100);
     const APP_FEE_PERCENTAGE = 0.10; // 10%
     const applicationFeeAmount = Math.round(amount * APP_FEE_PERCENTAGE);
 
@@ -88,7 +90,8 @@ serve(async (req) => {
             currency: contract.pricing_currency || "eur",
             product_data: {
               name: `License: ${contract.original_video_title}`,
-              description: `License for using video: ${contract.original_video_title}`,
+              description:
+                `License for using video: ${contract.original_video_title}`,
             },
             unit_amount: amount,
           },
@@ -105,8 +108,12 @@ serve(async (req) => {
       metadata: {
         contractId: contract.id,
       },
-      success_url: `${req.headers.get("origin")}/dashboard?success=true&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${req.headers.get("origin")}/dashboard?canceled=true`,
+      success_url: `${
+        req.headers.get("origin")
+      }/explore?success=true&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${
+        req.headers.get("origin")
+      }/explore?canceled=true&contractId=${contract.id}`,
     });
 
     // 5. Update Contract with Session ID
@@ -116,8 +123,8 @@ serve(async (req) => {
       .eq("id", contractId);
 
     if (updateError) {
-        console.error("Failed to update contract with session ID", updateError);
-        // We don't throw here to avoid blocking the user redirect, but it is bad.
+      console.error("Failed to update contract with session ID", updateError);
+      // We don't throw here to avoid blocking the user redirect, but it is bad.
     }
 
     return new Response(JSON.stringify({ url: session.url }), {

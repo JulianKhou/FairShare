@@ -9,6 +9,7 @@ export interface ReactionContract {
     licensee_id: string; // Reactor [cite: 267]
     licensor_name: string; // Name des Original-Creators
     licensee_name: string; // Name des Reactors
+    reaction_video_id?: string; // ID des Videos, mit dem reagiert wird
 
     // Video-Details [cite: 278, 280, 281]
     original_video_title: string;
@@ -36,10 +37,13 @@ export interface ReactionContract {
     licensee_accepted_at?: string;
 
     contract_version: string; // Wichtig für die Textform-Referenz [cite: 483]
-    
+
     // Stripe Payment
     stripe_session_id?: string;
     status?: "PENDING" | "PAID" | "FAILED";
+
+    // File handling
+    pdf_storage_path?: string; // Full URL to the license file
 }
 
 import { getProfile } from "./profiles";

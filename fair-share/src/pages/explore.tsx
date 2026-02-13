@@ -1,10 +1,55 @@
 // src/pages/explore.tsx
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import ShowVideoList from "../components/showVideos/showVideoList";
 import { useAuth } from "../hooks/auth/useAuth";
+import { useSearchParams } from "react-router-dom";
+import { deleteReactionContract } from "../services/supabaseCollum/reactionContract";
 
 function Explore() {
   const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const alertShown = useRef(false);
+
+  useEffect(() => {
+    const success = searchParams.get("success");
+    const canceled = searchParams.get("canceled");
+    const contractId = searchParams.get("contractId");
+
+    // Prevent double invocation in StrictMode
+    if (alertShown.current) return;
+
+    if (success) {
+      alertShown.current = true;
+      // Delay alert to allow UI to render first
+      setTimeout(() => {
+        alert("Payment successful! Your license has been created.");
+      }, 500);
+      setSearchParams({}, { replace: true });
+    }
+
+    if (canceled) {
+      alertShown.current = true;
+      if (contractId) {
+        deleteReactionContract(contractId)
+          .then(() => {
+             setTimeout(() => {
+                alert("Payment canceled. The pending contract has been deleted.");
+             }, 100);
+          })
+          .catch((err) => {
+            console.error("Failed to delete contract:", err);
+             setTimeout(() => {
+                alert("Payment canceled. Could not delete pending contract.");
+             }, 100);
+          });
+      } else {
+         setTimeout(() => {
+            alert("Payment canceled.");
+         }, 100);
+      }
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   return (
     <div className="flex flex-col items-center justify-center pt-20 overflow-hidden gap-8 w-full">

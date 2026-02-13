@@ -6,6 +6,7 @@ import {
 } from "@/services/supabaseCollum/reactionContract";
 import { Loader2, Download, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { downloadLicensePDF } from "@/services/supabaseFunctions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
@@ -58,6 +59,7 @@ export const MyLicenses = () => {
           // fallback for legacy/manual entries: check accepted_by_licensor if status is missing
           const validLicenses = data || [];
           console.log("Fetched licenses:", validLicenses); // DEBUG: Check status values
+          validLicenses.forEach(l => console.log(`License ${l.id} pdf_storage_path:`, l.pdf_storage_path));
           if (data?.length === 0) {
             // You might want to remove this fallback later if strictly using status
           }
@@ -71,15 +73,17 @@ export const MyLicenses = () => {
     }
   }, [user]);
 
-  const handleDownload = async (contractId: string) => {
-    // Trigger PDF generation or download
-    // For now, we reuse the generate-license-pdf logic or just show an alert
-    // Ideally, specific endpoint to GET the PDF
-    alert(
-      "PDF Download not yet implemented directly from list. Check your email!",
-    );
-
-    // Potential improvement: invoke generate-license-pdf and return blob
+  const handleDownload = async (license: ReactionContract) => {
+    try {
+      // Show loading indicator if needed (simulated by async/await for now)
+      // Ideally we'd modify the state to show a spinner on the specific button
+      
+      const fileName = `License-${license.id.slice(0, 8)}.pdf`;
+      await downloadLicensePDF(license.id, fileName, license.pdf_storage_path);
+      
+    } catch (e: any) {
+      alert(`Failed to download license: ${e.message}`);
+    }
   };
 
   if (loading) {
@@ -176,7 +180,7 @@ export const MyLicenses = () => {
               <Button
                 size="sm"
                 className="w-full sm:w-auto"
-                onClick={() => handleDownload(license.id)}
+                onClick={() => handleDownload(license)}
               >
                 <Download className="h-4 w-4 mr-2" />
                 Download License

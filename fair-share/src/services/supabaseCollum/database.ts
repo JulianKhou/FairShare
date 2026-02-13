@@ -16,14 +16,20 @@ export const saveVideosToSupabase = async (userId: string, videos: any[]) => {
       published_at: video.snippet?.publishedAt || video.publishedAt,
 
       // Metriken & Statistiken (Strings zu Zahlen konvertieren)
-      view_count_at_listing: parseInt(video.statistics?.viewCount || video.viewCount || "0"),
-      last_view_count: parseInt(video.statistics?.viewCount || video.viewCount || "0"),
+      view_count_at_listing: parseInt(
+        video.statistics?.viewCount || video.viewCount || "0",
+      ),
+      last_view_count: parseInt(
+        video.statistics?.viewCount || video.viewCount || "0",
+      ),
       last_view_count_update: new Date().toISOString(),
 
       // Kategorien & Dauer
-      category_id: video.snippet?.categoryId || video.categoryId || video.category_id,
+      category_id: video.snippet?.categoryId || video.categoryId ||
+        video.category_id,
       duration_seconds: video.duration_seconds || 0,
-      channel_title: video.snippet?.channelTitle || video.channel_title || "Unknown Channel",
+      channel_title: video.snippet?.channelTitle || video.channel_title ||
+        "Unknown Channel",
 
       // Algorithmus-Startwerte
       estimated_cpm: 0,
@@ -59,7 +65,14 @@ export const getVideosFromSupabase = async (
     query = query.eq("islicensed", true);
     // Exclude own videos if user is logged in
     if (userId) {
+      console.log(
+        `Applying filter using userId: ${userId} to exclude own videos`,
+      );
       query = query.neq("creator_id", userId);
+    } else {
+      console.log(
+        "No userId provided, showing all licensed videos (including own if any)",
+      );
     }
   } else if (videoType === "licensedByMe") {
     query = query.eq("creator_id", userId).eq("islicensed", true);
