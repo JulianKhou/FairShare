@@ -9,3 +9,9 @@ entrypoint = "./functions/generate-license-pdf/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/generate-license-pdf/*.html" ]
+
+[functions.report-usage]
+enabled = true
+verify_jwt = false
+import_map = "./functions/report-usage/deno.json"
+entrypoint = "./functions/report-usage/index.ts"

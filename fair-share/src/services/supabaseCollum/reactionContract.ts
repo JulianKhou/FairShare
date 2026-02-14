@@ -40,7 +40,11 @@ export interface ReactionContract {
 
     // Stripe Payment
     stripe_session_id?: string;
-    status?: "PENDING" | "PAID" | "FAILED";
+    stripe_subscription_id?: string; // For recurring/usage billing
+    stripe_customer_id?: string; // To link contract to Stripe Customer
+    last_reported_view_count?: number; // Last count synced to Stripe (for delta reporting)
+    billing_cycle_anchor?: string; // ISO Date of next billing cycle
+    status?: "PENDING" | "PAID" | "FAILED" | "ACTIVE"; // Added ACTIVE for subscriptions
 
     // File handling
     pdf_storage_path?: string; // Full URL to the license file
@@ -133,4 +137,27 @@ export const getPurchasedContracts = async (userId: string) => {
 
     if (error) throw error;
     return data;
+};
+
+export const checkExistingLicense = async (
+    licenseeId: string,
+    originalVideoId: string,
+    reactionVideoId: string,
+) => {
+    // Check if there is already a PAID or PENDING contract for this combination
+    const { data, error } = await supabase
+        .from("reaction_contracts")
+        .select("id, status")
+        .eq("licensee_id", licenseeId)
+        .eq("original_video_id", originalVideoId)
+        .eq("reaction_video_id", reactionVideoId)
+        .maybeSingle();
+
+    if (error) {
+        console.error("Error checking existing license:", error);
+        return null;
+    }
+
+    // Return the status string (e.g. "PAID", "PENDING") or null
+    return data?.status || null;
 };

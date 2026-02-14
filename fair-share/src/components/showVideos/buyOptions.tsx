@@ -12,6 +12,7 @@ import { useAuth } from "@/hooks/auth/useAuth";
 import {
   createReactionContract,
   ReactionContract,
+  checkExistingLicense,
 } from "@/services/supabaseCollum/reactionContract";
 import { useState, useEffect } from "react";
 import { generateUUID } from "@/lib/utils";
@@ -28,17 +29,32 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
     "monthly" | "yearly" | "lifetime"
   >("monthly");
   const [loading, setLoading] = useState(false);
+  const [existingLicenseStatus, setExistingLicenseStatus] = useState<string | null>(null);
+  const [checkingLicense, setCheckingLicense] = useState(false);
 
   // Fetch user's videos for selection
   const { videos: myVideos, isLoading: isLoadingVideos } = useVideos("myVideos", user?.id);
   const [selectedReactionVideoId, setSelectedReactionVideoId] = useState<string>("");
 
-  // Pre-select first video if available
+  // Auto-select removed to enforce manual selection
+
+  // Check for existing license
   useEffect(() => {
-    if (myVideos.length > 0 && !selectedReactionVideoId) {
-      setSelectedReactionVideoId(myVideos[0].id);
-    }
-  }, [myVideos, selectedReactionVideoId]);
+    const checkLicense = async () => {
+      if (user?.id && videoCreator?.id && selectedReactionVideoId) {
+        setCheckingLicense(true);
+        const status = await checkExistingLicense(
+          user.id,
+          videoCreator.id,
+          selectedReactionVideoId
+        );
+        setExistingLicenseStatus(String(status || '')); // Ensure string or empty
+        setCheckingLicense(false);
+      }
+    };
+
+    checkLicense();
+  }, [user, videoCreator, selectedReactionVideoId]);
 
   // Determine which video is selected
   const selectedVideo = myVideos.find(v => v.id === selectedReactionVideoId) || videoReactor;
@@ -63,13 +79,18 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
       let modelType: 1 | 2 | 3 = 1; // Default Fixed
       let price = prices.oneTime;
 
-      // START: ONLY ONE-TIME PAYMENT SUPPORTED FOR NOW
-      if (selectedPlan !== "monthly") {
-        alert("Momentan werden nur Einmalzahlungen unterstützt.");
-        setLoading(false);
-        return;
+      
+      // Determine Pricing Model and Value
+      if (selectedPlan === "yearly") {
+          modelType = 2; // PayPerView / 1000 Views
+          price = prices.payPerViews;
+      } else if (selectedPlan === "lifetime") {
+          modelType = 3; // CPM
+          price = prices.payPerCpm;
+      } else {
+          modelType = 1; // Fixed (monthly)
+          price = prices.oneTime;
       }
-      // END
 
       const newContract: ReactionContract = {
         id: generateUUID(), // Generate client-side ID (supports http/ip)
@@ -134,6 +155,7 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
                 value={selectedReactionVideoId}
                 onChange={(e) => setSelectedReactionVideoId(e.target.value)}
             >
+                <option value="" disabled>Select a video...</option>
                 {myVideos.map((video) => (
                     <option key={video.id} value={video.id}>
                         {video.title}
@@ -178,9 +200,23 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
           </Field>
         </RadioGroup>
       </FieldSet>
-      <Button onClick={handleBuy} disabled={loading || isLoadingVideos || !selectedReactionVideoId} className="mt-4">
-        {loading ? "Processing..." : "Buy"}
+      <Button 
+        onClick={handleBuy} 
+        disabled={loading || isLoadingVideos || !selectedReactionVideoId || !!existingLicenseStatus || checkingLicense} 
+        className="mt-4"
+      >
+        {checkingLicense ? "Checking..." : existingLicenseStatus === "PAID" ? "License already owned" : existingLicenseStatus === "PENDING" ? "Purchase Pending" : loading ? "Processing..." : "Buy"}
       </Button>
+      {existingLicenseStatus === "PAID" && (
+        <p className="text-xs text-destructive mt-1">
+          You have already purchased a license for this video combination.
+        </p>
+      )}
+      {existingLicenseStatus === "PENDING" && (
+        <p className="text-xs text-warning mt-1">
+          A purchase is technically pending. Please check your contracts or contact support if this persists.
+        </p>
+      )}
     </div>
   );
 };
