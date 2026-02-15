@@ -158,6 +158,17 @@ export const checkExistingLicense = async (
         return null;
     }
 
-    // Return the status string (e.g. "PAID", "PENDING") or null
-    return data?.status || null;
+    // Return the status and id
+    return data ? { status: data.status, id: data.id } : null;
+};
+
+export const withdrawReactionContract = async (contractId: string) => {
+    const { error } = await supabase
+        .from("reaction_contracts")
+        .delete()
+        .eq("id", contractId)
+        .eq("accepted_by_licensor", false); // Security: only delete if not accepted yet
+    
+    if (error) throw error;
+    return true;
 };

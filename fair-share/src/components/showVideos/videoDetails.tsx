@@ -4,19 +4,17 @@ import {
   FieldContent,
   FieldDescription,
   FieldLabel,
-  FieldSet,
-  FieldLegend,
 } from "@/components/ui/field";
 import { Switch } from "@/components/ui/switch";
 import { useVideoDetails } from "../../hooks/videoDetails/useVideoDetails";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+
 import { Button } from "@/components/ui/button";
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupInput,
 } from "@/components/ui/input-group";
-import { Search } from "lucide-react";
+import { Search, Loader2 } from "lucide-react";
 import { useFindVideo } from "@/hooks/videoDetails/useFindVideo";
 import { useState, useEffect } from "react";
 import { VideoItem } from "./videoItem";
@@ -25,7 +23,13 @@ import { useAdmin } from "@/hooks/auth/useAdmin";
 import { useLocation } from "react-router-dom";
 import { ChangeVideoSettings } from "../debug/changeVideoSettings";
 import { useVideoSimulation } from "@/hooks/debughooks/changeViewsLokal";
-import { getContractsForVideo, ReactionContract, getPendingReactionContracts, updateReactionContract, deleteReactionContract } from "@/services/supabaseCollum/reactionContract";
+import {
+  getContractsForVideo,
+  ReactionContract,
+  getPendingReactionContracts,
+  updateReactionContract,
+  deleteReactionContract,
+} from "@/services/supabaseCollum/reactionContract";
 import { generateLicensePDF } from "@/services/supabaseFunctions";
 
 interface VideoDetailsProps {
@@ -36,8 +40,6 @@ interface VideoDetailsProps {
 }
 const videoDetailCss =
   "video-details flex  flex-start justify-between fixed top-4/7 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-5/6 h-4/5 bg-card rounded-2xl p-2 ";
-
-
 
 export const VideoDetails = ({
   video,
@@ -50,7 +52,10 @@ export const VideoDetails = ({
   const { video: foundVideo, findVideo, isLoading } = useFindVideo();
   const [activeTab, setActiveTab] = useState<"details" | "pending">("details");
   const [contracts, setContracts] = useState<ReactionContract[]>([]);
-  const [pendingContracts, setPendingContracts] = useState<ReactionContract[]>([]);
+  const [pendingContracts, setPendingContracts] = useState<ReactionContract[]>(
+    [],
+  );
+  const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (isOpen && video?.id) {
@@ -68,18 +73,23 @@ export const VideoDetails = ({
   }, [isOpen, video, mode]);
 
   const handleAccept = async (contractId: string) => {
+    if (processingIds.has(contractId)) return;
+
+    setProcessingIds((prev) => new Set(prev).add(contractId));
     try {
       await updateReactionContract(contractId, { accepted_by_licensor: true });
-      
+
       // Generate and send PDF
       try {
         await generateLicensePDF(contractId);
         alert("Contract accepted! PDF has been emailed to both parties. ✅");
       } catch (pdfError) {
         console.error("Failed to generate PDF:", pdfError);
-        alert("Contract accepted, but PDF generation failed. Please contact support.");
+        alert(
+          "Contract accepted, but PDF generation failed. Please contact support.",
+        );
       }
-      
+
       // Refresh lists
       const pending = await getPendingReactionContracts(video.id);
       const accepted = await getContractsForVideo(video.id);
@@ -88,6 +98,12 @@ export const VideoDetails = ({
     } catch (e) {
       console.error("Failed to accept contract", e);
       alert("Failed to accept contract. Please try again.");
+    } finally {
+      setProcessingIds((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(contractId);
+        return newSet;
+      });
     }
   };
 
@@ -102,7 +118,6 @@ export const VideoDetails = ({
     }
   };
 
-
   if (!isOpen) return null;
 
   const handleSearch = () => {
@@ -110,12 +125,12 @@ export const VideoDetails = ({
       findVideo(videoUrl);
     }
   };
-  const { isAdmin, loading } = useAdmin();
+  const { isAdmin } = useAdmin();
   const location = useLocation();
 
   // Magic Query auslesen
   const queryParams = new URLSearchParams(location.search);
-  const isDebugRequested = queryParams.get('debug') === 'true';
+  const isDebugRequested = queryParams.get("debug") === "true";
 
   // Debug-Modus ist nur aktiv, wenn User Admin ist UND ?debug=true in der URL steht
   const showDebugTools = isAdmin && isDebugRequested;
@@ -124,15 +139,14 @@ export const VideoDetails = ({
   const {
     simulatedVideo: simulatedMainVideo,
     handleViewsChange: handleMainViewsChange,
-    setMockViews: setMainMockViews
+    setMockViews: setMainMockViews,
   } = useVideoSimulation(video);
 
   const {
     simulatedVideo: simulatedFoundVideo,
     handleViewsChange: handleFoundViewsChange,
-    setMockViews: setFoundMockViews
+    setMockViews: setFoundMockViews,
   } = useVideoSimulation(foundVideo);
-
 
   // Entscheidung: Welches Video nutzen wir für die Anzeige?
   // Im Debug-Mode nutzen wir das simulierte Video, sonst das echte.
@@ -181,17 +195,33 @@ export const VideoDetails = ({
           {/* PENDING REACTIONS TAB */}
           {mode === "owner" && activeTab === "pending" && (
             <div className="mt-4 p-4 bg-secondary/20 rounded-lg">
-              <h3 className="text-sm font-semibold mb-2">Pending Reaction Requests</h3>
+              <h3 className="text-sm font-semibold mb-2">
+                Pending Reaction Requests
+              </h3>
               {pendingContracts.length > 0 ? (
                 <ul className="space-y-2">
                   {pendingContracts.map((contract) => (
-                    <li key={contract.id} className="bg-card p-3 rounded flex flex-col gap-2">
+                    <li
+                      key={contract.id}
+                      className="bg-card p-3 rounded flex flex-col gap-2"
+                    >
                       <div className="flex justify-between items-start">
                         <div>
-                          <p className="text-sm font-medium">{contract.licensee_name || "Unknown User"}</p>
-                          <p className="text-xs text-muted-foreground">Original ID: {contract.original_video_id}</p>
+                          <p className="text-sm font-medium">
+                            {contract.licensee_name || "Unknown User"}
+                          </p>
                           <p className="text-xs text-muted-foreground">
-                            Offer: {contract.pricing_value} {contract.pricing_currency} ({contract.pricing_model_type === 1 ? 'Fixed' : contract.pricing_model_type === 2 ? 'Per View' : 'CPM'})
+                            Original ID: {contract.original_video_id}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Offer: {contract.pricing_value}{" "}
+                            {contract.pricing_currency} (
+                            {contract.pricing_model_type === 1
+                              ? "Fixed"
+                              : contract.pricing_model_type === 2
+                                ? "Per View"
+                                : "CPM"}
+                            )
                           </p>
                         </div>
                         <span className="text-xs text-muted-foreground">
@@ -199,18 +229,38 @@ export const VideoDetails = ({
                         </span>
                       </div>
                       <div className="flex gap-2 mt-2">
-                        <Button size="sm" onClick={() => handleAccept(contract.id)}>Accept</Button>
-                        <Button size="sm" variant="destructive" onClick={() => handleDelete(contract.id)}>Delete</Button>
+                        <Button
+                          size="sm"
+                          onClick={() => handleAccept(contract.id)}
+                          disabled={processingIds.has(contract.id)}
+                        >
+                          {processingIds.has(contract.id) ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Accepting...
+                            </>
+                          ) : (
+                            "Accept"
+                          )}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => handleDelete(contract.id)}
+                        >
+                          Delete
+                        </Button>
                       </div>
                     </li>
                   ))}
                 </ul>
               ) : (
-                <p className="text-sm text-muted-foreground">No pending requests.</p>
+                <p className="text-sm text-muted-foreground">
+                  No pending requests.
+                </p>
               )}
             </div>
           )}
-
 
           {/* DETAILS TAB (Existing Content) */}
           {(activeTab === "details" || mode !== "owner") && (
@@ -221,26 +271,40 @@ export const VideoDetails = ({
                 {mode === "owner" ? (
                   contracts.length > 0 ? (
                     <div className="space-y-2">
-                      <p className="text-xs text-muted-foreground">Purchased by:</p>
+                      <p className="text-xs text-muted-foreground">
+                        Purchased by:
+                      </p>
                       <ul className="text-sm space-y-1">
                         {contracts.map((contract) => (
-                          <li key={contract.id} className="flex justify-between items-center bg-card p-2 rounded">
-                            <span>{contract.licensee_name || "Unknown User"}</span>
+                          <li
+                            key={contract.id}
+                            className="flex justify-between items-center bg-card p-2 rounded"
+                          >
+                            <span>
+                              {contract.licensee_name || "Unknown User"}
+                            </span>
                             <span className="text-xs text-muted-foreground">
-                              {new Date(contract.created_at).toLocaleDateString()}
+                              {new Date(
+                                contract.created_at,
+                              ).toLocaleDateString()}
                             </span>
                           </li>
                         ))}
                       </ul>
                     </div>
                   ) : (
-                    <p className="text-sm text-muted-foreground">No licenses sold yet.</p>
+                    <p className="text-sm text-muted-foreground">
+                      No licenses sold yet.
+                    </p>
                   )
                 ) : (
                   // Public/View Mode
                   <div className="space-y-2">
                     <p className="text-sm">
-                      Owner: <span className="font-medium">{video.channel_title || "Unknown Channel"}</span>
+                      Owner:{" "}
+                      <span className="font-medium">
+                        {video.channel_title || "Unknown Channel"}
+                      </span>
                     </p>
                     {/* Check if *I* bought it? We'd need current user ID matching licensee_id */}
                     {/* For now, just show total licenses sold maybe? */}
@@ -252,7 +316,6 @@ export const VideoDetails = ({
               </div>
             </>
           )}
-
 
           {showDebugTools && simulatedMainVideo && (
             <>
@@ -268,11 +331,8 @@ export const VideoDetails = ({
       {/* Right Column content only shows in details tab if owner */}
       {mode === "owner" && activeTab === "details" && (
         <div>
-
-          <div>
-          </div>
+          <div></div>
           <div className="video-details-right flex flex-col w-full mr-5">
-
             <h2 className="self-start text-xl m-5 ">License Video</h2>
             <Field orientation="horizontal" className="max-w-sm">
               <FieldContent>
@@ -310,27 +370,37 @@ export const VideoDetails = ({
               </Button>
 
               {/* Optional: Feedback if a video is found */}
-              {foundVideo && <>
-                <VideoItem video={foundVideo} />
-                {showDebugTools && simulatedFoundVideo && (
-                  <>
-                    <ChangeVideoSettings
-                      video={simulatedFoundVideo}
-                      handleViewsChange={handleFoundViewsChange}
-                      setMockViews={setFoundMockViews}
-                    />
-                  </>
-                )}
-              </>}
+              {foundVideo && (
+                <>
+                  <VideoItem video={foundVideo} />
+                  {showDebugTools && simulatedFoundVideo && (
+                    <>
+                      <ChangeVideoSettings
+                        video={simulatedFoundVideo}
+                        handleViewsChange={handleFoundViewsChange}
+                        setMockViews={setFoundMockViews}
+                      />
+                    </>
+                  )}
+                </>
+              )}
               {/* Hier übergeben wir die simulierten Videos an BuyOptions */}
-              {foundVideo && <BuyOptions videoCreator={activeFoundVideo} videoReactor={activeMainVideo} />}
+              {foundVideo && (
+                <BuyOptions
+                  videoCreator={activeFoundVideo}
+                  videoReactor={activeMainVideo}
+                />
+              )}
             </div>
           </div>
         </div>
       )}
       {mode === "public" && (
         /* Auch hier simuliertes Video nutzen */
-        <BuyOptions videoCreator={activeMainVideo} videoReactor={activeMainVideo} />
+        <BuyOptions
+          videoCreator={activeMainVideo}
+          videoReactor={activeMainVideo}
+        />
       )}
       <CloseBtn onClose={onClose} />
     </div>

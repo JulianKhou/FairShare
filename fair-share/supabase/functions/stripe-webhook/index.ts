@@ -5,16 +5,14 @@ import Stripe from "https://esm.sh/stripe@14.14.0";
 console.log("Stripe Webhook Function Invoked");
 
 serve(async (req) => {
-  // Debug Log 1: Request received
   console.log("🔔 Stripe Webhook Request received");
 
   const signature = req.headers.get("Stripe-Signature");
   const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
   const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
 
-  // Debug Log 2: Secrets check
   if (!webhookSecret || !stripeKey) {
-    console.error("❌ Missing Secrets during execution:", {
+    console.error("❌ Missing Secrets:", {
       hasWebhookSecret: !!webhookSecret,
       hasStripeKey: !!stripeKey,
     });
@@ -51,12 +49,14 @@ serve(async (req) => {
   );
 
   switch (event.type) {
+    // ─── CHECKOUT COMPLETED (One-Time + Subscription Start) ────────────
     case "checkout.session.completed": {
       const session = event.data.object;
       const contractId = session.metadata?.contractId;
 
       console.log(`📦 Session Data:`, {
         id: session.id,
+        mode: session.mode,
         metadata: session.metadata,
         contractId: contractId,
       });
@@ -70,15 +70,13 @@ serve(async (req) => {
 
         // Handle Subscription Mode
         if (session.mode === "subscription") {
-          updatePayload.status = "ACTIVE"; // Subscriptions are ACTIVE not just PAID
+          updatePayload.status = "ACTIVE";
           if (typeof session.subscription === "string") {
             updatePayload.stripe_subscription_id = session.subscription;
           }
           if (typeof session.customer === "string") {
             updatePayload.stripe_customer_id = session.customer;
           }
-          // Initialize billing anchor? Usually we get this from the Subscription object,
-          // but for now we can rely on Stripe managing the cycle.
         }
 
         // 1. Update Contract Status
@@ -109,7 +107,7 @@ serve(async (req) => {
           );
         } else {
           console.log(
-            "✅ generator-license-pdf triggered successfully:",
+            "✅ generate-license-pdf triggered successfully:",
             funcData,
           );
         }
@@ -118,6 +116,84 @@ serve(async (req) => {
       }
       break;
     }
+
+    // ─── INVOICE PAID (Recurring quarterly payment succeeded) ──────────
+    case "invoice.paid": {
+      const invoice = event.data.object;
+      const subscriptionId = invoice.subscription;
+
+      if (!subscriptionId) {
+        console.log("ℹ️  invoice.paid without subscription — likely one-time, skipping.");
+        break;
+      }
+
+      console.log(`💰 Invoice paid for subscription: ${subscriptionId}`);
+      console.log(`   Amount: ${invoice.amount_paid / 100} ${invoice.currency?.toUpperCase()}`);
+      console.log(`   Period: ${new Date((invoice.period_start || 0) * 1000).toISOString()} - ${new Date((invoice.period_end || 0) * 1000).toISOString()}`);
+
+      // Ensure contract status stays ACTIVE after successful payment
+      const { error: invoicePaidError } = await supabaseClient
+        .from("reaction_contracts")
+        .update({
+          status: "ACTIVE",
+        })
+        .eq("stripe_subscription_id", subscriptionId);
+
+      if (invoicePaidError) {
+        console.error("❌ Failed to update contract after invoice.paid:", invoicePaidError);
+      } else {
+        console.log("✅ Contract confirmed ACTIVE after successful payment");
+      }
+      break;
+    }
+
+    // ─── INVOICE PAYMENT FAILED (Quarterly payment failed) ─────────────
+    case "invoice.payment_failed": {
+      const failedInvoice = event.data.object;
+      const failedSubId = failedInvoice.subscription;
+
+      if (!failedSubId) {
+        console.log("ℹ️  invoice.payment_failed without subscription — skipping.");
+        break;
+      }
+
+      console.error(`❌ Payment FAILED for subscription: ${failedSubId}`);
+      console.error(`   Attempt: ${failedInvoice.attempt_count}`);
+
+      // Mark contract as payment failed
+      const { error: failedError } = await supabaseClient
+        .from("reaction_contracts")
+        .update({ status: "PAYMENT_FAILED" })
+        .eq("stripe_subscription_id", failedSubId);
+
+      if (failedError) {
+        console.error("❌ Failed to update contract status to PAYMENT_FAILED:", failedError);
+      } else {
+        console.log("⚠️  Contract marked as PAYMENT_FAILED — user needs to update payment method");
+      }
+      break;
+    }
+
+    // ─── SUBSCRIPTION DELETED (Cancelled or fully churned) ─────────────
+    case "customer.subscription.deleted": {
+      const deletedSub = event.data.object;
+      const deletedSubId = deletedSub.id;
+
+      console.log(`🚫 Subscription deleted/cancelled: ${deletedSubId}`);
+
+      const { error: cancelError } = await supabaseClient
+        .from("reaction_contracts")
+        .update({ status: "CANCELLED" })
+        .eq("stripe_subscription_id", deletedSubId);
+
+      if (cancelError) {
+        console.error("❌ Failed to update contract status to CANCELLED:", cancelError);
+      } else {
+        console.log("✅ Contract marked as CANCELLED");
+      }
+      break;
+    }
+
     default:
       console.log(`ℹ️  Unhandled event type: ${event.type}`);
   }

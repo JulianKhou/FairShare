@@ -1,6 +1,5 @@
-import React, { useState } from "react";
+import React from "react";
 import { handleLogout, handleLogin } from "../../hooks/auth/useHandleAuth";
-import { SettingsModal } from "./settingsModal";
 import { useNavigate } from "react-router-dom";
 
 interface UserMenuProps {
@@ -10,7 +9,6 @@ interface UserMenuProps {
 }
 
 export const UserMenu = ({ isOpen, onClose, user }: UserMenuProps) => {
-  const [showSettings, setShowSettings] = useState(false);
   const navigate = useNavigate();
 
   if (!isOpen) return null;
@@ -49,18 +47,43 @@ export const UserMenu = ({ isOpen, onClose, user }: UserMenuProps) => {
                 navigate("/profile");
               }}
             >
-              Mein Profil
+              My Profile
             </button>
             <button
               className="w-full text-left px-3 py-2 rounded-lg hover:bg-accent transition-colors text-sm"
-              onClick={() => setShowSettings(true)}
+              onClick={() => {
+                onClose();
+                navigate("/profile?tab=analytics");
+              }}
+            >
+              Analytics
+            </button>
+            <button
+              className="w-full text-left px-3 py-2 rounded-lg hover:bg-accent transition-colors text-sm"
+              onClick={() => {
+                onClose();
+                navigate("/profile?tab=licenses");
+              }}
+            >
+              My Licenses
+            </button>
+            <button
+              className="w-full text-left px-3 py-2 rounded-lg hover:bg-accent transition-colors text-sm"
+              onClick={() => {
+                onClose();
+                navigate("/settings");
+              }}
             >
               Einstellungen
             </button>
             <hr className="border-border my-2" />
             <button
               className="w-full text-left px-3 py-2 rounded-lg hover:bg-red-500/10 text-red-500 transition-colors text-sm font-medium"
-              onClick={handleLogout}
+              onClick={async () => {
+                await handleLogout();
+                onClose();
+                navigate("/");
+              }}
             >
               Abmelden
             </button>
@@ -76,14 +99,6 @@ export const UserMenu = ({ isOpen, onClose, user }: UserMenuProps) => {
           </div>
         )}
       </div>
-
-      {/* Settings Modal */}
-      {showSettings && (
-        <SettingsModal
-          isOpen={showSettings}
-          onClose={() => setShowSettings(false)}
-        />
-      )}
     </>
   );
 };

@@ -13,10 +13,13 @@ import {
   createReactionContract,
   ReactionContract,
   checkExistingLicense,
+  withdrawReactionContract,
 } from "@/services/supabaseCollum/reactionContract";
+import { getProfile } from "@/services/supabaseCollum/profiles";
 import { useState, useEffect } from "react";
 import { generateUUID } from "@/lib/utils";
 import { useVideos } from "@/hooks/youtube/useVideos";
+import { AlertCircle, CheckCircle2, XCircle } from "lucide-react";
 
 interface BuyOptionsProps {
   videoCreator: any;
@@ -29,27 +32,40 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
     "monthly" | "yearly" | "lifetime"
   >("monthly");
   const [loading, setLoading] = useState(false);
-  const [existingLicenseStatus, setExistingLicenseStatus] = useState<string | null>(null);
+  const [existingContract, setExistingContract] = useState<{
+    id: string;
+    status: string;
+  } | null>(null);
   const [checkingLicense, setCheckingLicense] = useState(false);
 
   // Fetch user's videos for selection
-  const { videos: myVideos, isLoading: isLoadingVideos } = useVideos("myVideos", user?.id);
-  const [selectedReactionVideoId, setSelectedReactionVideoId] = useState<string>("");
-
-  // Auto-select removed to enforce manual selection
+  const { videos: myVideos, isLoading: isLoadingVideos } = useVideos(
+    "myVideos",
+    user?.id,
+  );
+  const [selectedReactionVideoId, setSelectedReactionVideoId] =
+    useState<string>("");
 
   // Check for existing license
   useEffect(() => {
     const checkLicense = async () => {
       if (user?.id && videoCreator?.id && selectedReactionVideoId) {
         setCheckingLicense(true);
-        const status = await checkExistingLicense(
-          user.id,
-          videoCreator.id,
-          selectedReactionVideoId
-        );
-        setExistingLicenseStatus(String(status || '')); // Ensure string or empty
-        setCheckingLicense(false);
+        try {
+          // Now returns object { status, id } or null
+          const result = await checkExistingLicense(
+            user.id,
+            videoCreator.id,
+            selectedReactionVideoId,
+          );
+          setExistingContract(result);
+        } catch (err) {
+          console.error("Failed to check license", err);
+        } finally {
+          setCheckingLicense(false);
+        }
+      } else {
+        setExistingContract(null);
       }
     };
 
@@ -57,8 +73,9 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
   }, [user, videoCreator, selectedReactionVideoId]);
 
   // Determine which video is selected
-  const selectedVideo = myVideos.find(v => v.id === selectedReactionVideoId) || videoReactor;
-  
+  const selectedVideo =
+    myVideos.find((v) => v.id === selectedReactionVideoId) || videoReactor;
+
   // Recalculate prices based on the selected video
   const prices = getPrices(selectedVideo, videoCreator);
 
@@ -69,31 +86,36 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
     }
 
     if (!selectedReactionVideoId) {
-        alert("Please select a video to license.");
-        return;
+      alert("Please select a video to license.");
+      return;
     }
 
     setLoading(true);
     try {
+      // 1. Check Creator's Auto-Accept Setting
+      const creatorProfile = await getProfile(
+        videoCreator.creator_id || videoCreator.id,
+      );
+      const autoAccept = creatorProfile?.auto_accept_reactions ?? false;
+
       // Map selection to model type and price
       let modelType: 1 | 2 | 3 = 1; // Default Fixed
       let price = prices.oneTime;
 
-      
       // Determine Pricing Model and Value
       if (selectedPlan === "yearly") {
-          modelType = 2; // PayPerView / 1000 Views
-          price = prices.payPerViews;
+        modelType = 2; // PayPerView / 1000 Views
+        price = prices.payPerViews;
       } else if (selectedPlan === "lifetime") {
-          modelType = 3; // CPM
-          price = prices.payPerCpm;
+        modelType = 3; // CPM
+        price = prices.payPerCpm;
       } else {
-          modelType = 1; // Fixed (monthly)
-          price = prices.oneTime;
+        modelType = 1; // Fixed (monthly)
+        price = prices.oneTime;
       }
 
       const newContract: ReactionContract = {
-        id: generateUUID(), // Generate client-side ID (supports http/ip)
+        id: generateUUID(),
         created_at: new Date().toISOString(),
         licensor_id: videoCreator.creator_id || videoCreator.id,
         licensee_id: user.id,
@@ -113,110 +135,180 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
           schoepferische_leistung: 0,
           parameter_dokumentation_url: "",
         },
-        accepted_by_licensor: false,
+        accepted_by_licensor: autoAccept, // Set based on profile
         accepted_by_licensee: true,
         contract_version: "1.0",
-        status: "PENDING", // Initial status
+        status: "PENDING",
         reaction_video_id: selectedReactionVideoId,
       };
 
-      // 1. Create Contract in DB
+      // 2. Create Contract in DB
       const customContract = await createReactionContract(newContract);
       const contractId = customContract?.id || newContract.id;
 
-      // 2. Create Stripe Checkout Session
+      if (!autoAccept) {
+        // If NOT auto-accepted, stop here and show Pending UI
+        setExistingContract({ id: contractId, status: "PENDING" });
+        return;
+      }
+
+      // 3. If Auto-Accepted, Proceed to Stripe
       const { url } = await import("@/services/stripeFunctions").then((mod) =>
         mod.createStripeCheckoutSession(contractId),
       );
 
-      // 3. Redirect to Stripe
       if (url) {
         window.location.href = url;
       } else {
         alert("Fehler beim Erstellen der Checkout-Session.");
       }
     } catch (error) {
-      console.error("Purchase failed:", error);
-      alert("Purchase failed. Please try again.");
+      console.error("Purchase/Request failed:", error);
+      alert("Prozess fehlgeschlagen. Bitte erneut versuchen.");
     } finally {
       setLoading(false);
     }
   };
+
+  const handleWithdraw = async () => {
+    if (!existingContract?.id) return;
+    if (!confirm("Möchtest du diese Anfrage wirklich zurückziehen?")) return;
+
+    setLoading(true);
+    try {
+      await withdrawReactionContract(existingContract.id);
+      setExistingContract(null); // Clear pending state
+    } catch (error) {
+      console.error("Withdraw failed", error);
+      alert("Fehler beim Zurückziehen der Anfrage.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Determine Button State & Text
+  const isPaid =
+    existingContract?.status === "PAID" ||
+    existingContract?.status === "ACTIVE";
+  const isPending = existingContract?.status === "PENDING";
+  const isRejected = existingContract?.status === "REJECTED";
 
   return (
     <div className="video-details-right flex flex-col w-full gap-6">
       <FieldSet className="w-full max-w-xs">
         <FieldLegend variant="label">Select your Reaction Video</FieldLegend>
         {isLoadingVideos ? (
-            <FieldDescription>Loading videos...</FieldDescription>
+          <FieldDescription>Loading videos...</FieldDescription>
         ) : myVideos.length > 0 ? (
-            <select
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                value={selectedReactionVideoId}
-                onChange={(e) => setSelectedReactionVideoId(e.target.value)}
-            >
-                <option value="" disabled>Select a video...</option>
-                {myVideos.map((video) => (
-                    <option key={video.id} value={video.id}>
-                        {video.title}
-                    </option>
-                ))}
-            </select>
+          <select
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            value={selectedReactionVideoId}
+            onChange={(e) => setSelectedReactionVideoId(e.target.value)}
+            disabled={!!existingContract} // Lock selection if contract exists
+          >
+            <option value="" disabled>
+              Select a video...
+            </option>
+            {myVideos.map((video) => (
+              <option key={video.id} value={video.id}>
+                {video.title}
+              </option>
+            ))}
+          </select>
         ) : (
-            <FieldDescription className="text-destructive">
-                You have no uploaded videos to link.
-            </FieldDescription>
+          <FieldDescription className="text-destructive">
+            You have no uploaded videos to link.
+          </FieldDescription>
         )}
       </FieldSet>
 
-      <FieldSet className="w-full max-w-xs">
-        <FieldLegend variant="label">Subscription Plan</FieldLegend>
-        <FieldDescription>
-          Yearly and lifetime plans offer significant savings.
-        </FieldDescription>
-        <RadioGroup
-          value={selectedPlan}
-          onValueChange={(val: "monthly" | "yearly" | "lifetime") =>
-            setSelectedPlan(val)
-          }
-        >
-          <Field orientation="horizontal">
-            <RadioGroupItem value="monthly" id="plan-monthly" />
-            <FieldLabel htmlFor="plan-monthly" className="font-normal">
-              Einmalzahlung {prices.oneTime.toFixed(2)} €
-            </FieldLabel>
-          </Field>
-          <Field orientation="horizontal">
-            <RadioGroupItem value="yearly" id="plan-yearly" />
-            <FieldLabel htmlFor="plan-yearly" className="font-normal">
-              PayPer 1000 Views {prices.payPerViews.toFixed(2)} €
-            </FieldLabel>
-          </Field>
-          <Field orientation="horizontal">
-            <RadioGroupItem value="lifetime" id="plan-lifetime" />
-            <FieldLabel htmlFor="plan-lifetime" className="font-normal">
-              PayPer CPM {prices.payPerCpm.toFixed(2)} €
-            </FieldLabel>
-          </Field>
-        </RadioGroup>
-      </FieldSet>
-      <Button 
-        onClick={handleBuy} 
-        disabled={loading || isLoadingVideos || !selectedReactionVideoId || !!existingLicenseStatus || checkingLicense} 
-        className="mt-4"
-      >
-        {checkingLicense ? "Checking..." : existingLicenseStatus === "PAID" ? "License already owned" : existingLicenseStatus === "PENDING" ? "Purchase Pending" : loading ? "Processing..." : "Buy"}
-      </Button>
-      {existingLicenseStatus === "PAID" && (
-        <p className="text-xs text-destructive mt-1">
-          You have already purchased a license for this video combination.
-        </p>
+      {!isPaid && !isPending && !isRejected && (
+        <FieldSet className="w-full max-w-xs">
+          <FieldLegend variant="label">Subscription Plan</FieldLegend>
+          <FieldDescription>
+            Yearly and lifetime plans offer significant savings.
+          </FieldDescription>
+          <RadioGroup
+            value={selectedPlan}
+            onValueChange={(val: "monthly" | "yearly" | "lifetime") =>
+              setSelectedPlan(val)
+            }
+          >
+            <Field orientation="horizontal">
+              <RadioGroupItem value="monthly" id="plan-monthly" />
+              <FieldLabel htmlFor="plan-monthly" className="font-normal">
+                Einmalzahlung {prices.oneTime.toFixed(2)} €
+              </FieldLabel>
+            </Field>
+            <Field orientation="horizontal">
+              <RadioGroupItem value="yearly" id="plan-yearly" />
+              <FieldLabel htmlFor="plan-yearly" className="font-normal">
+                PayPer 1000 Views {prices.payPerViews.toFixed(2)} €
+              </FieldLabel>
+            </Field>
+            <Field orientation="horizontal">
+              <RadioGroupItem value="lifetime" id="plan-lifetime" />
+              <FieldLabel htmlFor="plan-lifetime" className="font-normal">
+                PayPer CPM {prices.payPerCpm.toFixed(2)} €
+              </FieldLabel>
+            </Field>
+          </RadioGroup>
+        </FieldSet>
       )}
-      {existingLicenseStatus === "PENDING" && (
-        <p className="text-xs text-warning mt-1">
-          A purchase is technically pending. Please check your contracts or contact support if this persists.
-        </p>
-      )}
+
+      {/* Main Action Area */}
+      <div className="mt-4">
+        {checkingLicense ? (
+          <Button disabled className="w-full">
+            Checking Status...
+          </Button>
+        ) : isPaid ? (
+          <div className="flex items-center gap-2 p-3 bg-green-500/10 text-green-600 rounded-md border border-green-500/20">
+            <CheckCircle2 className="h-5 w-5" />
+            <span className="font-medium">Lizenz bereits erworben</span>
+          </div>
+        ) : isPending ? (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 p-3 bg-yellow-500/10 text-yellow-600 rounded-md border border-yellow-500/20">
+              <AlertCircle className="h-5 w-5" />
+              <span className="font-medium">
+                Anfrage gesendet. Warte auf Bestätigung.
+              </span>
+            </div>
+            <Button
+              variant="outline"
+              className="w-full text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/20"
+              onClick={handleWithdraw}
+              disabled={loading}
+            >
+              {loading ? "Wird zurückgezogen..." : "Anfrage zurückziehen"}
+            </Button>
+          </div>
+        ) : isRejected ? (
+          <div className="flex items-center gap-2 p-3 bg-destructive/10 text-destructive rounded-md border border-destructive/20">
+            <XCircle className="h-5 w-5" />
+            <div>
+              <span className="font-bold block">Anfrage abgelehnt</span>
+              <span className="text-xs opacity-90">
+                Für dieses Video ist keine weitere Anfrage möglich.
+              </span>
+            </div>
+          </div>
+        ) : (
+          <Button
+            onClick={handleBuy}
+            disabled={
+              loading ||
+              isLoadingVideos ||
+              !selectedReactionVideoId ||
+              checkingLicense
+            }
+            className="w-full"
+          >
+            {loading ? "Verarbeite..." : "Kaufen / Anfrage senden"}
+          </Button>
+        )}
+      </div>
     </div>
   );
 };
