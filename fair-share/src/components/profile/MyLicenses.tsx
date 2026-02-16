@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { downloadLicensePDF } from "@/services/supabaseFunctions";
+import { createStripeCheckoutSession } from "@/services/stripeFunctions";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
@@ -26,6 +27,7 @@ export const MyLicenses = () => {
     {},
   );
   const [loading, setLoading] = useState(true);
+  const [payingId, setPayingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Auto-refresh logic for incoming payments
@@ -104,13 +106,21 @@ export const MyLicenses = () => {
     }
   };
 
-  const getStatusBadge = (status?: string) => {
-    const s = status || "ACTIVE"; // Default to ACTIVE if undefined (legacy)
+  const getStatusBadge = (license: ReactionContract) => {
+    const s = license.status || "ACTIVE";
     if (s === "PAID" || s === "ACTIVE") {
       return (
         <Badge className="bg-green-500 hover:bg-green-600 text-white border-transparent px-3 py-1 text-sm flex items-center gap-1.5 shadow-sm">
           <CheckCircle2 className="h-3.5 w-3.5" />
           ACTIVE
+        </Badge>
+      );
+    }
+    if (s === "PENDING" && license.accepted_by_licensor) {
+      return (
+        <Badge className="bg-blue-500 hover:bg-blue-600 text-white border-transparent px-3 py-1 text-sm flex items-center gap-1.5 shadow-sm">
+          <CheckCircle2 className="h-3.5 w-3.5" />
+          AKZEPTIERT
         </Badge>
       );
     }
@@ -195,10 +205,10 @@ export const MyLicenses = () => {
               </div>
 
               <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden sm:block">
-                {getStatusBadge(license.status)}
+                {getStatusBadge(license)}
               </div>
               <div className="sm:hidden w-full flex justify-center">
-                {getStatusBadge(license.status)}
+                {getStatusBadge(license)}
               </div>
 
               <div className="text-sm font-medium text-muted-foreground">
@@ -308,6 +318,30 @@ export const MyLicenses = () => {
                 </div>
 
                 <div className="flex gap-3 w-full sm:w-auto">
+                  {license.status === "PENDING" &&
+                    license.accepted_by_licensor && (
+                      <Button
+                        size="sm"
+                        className="flex-1 sm:flex-none bg-green-600 hover:bg-green-700 text-white"
+                        disabled={payingId === license.id}
+                        onClick={async () => {
+                          setPayingId(license.id);
+                          try {
+                            const { url } = await createStripeCheckoutSession(
+                              license.id,
+                            );
+                            if (url) window.location.href = url;
+                          } catch (e) {
+                            console.error(e);
+                            alert("Fehler beim Starten der Zahlung.");
+                          } finally {
+                            setPayingId(null);
+                          }
+                        }}
+                      >
+                        {payingId === license.id ? "Lade..." : "Jetzt bezahlen"}
+                      </Button>
+                    )}
                   <Button
                     variant="outline"
                     size="sm"

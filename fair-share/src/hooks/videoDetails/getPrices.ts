@@ -61,7 +61,8 @@ export function getPrices(videoReactor: any, videoCreator: any) {
       const baseViews = videoCreator.averageViewsPerCategory || videoCreator.views || 10000;
 
       // Formula: (Estimated Views * FairShare * RPM) / 1000
-      prices.oneTime = (baseViews * fairShare * nicheRPM) / 1000;
+      const calculatedOneTime = (baseViews * fairShare * nicheRPM) / 1000;
+      prices.oneTime = Math.max(calculatedOneTime, 0.50);
 
       // PayPerView: Price per 1000 Views
       // Formula: FairShare * RPM

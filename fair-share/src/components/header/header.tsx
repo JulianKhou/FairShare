@@ -7,7 +7,8 @@ import { useAuth } from "../../hooks/auth/useAuth";
 import { NavLink } from "react-router-dom";
 import { Switch } from "../ui/switch";
 import { useToggleDarkmode } from "../../lib/useToggleDarkmode.ts";
-import { IconMoon, IconSun } from "@tabler/icons-react";
+import { IconMoon, IconSun, IconX } from "@tabler/icons-react";
+import { NotificationBell } from "./NotificationBell";
 import {
   getProfile,
   isProfileComplete,
@@ -20,6 +21,7 @@ import { fetchChannelId } from "../../services/youtube";
 function Header() {
   const { user } = useAuth();
   const [userProfile, setUserProfile] = useState<Profile | null>(null);
+  const [isWarningVisible, setIsWarningVisible] = useState(true);
 
   useEffect(() => {
     if (user) {
@@ -68,7 +70,7 @@ function Header() {
           Fair<span className="text-fair-purple">Share</span>
         </h1>
       </NavLink>
-      {userProfile && !isProfileComplete(userProfile) && (
+      {userProfile && !isProfileComplete(userProfile) && isWarningVisible && (
         <div className="hidden lg:flex fixed top-20 left-0 right-0 bg-yellow-100 border-b border-yellow-200 text-yellow-800 px-4 py-2 justify-center items-center gap-2 z-40 text-sm">
           <span>
             Your profile is incomplete. Please update it to use all features.
@@ -76,6 +78,12 @@ function Header() {
           <NavLink to="/profile" className="font-semibold underline">
             Complete Profile
           </NavLink>
+          <button
+            onClick={() => setIsWarningVisible(false)}
+            className="absolute right-4 p-1 hover:bg-yellow-200 rounded-full transition-colors"
+          >
+            <IconX size={16} />
+          </button>
         </div>
       )}
 
@@ -110,6 +118,7 @@ function Header() {
           {isDarkMode ? <IconMoon size={20} /> : <IconSun size={20} />}
           <Switch onCheckedChange={toggleDarkMode} checked={isDarkMode} />
         </div>
+        {user && <NotificationBell />}
         <button
           className="flex items-center justify-center p-1 rounded-full hover:bg-white/5 transition-colors"
           onClick={toggleMenu}

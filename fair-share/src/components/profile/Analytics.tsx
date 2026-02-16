@@ -95,7 +95,7 @@ export const Analytics = () => {
           (c) => c.status === "PAID" || c.status === "ACTIVE",
         );
 
-        const totalRevenue = paidContracts.reduce(
+        const totalRevenue = contracts.reduce(
           (sum, c) => sum + (c.pricing_value || 0),
           0,
         );
@@ -105,11 +105,11 @@ export const Analytics = () => {
         ).length;
 
         // Unique reactors
-        const uniqueReactors = new Set(paidContracts.map((c) => c.licensee_id));
+        const uniqueReactors = new Set(contracts.map((c) => c.licensee_id));
 
         // Revenue by pricing model
         const modelMap = new Map<number, { amount: number; count: number }>();
-        for (const c of paidContracts) {
+        for (const c of contracts) {
           const existing = modelMap.get(c.pricing_model_type) || {
             amount: 0,
             count: 0,
@@ -137,13 +137,13 @@ export const Analytics = () => {
           monthMap.set(key, { amount: 0, count: 0 });
         }
 
-        for (const c of paidContracts) {
+        for (const c of contracts) {
           const key = c.created_at.slice(0, 7);
-          if (monthMap.has(key)) {
-            const existing = monthMap.get(key)!;
-            existing.amount += c.pricing_value || 0;
-            existing.count += 1;
-          }
+          const existing = monthMap.get(key) || { amount: 0, count: 0 };
+          existing.amount += c.pricing_value || 0;
+          existing.count += 1;
+          if (!monthMap.has(key)) monthMap.set(key, existing);
+          else monthMap.set(key, existing);
         }
 
         // Convert to array and format month label
@@ -481,7 +481,7 @@ function SimpleBarChart({
         return (
           <div
             key={i}
-            className="flex-1 flex flex-col items-center gap-2 group"
+            className="flex-1 h-full flex flex-col items-center gap-2 group"
           >
             <div className="relative w-full bg-muted/30 rounded-t-sm hover:bg-muted/50 transition-colors flex items-end justify-center group-hover:bg-primary/10 h-full">
               {/* Bar */}

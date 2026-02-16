@@ -35,6 +35,7 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
   const [existingContract, setExistingContract] = useState<{
     id: string;
     status: string;
+    accepted_by_licensor?: boolean;
   } | null>(null);
   const [checkingLicense, setCheckingLicense] = useState(false);
 
@@ -52,7 +53,7 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
       if (user?.id && videoCreator?.id && selectedReactionVideoId) {
         setCheckingLicense(true);
         try {
-          // Now returns object { status, id } or null
+          // Now returns object { status, id, accepted_by_licensor } or null
           const result = await checkExistingLicense(
             user.id,
             videoCreator.id,
@@ -148,7 +149,11 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
 
       if (!autoAccept) {
         // If NOT auto-accepted, stop here and show Pending UI
-        setExistingContract({ id: contractId, status: "PENDING" });
+        setExistingContract({
+          id: contractId,
+          status: "PENDING",
+          accepted_by_licensor: false,
+        });
         return;
       }
 
@@ -190,7 +195,9 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
   const isPaid =
     existingContract?.status === "PAID" ||
     existingContract?.status === "ACTIVE";
-  const isPending = existingContract?.status === "PENDING";
+  const isPending =
+    existingContract?.status === "PENDING" &&
+    !existingContract?.accepted_by_licensor;
   const isRejected = existingContract?.status === "REJECTED";
 
   return (
@@ -282,6 +289,37 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
               disabled={loading}
             >
               {loading ? "Wird zurückgezogen..." : "Anfrage zurückziehen"}
+            </Button>
+          </div>
+        ) : existingContract?.status === "PENDING" &&
+          existingContract?.accepted_by_licensor ? (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 p-3 bg-green-500/10 text-green-600 rounded-md border border-green-500/20">
+              <CheckCircle2 className="h-5 w-5" />
+              <span className="font-medium">
+                Anfrage akzeptiert! Bitte bezahlen.
+              </span>
+            </div>
+            <Button
+              onClick={async () => {
+                setLoading(true);
+                try {
+                  const { url } =
+                    await import("@/services/stripeFunctions").then((mod) =>
+                      mod.createStripeCheckoutSession(existingContract.id),
+                    );
+                  if (url) window.location.href = url;
+                } catch (e) {
+                  console.error(e);
+                  alert("Fehler beim Starten der Zahlung");
+                } finally {
+                  setLoading(false);
+                }
+              }}
+              disabled={loading}
+              className="w-full bg-green-600 hover:bg-green-700 text-white"
+            >
+              {loading ? "Lade..." : "Jetzt bezahlen"}
             </Button>
           </div>
         ) : isRejected ? (

@@ -175,9 +175,6 @@ serve(async (req) => {
         },
       ];
 
-      // Subscription läuft genau 1 Jahr (4 Quartalszyklen) und endet automatisch
-      const oneYearFromNow = Math.floor(Date.now() / 1000) + 365 * 24 * 60 * 60;
-
       sessionParams.subscription_data = {
         application_fee_percent: APP_FEE_PERCENTAGE * 100, // 10%
         transfer_data: {
@@ -186,7 +183,6 @@ serve(async (req) => {
         metadata: {
           contractId: contract.id,
         },
-        cancel_at: oneYearFromNow, // Endet automatisch nach 1 Jahr
       };
     }
 

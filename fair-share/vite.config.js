@@ -11,6 +11,7 @@ export default defineConfig({
   plugins: [react(), tailwindcss({ optimize: false })],
   server: {
     host: "127.0.0.1",
+    allowedHosts: ["unshadily-bashful-aaden.ngrok-free.dev"],
   },
   resolve: {
     alias: {
