@@ -18,7 +18,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     <ThemeProvider>
       <AuthProvider>
         <VideoSyncProvider>
-          <BrowserRouter>
+          <BrowserRouter basename="/fairshare">
             {/* Der Header muss INNERHALB des BrowserRouter liegen */}
             <Header />
 
