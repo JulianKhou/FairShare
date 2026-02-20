@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import {
     createReactionContract,
     getReactionContracts,
@@ -13,30 +13,39 @@ export const useReactionContracts = (videoCreator: any, videoReactor: any) => {
     const [currentContract, setCurrentContract] = useState<ReactionContract | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<any>(null);
+    const isMounted = React.useRef(true);
+
+    React.useEffect(() => {
+        return () => {
+            isMounted.current = false;
+        };
+    }, []);
 
     const fetchContracts = useCallback(async () => {
+        if (!isMounted.current) return;
         setIsLoading(true);
         setError(null);
         try {
             const data = await getReactionContracts();
-            if (data) setContracts(data as ReactionContract[]);
+            if (isMounted.current && data) setContracts(data as ReactionContract[]);
         } catch (err) {
-            setError(err);
+            if (isMounted.current) setError(err);
         } finally {
-            setIsLoading(false);
+            if (isMounted.current) setIsLoading(false);
         }
     }, []);
 
     const fetchContractById = useCallback(async (id: string) => {
+        if (!isMounted.current) return;
         setIsLoading(true);
         setError(null);
         try {
             const data = await getReactionContractById(id);
-            if (data && data.length > 0) setCurrentContract(data[0] as ReactionContract);
+            if (isMounted.current && data && data.length > 0) setCurrentContract(data[0] as ReactionContract);
         } catch (err) {
-            setError(err);
+            if (isMounted.current) setError(err);
         } finally {
-            setIsLoading(false);
+            if (isMounted.current) setIsLoading(false);
         }
     }, []);
 

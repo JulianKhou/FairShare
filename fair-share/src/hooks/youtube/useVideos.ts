@@ -58,7 +58,8 @@ export function useVideos(
     // Wir brechen hier NICHT mehr ab, damit auch "licensed" (Public) funktioniert.
     // Aber wir müssen sicherstellen, dass wir für user-spezifische Dinge eine ID haben.
 
-    let channel = supabase.channel("video-updates");
+    let channel = supabase.channel(`video-updates-${videoType}-${user?.id || 'public'}`);
+    let isSubscribed = false;
 
     if (videoType === "myVideos" && user?.id) {
       console.log(
@@ -81,6 +82,7 @@ export function useVideos(
           },
         )
         .subscribe();
+      isSubscribed = true;
     } else if (videoType === "licensed") {
       console.log(
         "Setting up Realtime subscription for licensed videos (Public)",
@@ -105,6 +107,7 @@ export function useVideos(
           },
         )
         .subscribe();
+      isSubscribed = true;
     } else if (videoType === "licensedByMe" && user?.id) {
       console.log(
         "Setting up Realtime subscription for licensedByMe (User:",
@@ -126,12 +129,15 @@ export function useVideos(
           },
         )
         .subscribe();
+      isSubscribed = true;
     }
 
     return () => {
-      // Cleanup nur, wenn wir auch subscribed haben (channel ist aber immer definiert, also unbedenklich)
-      console.log("Cleaning up Realtime subscription");
-      supabase.removeChannel(channel);
+      // Cleanup nur, wenn wir auch subscribed haben
+      if (isSubscribed) {
+        console.log("Cleaning up Realtime subscription");
+        supabase.removeChannel(channel);
+      }
     };
   }, [user?.id, loadVideos, videoType]);
 

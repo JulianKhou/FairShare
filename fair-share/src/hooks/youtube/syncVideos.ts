@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { fetchAllVideos } from '../../services/youtube';
 import { saveVideosToSupabase } from '../../services/supabaseCollum/database';
 import { useAuth } from '../auth/useAuth';
+import { getProfile } from '../../services/supabaseCollum/profiles';
 
 export const useSyncVideos = () => {
   const [loading, setLoading] = useState(false);
@@ -20,11 +21,13 @@ export const useSyncVideos = () => {
       // 1. Daten von YouTube holen (Service 1)
       const videos = await fetchAllVideos();
       console.log("Videos fetched from YouTube:", videos);
-      // 2. Daten in Supabase speichern (Service 2)
-      await saveVideosToSupabase(user.id, videos);
 
-    
-      
+      // Fetch user profile to check auto-license preference
+      const profile = await getProfile(user.id);
+      const autoLicense = profile?.auto_license_videos || false;
+
+      // 2. Daten in Supabase speichern (Service 2)
+      await saveVideosToSupabase(user.id, videos, autoLicense);
       return videos;
     } catch (err: any) {
       setError(err.message);

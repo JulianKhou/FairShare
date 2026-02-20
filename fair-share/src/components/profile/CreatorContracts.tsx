@@ -66,9 +66,10 @@ export const CreatorContracts = () => {
 
     if (!user) return;
 
-    // Realtime updates
+    // Realtime updates — optimistically apply event data immediately,
+    // then do a full re-fetch to ensure consistency (e.g. for licensee names)
     const channel = supabase
-      .channel("creator-contracts")
+      .channel(`creator-contracts-${user.id}`)
       .on(
         "postgres_changes",
         {
@@ -77,7 +78,26 @@ export const CreatorContracts = () => {
           table: "reaction_contracts",
           filter: `licensor_id=eq.${user.id}`,
         },
-        () => fetchContracts(),
+        (payload) => {
+          if (payload.eventType === "INSERT") {
+            // Immediately add the new contract so it shows without waiting for re-fetch
+            setContracts((prev) => [payload.new as ReactionContract, ...prev]);
+          } else if (payload.eventType === "UPDATE") {
+            setContracts((prev) =>
+              prev.map((c) =>
+                c.id === (payload.new as ReactionContract).id
+                  ? (payload.new as ReactionContract)
+                  : c,
+              ),
+            );
+          } else if (payload.eventType === "DELETE") {
+            setContracts((prev) =>
+              prev.filter((c) => c.id !== (payload.old as any).id),
+            );
+          }
+          // Background re-fetch to get up-to-date data (e.g. licensee names)
+          fetchContracts();
+        },
       )
       .subscribe();
 

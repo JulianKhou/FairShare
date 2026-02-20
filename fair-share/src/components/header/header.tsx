@@ -16,26 +16,47 @@ import {
   updateProfile,
 } from "../../services/supabaseCollum/profiles.ts";
 import { useEffect, useState } from "react";
-import { fetchChannelId } from "../../services/youtube";
+import { fetchChannelData } from "../../services/youtube";
+import { OnboardingModal } from "../profile/OnboardingModal";
 
 function Header() {
   const { user } = useAuth();
   const [userProfile, setUserProfile] = useState<Profile | null>(null);
   const [isWarningVisible, setIsWarningVisible] = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
     if (user) {
       getProfile(user.id).then(async (profile) => {
         setUserProfile(profile);
 
-        // Auto-fetch channel ID if missing
+        // Check onboarding trigger
+        if (profile && !isProfileComplete(profile)) {
+          if (
+            localStorage.getItem(`fairshare_onboarding_done_${user.id}`) !==
+            "true"
+          ) {
+            setShowOnboarding(true);
+          }
+        }
+
+        // Auto-fetch channel data if missing
         if (profile && !profile.youtube_channel_id) {
-          const channelId = await fetchChannelId();
-          if (channelId) {
-            await updateProfile(user.id, { youtube_channel_id: channelId });
+          const channelData = await fetchChannelData();
+          if (channelData) {
+            await updateProfile(user.id, {
+              youtube_channel_id: channelData.id,
+              subscriber_count: channelData.subscriberCount,
+            });
             // Update local state to remove warning if this was the only missing field
             setUserProfile((prev) =>
-              prev ? { ...prev, youtube_channel_id: channelId } : null,
+              prev
+                ? {
+                    ...prev,
+                    youtube_channel_id: channelData.id,
+                    subscriber_count: channelData.subscriberCount,
+                  }
+                : null,
             );
           }
         }
@@ -70,25 +91,33 @@ function Header() {
           Fair<span className="text-fair-purple">Share</span>
         </h1>
       </NavLink>
-      {userProfile && !isProfileComplete(userProfile) && isWarningVisible && (
-        <div className="hidden lg:flex fixed top-20 left-0 right-0 bg-yellow-100 border-b border-yellow-200 text-yellow-800 px-4 py-2 justify-center items-center gap-2 z-40 text-sm">
-          <span>
-            Your profile is incomplete. Please update it to use all features.
-          </span>
-          <NavLink to="/profile" className="font-semibold underline">
-            Complete Profile
-          </NavLink>
-          <button
-            onClick={() => setIsWarningVisible(false)}
-            className="absolute right-4 p-1 hover:bg-yellow-200 rounded-full transition-colors"
-          >
-            <IconX size={16} />
-          </button>
-        </div>
-      )}
+      {userProfile &&
+        !isProfileComplete(userProfile) &&
+        isWarningVisible &&
+        !showOnboarding && (
+          <div className="hidden lg:flex fixed top-20 left-0 right-0 bg-yellow-100 border-b border-yellow-200 text-yellow-800 px-4 py-2 justify-center items-center gap-2 z-40 text-sm">
+            <span>
+              Your profile is incomplete. Please update it to use all features.
+            </span>
+            <NavLink to="/profile" className="font-semibold underline">
+              Complete Profile
+            </NavLink>
+            <button
+              onClick={() => setIsWarningVisible(false)}
+              className="absolute right-4 p-1 hover:bg-yellow-200 rounded-full transition-colors"
+            >
+              <IconX size={16} />
+            </button>
+          </div>
+        )}
 
       {/* Navigation */}
       <nav className="flex gap-8 h-full">
+        {user && (
+          <NavLink to="/dashboard" className={navLinkClasses}>
+            Dashboard
+          </NavLink>
+        )}
         <NavLink to="/explore" className={navLinkClasses}>
           Explore
         </NavLink>
@@ -126,8 +155,26 @@ function Header() {
           <ProfileIcon />
         </button>
         {/* Das Menü sollte absolut zum Button positioniert sein */}
-        <UserMenu isOpen={isMenuOpen} onClose={closeMenu} user={user} />
+        <UserMenu
+          isOpen={isMenuOpen}
+          onClose={closeMenu}
+          user={user}
+          userProfile={userProfile}
+        />
       </div>
+
+      {user && (
+        <OnboardingModal
+          userProfile={userProfile}
+          isOpen={showOnboarding}
+          onOpenChange={setShowOnboarding}
+          userId={user.id}
+          onComplete={() => {
+            // Re-fetch profile to update local state after onboarding
+            getProfile(user.id).then(setUserProfile);
+          }}
+        />
+      )}
     </header>
   );
 }

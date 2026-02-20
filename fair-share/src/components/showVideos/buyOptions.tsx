@@ -13,6 +13,7 @@ import {
   createReactionContract,
   ReactionContract,
   checkExistingLicense,
+  checkAnyExistingLicense,
   withdrawReactionContract,
 } from "@/services/supabaseCollum/reactionContract";
 import { getProfile } from "@/services/supabaseCollum/profiles";
@@ -38,6 +39,7 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
     accepted_by_licensor?: boolean;
   } | null>(null);
   const [checkingLicense, setCheckingLicense] = useState(false);
+  const [hasAnyLicense, setHasAnyLicense] = useState(false);
 
   // Fetch user's videos for selection
   const { videos: myVideos, isLoading: isLoadingVideos } = useVideos(
@@ -72,6 +74,27 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
 
     checkLicense();
   }, [user, videoCreator, selectedReactionVideoId]);
+
+  // Check for ANY existing license for this base video
+  useEffect(() => {
+    const checkAnyLicense = async () => {
+      if (user?.id && videoCreator?.id) {
+        try {
+          const result = await checkAnyExistingLicense(
+            user.id,
+            videoCreator.id,
+          );
+          setHasAnyLicense(result);
+        } catch (err) {
+          console.error("Failed to check any license", err);
+        }
+      } else {
+        setHasAnyLicense(false);
+      }
+    };
+
+    checkAnyLicense();
+  }, [user, videoCreator]);
 
   // Determine which video is selected
   const selectedVideo =
@@ -201,8 +224,21 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
   const isRejected = existingContract?.status === "REJECTED";
 
   return (
-    <div className="video-details-right flex flex-col w-full gap-6">
-      <FieldSet className="w-full max-w-xs">
+    <div className="video-details-right flex flex-col w-full gap-3">
+      {hasAnyLicense && (
+        <div className="flex items-start gap-2 p-3 bg-green-500/10 text-green-700 dark:text-green-400 rounded-lg border border-green-500/20 shadow-sm">
+          <CheckCircle2 className="h-5 w-5 mt-0.5 shrink-0" />
+          <div className="flex flex-col">
+            <span className="font-semibold">Lizenz bereits vorhanden</span>
+            <span className="text-sm mt-1 opacity-90">
+              Du hast für dieses Video bereits eine aktive Lizenz erworben. Pro
+              Grundvideo ist nur eine Lizenz möglich.
+            </span>
+          </div>
+        </div>
+      )}
+
+      <FieldSet className="w-full max-w-xs space-y-1">
         <FieldLegend variant="label">Select your Reaction Video</FieldLegend>
         {isLoadingVideos ? (
           <FieldDescription>Loading videos...</FieldDescription>
@@ -211,7 +247,6 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             value={selectedReactionVideoId}
             onChange={(e) => setSelectedReactionVideoId(e.target.value)}
-            disabled={!!existingContract} // Lock selection if contract exists
           >
             <option value="" disabled>
               Select a video...
@@ -230,11 +265,8 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
       </FieldSet>
 
       {!isPaid && !isPending && !isRejected && (
-        <FieldSet className="w-full max-w-xs">
+        <FieldSet className="w-full max-w-xs space-y-1">
           <FieldLegend variant="label">Subscription Plan</FieldLegend>
-          <FieldDescription>
-            Yearly and lifetime plans offer significant savings.
-          </FieldDescription>
           <RadioGroup
             value={selectedPlan}
             onValueChange={(val: "monthly" | "yearly" | "lifetime") =>
@@ -263,90 +295,92 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
         </FieldSet>
       )}
 
-      {/* Main Action Area */}
-      <div className="mt-4">
-        {checkingLicense ? (
-          <Button disabled className="w-full">
-            Checking Status...
-          </Button>
-        ) : isPaid ? (
-          <div className="flex items-center gap-2 p-3 bg-green-500/10 text-green-600 rounded-md border border-green-500/20">
-            <CheckCircle2 className="h-5 w-5" />
-            <span className="font-medium">Lizenz bereits erworben</span>
-          </div>
-        ) : isPending ? (
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 p-3 bg-yellow-500/10 text-yellow-600 rounded-md border border-yellow-500/20">
-              <AlertCircle className="h-5 w-5" />
-              <span className="font-medium">
-                Anfrage gesendet. Warte auf Bestätigung.
-              </span>
-            </div>
-            <Button
-              variant="outline"
-              className="w-full text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/20"
-              onClick={handleWithdraw}
-              disabled={loading}
-            >
-              {loading ? "Wird zurückgezogen..." : "Anfrage zurückziehen"}
+      {/* Main Action Area — hidden if already licensed for this base video */}
+      {!hasAnyLicense && (
+        <div className="mt-2">
+          {checkingLicense ? (
+            <Button disabled className="w-full">
+              Checking Status...
             </Button>
-          </div>
-        ) : existingContract?.status === "PENDING" &&
-          existingContract?.accepted_by_licensor ? (
-          <div className="space-y-3">
+          ) : isPaid ? (
             <div className="flex items-center gap-2 p-3 bg-green-500/10 text-green-600 rounded-md border border-green-500/20">
               <CheckCircle2 className="h-5 w-5" />
-              <span className="font-medium">
-                Anfrage akzeptiert! Bitte bezahlen.
-              </span>
+              <span className="font-medium">Lizenz bereits erworben</span>
             </div>
+          ) : isPending ? (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 p-3 bg-yellow-500/10 text-yellow-600 rounded-md border border-yellow-500/20">
+                <AlertCircle className="h-5 w-5" />
+                <span className="font-medium">
+                  Anfrage gesendet. Warte auf Bestätigung.
+                </span>
+              </div>
+              <Button
+                variant="outline"
+                className="w-full text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/20"
+                onClick={handleWithdraw}
+                disabled={loading}
+              >
+                {loading ? "Wird zurückgezogen..." : "Anfrage zurückziehen"}
+              </Button>
+            </div>
+          ) : existingContract?.status === "PENDING" &&
+            existingContract?.accepted_by_licensor ? (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 p-3 bg-green-500/10 text-green-600 rounded-md border border-green-500/20">
+                <CheckCircle2 className="h-5 w-5" />
+                <span className="font-medium">
+                  Anfrage akzeptiert! Bitte bezahlen.
+                </span>
+              </div>
+              <Button
+                onClick={async () => {
+                  setLoading(true);
+                  try {
+                    const { url } =
+                      await import("@/services/stripeFunctions").then((mod) =>
+                        mod.createStripeCheckoutSession(existingContract.id),
+                      );
+                    if (url) window.location.href = url;
+                  } catch (e) {
+                    console.error(e);
+                    alert("Fehler beim Starten der Zahlung");
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+                disabled={loading}
+                className="w-full bg-green-600 hover:bg-green-700 text-white"
+              >
+                {loading ? "Lade..." : "Jetzt bezahlen"}
+              </Button>
+            </div>
+          ) : isRejected ? (
+            <div className="flex items-center gap-2 p-3 bg-destructive/10 text-destructive rounded-md border border-destructive/20">
+              <XCircle className="h-5 w-5" />
+              <div>
+                <span className="font-bold block">Anfrage abgelehnt</span>
+                <span className="text-xs opacity-90">
+                  Für dieses Video ist keine weitere Anfrage möglich.
+                </span>
+              </div>
+            </div>
+          ) : (
             <Button
-              onClick={async () => {
-                setLoading(true);
-                try {
-                  const { url } =
-                    await import("@/services/stripeFunctions").then((mod) =>
-                      mod.createStripeCheckoutSession(existingContract.id),
-                    );
-                  if (url) window.location.href = url;
-                } catch (e) {
-                  console.error(e);
-                  alert("Fehler beim Starten der Zahlung");
-                } finally {
-                  setLoading(false);
-                }
-              }}
-              disabled={loading}
-              className="w-full bg-green-600 hover:bg-green-700 text-white"
+              onClick={handleBuy}
+              disabled={
+                loading ||
+                isLoadingVideos ||
+                !selectedReactionVideoId ||
+                checkingLicense
+              }
+              className="w-full"
             >
-              {loading ? "Lade..." : "Jetzt bezahlen"}
+              {loading ? "Verarbeite..." : "Kaufen / Anfrage senden"}
             </Button>
-          </div>
-        ) : isRejected ? (
-          <div className="flex items-center gap-2 p-3 bg-destructive/10 text-destructive rounded-md border border-destructive/20">
-            <XCircle className="h-5 w-5" />
-            <div>
-              <span className="font-bold block">Anfrage abgelehnt</span>
-              <span className="text-xs opacity-90">
-                Für dieses Video ist keine weitere Anfrage möglich.
-              </span>
-            </div>
-          </div>
-        ) : (
-          <Button
-            onClick={handleBuy}
-            disabled={
-              loading ||
-              isLoadingVideos ||
-              !selectedReactionVideoId ||
-              checkingLicense
-            }
-            className="w-full"
-          >
-            {loading ? "Verarbeite..." : "Kaufen / Anfrage senden"}
-          </Button>
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

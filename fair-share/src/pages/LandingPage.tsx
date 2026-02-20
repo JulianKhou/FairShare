@@ -7,9 +7,12 @@ import {
   IconBolt,
 } from "@tabler/icons-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../hooks/auth/useAuth";
+import { handleLogin } from "../hooks/auth/useHandleAuth";
 
 function LandingPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const handleGetStarted = () => {
     // Navigate to explore, which will trigger auth flow if needed
@@ -37,13 +40,25 @@ function LandingPage() {
           Fair, transparent und rechtssicher.
         </p>
 
-        <Button
-          onClick={handleGetStarted}
-          size="lg"
-          className="text-lg px-8 py-6 animate-fade-in hover:scale-105 transition-transform"
-        >
-          Jetzt starten
-        </Button>
+        <div className="flex gap-4 items-center animate-fade-in">
+          <Button
+            onClick={handleGetStarted}
+            size="lg"
+            className="text-lg px-8 py-6 hover:scale-105 transition-transform"
+          >
+            {user ? "Zur Plattform" : "Jetzt entdecken"}
+          </Button>
+          {!user && (
+            <Button
+              onClick={handleLogin}
+              size="lg"
+              variant="outline"
+              className="text-lg px-8 py-6 hover:scale-105 transition-transform bg-background/50 backdrop-blur-md border-fair-purple/50 text-foreground hover:bg-fair-purple/20"
+            >
+              Anmelden
+            </Button>
+          )}
+        </div>
       </section>
 
       {/* Features Section */}
@@ -113,13 +128,25 @@ function LandingPage() {
             Starte jetzt und entdecke exklusive Videoinhalte oder verkaufe deine
             eigenen Videos.
           </p>
-          <Button
-            onClick={handleGetStarted}
-            size="lg"
-            className="text-lg px-8 py-6 hover:scale-105 transition-transform"
-          >
-            Zur Plattform
-          </Button>
+          <div className="flex justify-center gap-4 items-center">
+            <Button
+              onClick={handleGetStarted}
+              size="lg"
+              className="text-lg px-8 py-6 hover:scale-105 transition-transform"
+            >
+              {user ? "Zur Plattform" : "Jetzt entdecken"}
+            </Button>
+            {!user && (
+              <Button
+                onClick={handleLogin}
+                size="lg"
+                variant="outline"
+                className="text-lg px-8 py-6 hover:scale-105 transition-transform bg-background/50 backdrop-blur-md border-fair-purple/50 text-foreground hover:bg-fair-purple/20"
+              >
+                Anmelden
+              </Button>
+            )}
+          </div>
         </div>
       </section>
 

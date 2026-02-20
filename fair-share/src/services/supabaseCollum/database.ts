@@ -5,37 +5,54 @@ import { parseISO8601Duration } from "../../lib/utils";
  * Speichert oder aktualisiert YouTube-Videos in der Supabase-Datenbank.
  * Nutzt 'id' (YouTube-ID) als Primary Key für den Upsert.
  */
-export const saveVideosToSupabase = async (userId: string, videos: any[]) => {
+export const saveVideosToSupabase = async (userId: string, videos: any[], autoLicense: boolean = false) => {
   if (!videos || videos.length === 0) return;
   try {
-    const rowsToInsert = videos.map((video) => ({
-      id: video.id, // Primary Key (YouTube ID)
-      creator_id: userId, // Verknüpfung zum User
-      title: video.snippet?.title || video.title, // Fallback falls API structure varies
-      thumbnail: video.snippet?.thumbnails?.high?.url || video.thumbnail,
-      published_at: video.snippet?.publishedAt || video.publishedAt,
+    // 1. Fetch existing video IDs to know which ones are new
+    const { data: existing } = await supabase
+      .from("videos")
+      .select("id")
+      .eq("creator_id", userId);
+    const existingIds = new Set(existing?.map((v) => v.id) || []);
 
-      // Metriken & Statistiken (Strings zu Zahlen konvertieren)
-      view_count_at_listing: parseInt(
-        video.statistics?.viewCount || video.viewCount || "0",
-      ),
-      last_view_count: parseInt(
-        video.statistics?.viewCount || video.viewCount || "0",
-      ),
-      last_view_count_update: new Date().toISOString(),
+    const rowsToInsert = videos.map((video) => {
+      const isNew = !existingIds.has(video.id);
+      
+      const row: any = {
+        id: video.id, // Primary Key (YouTube ID)
+        creator_id: userId, // Verknüpfung zum User
+        title: video.snippet?.title || video.title, // Fallback falls API structure varies
+        thumbnail: video.snippet?.thumbnails?.high?.url || video.thumbnail,
+        published_at: video.snippet?.publishedAt || video.publishedAt,
 
-      // Kategorien & Dauer
-      category_id: video.snippet?.categoryId || video.categoryId ||
-        video.category_id,
-      duration_seconds: video.duration_seconds || 0,
-      channel_title: video.snippet?.channelTitle || video.channel_title ||
-        "Unknown Channel",
+        // Metriken & Statistiken (Strings zu Zahlen konvertieren)
+        view_count_at_listing: parseInt(
+          video.statistics?.viewCount || video.viewCount || "0",
+        ),
+        last_view_count: parseInt(
+          video.statistics?.viewCount || video.viewCount || "0",
+        ),
+        last_view_count_update: new Date().toISOString(),
 
-      // Algorithmus-Startwerte
-      estimated_cpm: 0,
-      final_price: 0,
-      // islicensed: false,  <-- REMOVED to prevent overwriting existing status. Relies on DB default.
-    }));
+        // Kategorien & Dauer
+        category_id: video.snippet?.categoryId || video.categoryId ||
+          video.category_id,
+        duration_seconds: video.duration_seconds || 0,
+        channel_title: video.snippet?.channelTitle || video.channel_title ||
+          "Unknown Channel",
+
+        // Algorithmus-Startwerte
+        estimated_cpm: 0,
+        final_price: 0,
+      };
+
+      // Apply auto_license preference only to newly synced videos
+      if (isNew && autoLicense) {
+        row.islicensed = true;
+      }
+
+      return row;
+    });
 
     const { error } = await supabase.from("videos").upsert(rowsToInsert, {
       onConflict: "id", // Verhindert Dubletten, aktualisiert bestehende

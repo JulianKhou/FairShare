@@ -6,59 +6,83 @@ import {
   ReactionContract,
   updateReactionContract,
 } from "@/services/supabaseCollum/reactionContract";
-import { Bell, Check, X, Loader2 } from "lucide-react";
+import { Bell, Check, X, Loader2, CreditCard } from "lucide-react";
 import { generateLicensePDF } from "@/services/supabaseFunctions";
+import { createStripeCheckoutSession } from "@/services/stripeFunctions";
 
 export const NotificationBell = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  // Licensor side: incoming pending requests
   const [requests, setRequests] = useState<ReactionContract[]>([]);
   const [licenseeNames, setLicenseeNames] = useState<Record<string, string>>(
     {},
   );
+
+  // Licensee side: accepted requests waiting for payment
+  const [paymentDue, setPaymentDue] = useState<ReactionContract[]>([]);
+
   const [isOpen, setIsOpen] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [payLoading, setPayLoading] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Fetch pending requests where user is the licensor
+  const fetchRequests = async () => {
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from("reaction_contracts")
+      .select("*")
+      .eq("licensor_id", user.id)
+      .eq("accepted_by_licensor", false)
+      .eq("status", "PENDING")
+      .order("created_at", { ascending: false });
+
+    if (!error && data) {
+      setRequests(data);
+
+      const ids = [...new Set(data.map((c) => c.licensee_id))];
+      if (ids.length > 0) {
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("id, full_name")
+          .in("id", ids);
+        if (profiles) {
+          const nameMap: Record<string, string> = {};
+          profiles.forEach((p) => (nameMap[p.id] = p.full_name || "Unbekannt"));
+          setLicenseeNames(nameMap);
+        }
+      }
+    }
+  };
+
+  const fetchPaymentDue = async () => {
+    if (!user) return;
+
+    // Contracts where I am the reactor and the creator has accepted, but I haven't paid yet
+    const { data, error } = await supabase
+      .from("reaction_contracts")
+      .select("*")
+      .eq("licensee_id", user.id)
+      .eq("accepted_by_licensor", true)
+      .eq("status", "PENDING")
+      .order("created_at", { ascending: false });
+
+    if (!error && data) {
+      setPaymentDue(data);
+    }
+  };
+
   useEffect(() => {
     if (!user) return;
 
-    const fetchRequests = async () => {
-      const { data, error } = await supabase
-        .from("reaction_contracts")
-        .select("*")
-        .eq("licensor_id", user.id)
-        .eq("accepted_by_licensor", false)
-        .eq("status", "PENDING")
-        .order("created_at", { ascending: false });
-
-      if (!error && data) {
-        setRequests(data);
-
-        // Fetch licensee profiles for display names (YT channel name)
-        const ids = [...new Set(data.map((c) => c.licensee_id))];
-        if (ids.length > 0) {
-          const { data: profiles } = await supabase
-            .from("profiles")
-            .select("id, full_name")
-            .in("id", ids);
-          if (profiles) {
-            const nameMap: Record<string, string> = {};
-            profiles.forEach(
-              (p) => (nameMap[p.id] = p.full_name || "Unbekannt"),
-            );
-            setLicenseeNames(nameMap);
-          }
-        }
-      }
-    };
-
     fetchRequests();
+    fetchPaymentDue();
 
-    // Realtime subscription for new requests
-    const channel = supabase
-      .channel("pending-requests")
+    // Licensor side: incoming requests
+    const licensorChannel = supabase
+      .channel(`notif-licensor-${user.id}`)
       .on(
         "postgres_changes",
         {
@@ -71,8 +95,24 @@ export const NotificationBell = () => {
       )
       .subscribe();
 
+    // Licensee side: payment-due updates (when licensor accepts)
+    const licenseeChannel = supabase
+      .channel(`notif-licensee-${user.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "reaction_contracts",
+          filter: `licensee_id=eq.${user.id}`,
+        },
+        () => fetchPaymentDue(),
+      )
+      .subscribe();
+
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(licensorChannel);
+      supabase.removeChannel(licenseeChannel);
     };
   }, [user]);
 
@@ -97,7 +137,6 @@ export const NotificationBell = () => {
         accepted_by_licensor: true,
         licensor_accepted_at: new Date().toISOString(),
       });
-      // Trigger PDF generation
       try {
         await generateLicensePDF(contractId);
       } catch (pdfErr) {
@@ -119,9 +158,7 @@ export const NotificationBell = () => {
     if (!confirm("Anfrage wirklich ablehnen?")) return;
     setActionLoading(contractId);
     try {
-      await updateReactionContract(contractId, {
-        status: "REJECTED" as any,
-      });
+      await updateReactionContract(contractId, { status: "REJECTED" as any });
       setRequests((prev) => prev.filter((r) => r.id !== contractId));
     } catch (e) {
       console.error("Reject failed", e);
@@ -131,7 +168,18 @@ export const NotificationBell = () => {
     }
   };
 
-  const count = requests.length;
+  const handlePay = async (contractId: string) => {
+    setPayLoading(contractId);
+    try {
+      const { url } = await createStripeCheckoutSession(contractId);
+      window.location.href = url;
+    } catch (e: any) {
+      alert("Fehler beim Starten der Zahlung: " + e.message);
+      setPayLoading(null);
+    }
+  };
+
+  const totalCount = requests.length + paymentDue.length;
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -142,9 +190,9 @@ export const NotificationBell = () => {
         title="Benachrichtigungen"
       >
         <Bell className="h-5 w-5" />
-        {count > 0 && (
+        {totalCount > 0 && (
           <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center min-w-[18px] h-[18px] rounded-full bg-red-500 text-white text-[10px] font-bold px-1 animate-pulse">
-            {count}
+            {totalCount}
           </span>
         )}
       </button>
@@ -155,83 +203,148 @@ export const NotificationBell = () => {
           {/* Header */}
           <div className="px-4 py-3 border-b border-border bg-muted/30">
             <h3 className="font-semibold text-sm">
-              Eingehende Anfragen
-              {count > 0 && (
+              Benachrichtigungen
+              {totalCount > 0 && (
                 <span className="ml-2 text-xs bg-red-500/10 text-red-500 px-2 py-0.5 rounded-full">
-                  {count}
+                  {totalCount}
                 </span>
               )}
             </h3>
           </div>
 
-          {/* Content */}
-          <div className="max-h-80 overflow-y-auto">
-            {count === 0 ? (
+          <div className="max-h-[28rem] overflow-y-auto">
+            {totalCount === 0 ? (
               <div className="p-6 text-center text-muted-foreground text-sm">
-                Keine offenen Anfragen
+                Keine offenen Benachrichtigungen
               </div>
             ) : (
-              requests.map((req) => (
-                <div
-                  key={req.id}
-                  className="px-4 py-3 border-b border-border/50 last:border-0 hover:bg-muted/20 transition-colors cursor-pointer"
-                  onClick={() => {
-                    setIsOpen(false);
-                    navigate(`/profile?tab=creator-requests`);
-                  }}
-                >
-                  <div className="flex justify-between items-start gap-3">
-                    <div className="min-w-0 flex-1">
-                      <p
-                        className="text-sm font-medium truncate"
-                        title={req.original_video_title}
+              <>
+                {/* --- Payment Due Section --- */}
+                {paymentDue.length > 0 && (
+                  <>
+                    <div className="px-4 py-2 bg-blue-500/5 border-b border-border/50">
+                      <p className="text-xs font-semibold text-blue-500 uppercase tracking-wide flex items-center gap-1">
+                        <CreditCard className="h-3 w-3" /> Zahlung fällig
+                      </p>
+                    </div>
+                    {paymentDue.map((req) => (
+                      <div
+                        key={req.id}
+                        className="px-4 py-3 border-b border-border/50 last:border-0 hover:bg-muted/20 transition-colors"
                       >
-                        {req.original_video_title}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        von{" "}
-                        <span className="font-medium">
-                          {licenseeNames[req.licensee_id] || req.licensee_name}
-                        </span>
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {req.pricing_value.toFixed(2)} {req.pricing_currency} ·{" "}
-                        {new Date(req.created_at).toLocaleDateString("de-DE")}
-                      </p>
-                    </div>
+                        <div className="flex justify-between items-start gap-3">
+                          <div className="min-w-0 flex-1">
+                            <p
+                              className="text-sm font-medium truncate text-blue-500"
+                              title={req.original_video_title}
+                            >
+                              {req.original_video_title}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              Lizenz von{" "}
+                              <span className="font-medium">
+                                {req.licensor_name}
+                              </span>{" "}
+                              akzeptiert!
+                            </p>
+                            <p className="text-xs font-semibold text-foreground mt-1">
+                              {req.pricing_value.toFixed(2)}{" "}
+                              {req.pricing_currency}
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => handlePay(req.id)}
+                            disabled={payLoading === req.id}
+                            className="flex items-center gap-1 shrink-0 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90 transition-opacity disabled:opacity-60"
+                          >
+                            {payLoading === req.id ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <CreditCard className="h-3 w-3" />
+                            )}
+                            Bezahlen
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                )}
 
-                    {/* Actions */}
-                    <div className="flex gap-1.5 shrink-0">
-                      {actionLoading === req.id ? (
-                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                      ) : (
-                        <>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleAccept(req.id);
-                            }}
-                            className="p-1.5 rounded-lg bg-green-500/10 text-green-500 hover:bg-green-500/20 transition-colors"
-                            title="Akzeptieren"
-                          >
-                            <Check className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleReject(req.id);
-                            }}
-                            className="p-1.5 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-colors"
-                            title="Ablehnen"
-                          >
-                            <X className="h-4 w-4" />
-                          </button>
-                        </>
-                      )}
+                {/* --- Incoming Requests Section --- */}
+                {requests.length > 0 && (
+                  <>
+                    <div className="px-4 py-2 bg-yellow-500/5 border-b border-border/50">
+                      <p className="text-xs font-semibold text-yellow-600 uppercase tracking-wide">
+                        Eingehende Anfragen
+                      </p>
                     </div>
-                  </div>
-                </div>
-              ))
+                    {requests.map((req) => (
+                      <div
+                        key={req.id}
+                        className="px-4 py-3 border-b border-border/50 last:border-0 hover:bg-muted/20 transition-colors cursor-pointer"
+                        onClick={() => {
+                          setIsOpen(false);
+                          navigate(`/dashboard?tab=creator-requests`);
+                        }}
+                      >
+                        <div className="flex justify-between items-start gap-3">
+                          <div className="min-w-0 flex-1">
+                            <p
+                              className="text-sm font-medium truncate"
+                              title={req.original_video_title}
+                            >
+                              {req.original_video_title}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              von{" "}
+                              <span className="font-medium">
+                                {licenseeNames[req.licensee_id] ||
+                                  req.licensee_name}
+                              </span>
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              {req.pricing_value.toFixed(2)}{" "}
+                              {req.pricing_currency} ·{" "}
+                              {new Date(req.created_at).toLocaleDateString(
+                                "de-DE",
+                              )}
+                            </p>
+                          </div>
+
+                          <div className="flex gap-1.5 shrink-0">
+                            {actionLoading === req.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                            ) : (
+                              <>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleAccept(req.id);
+                                  }}
+                                  className="p-1.5 rounded-lg bg-green-500/10 text-green-500 hover:bg-green-500/20 transition-colors"
+                                  title="Akzeptieren"
+                                >
+                                  <Check className="h-4 w-4" />
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleReject(req.id);
+                                  }}
+                                  className="p-1.5 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-colors"
+                                  title="Ablehnen"
+                                >
+                                  <X className="h-4 w-4" />
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                )}
+              </>
             )}
           </div>
         </div>

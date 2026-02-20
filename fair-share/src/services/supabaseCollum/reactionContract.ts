@@ -82,6 +82,16 @@ export const getReactionContracts = async () => {
     return data;
 };
 
+export const getAllReactionContracts = async () => {
+    const { data, error } = await supabase
+        .from("reaction_contracts")
+        .select("*")
+        .order("created_at", { ascending: false });
+    
+    if (error) throw error;
+    return data as ReactionContract[];
+};
+
 export const getReactionContractById = async (id: string) => {
     const { data, error } = await supabase.from("reaction_contracts").select(
         "*",
@@ -105,6 +115,23 @@ export const deleteReactionContract = async (id: string) => {
     const { data, error } = await supabase.from("reaction_contracts").delete()
         .eq("id", id);
     if (error) throw error;
+    return data;
+};
+
+// Spezielle Funktion für Admins (Ohne RLS/Business Logic Restriktionen im Code)
+export const adminDeleteReactionContract = async (id: string) => {
+    // 1. Delete
+    const { data, error } = await supabase.from("reaction_contracts").delete()
+        .eq("id", id);
+    if (error) throw error;
+    
+    // 2. Check if really deleted (RLS might absorb the delete without error)
+    const { data: checkData, error: checkError } = await supabase.from("reaction_contracts").select("id").eq("id", id).maybeSingle();
+    
+    if (checkData) {
+        throw new Error("Missing Permission: Supabase Row Level Security (RLS) prevented the deletion. Please ensure the admin role has delete access on reaction_contracts.");
+    }
+    
     return data;
 };
 
@@ -160,6 +187,28 @@ export const checkExistingLicense = async (
 
     // Return the status and id
     return data ? { status: data.status, id: data.id, accepted_by_licensor: data.accepted_by_licensor } : null;
+};
+
+export const checkAnyExistingLicense = async (
+    licenseeId: string,
+    originalVideoId: string,
+) => {
+    // Check if there is ANY PAID or ACTIVE contract for this base video
+    const { data, error } = await supabase
+        .from("reaction_contracts")
+        .select("id")
+        .eq("licensee_id", licenseeId)
+        .eq("original_video_id", originalVideoId)
+        .in("status", ["PAID", "ACTIVE"])
+        .limit(1)
+        .maybeSingle();
+
+    if (error) {
+        console.error("Error checking any existing license:", error);
+        return false;
+    }
+
+    return !!data;
 };
 
 export const withdrawReactionContract = async (contractId: string) => {

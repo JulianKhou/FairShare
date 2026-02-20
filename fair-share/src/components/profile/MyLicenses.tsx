@@ -35,7 +35,6 @@ export const MyLicenses = () => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("success") === "true") {
       setLoading(true);
-      // Poll every 2 seconds for 10 seconds
       let attempts = 0;
       const interval = setInterval(() => {
         if (!user) return;
@@ -43,12 +42,15 @@ export const MyLicenses = () => {
         getPurchasedContracts(user.id).then((data) => {
           if (data && data.some((l) => l.status === "PAID")) {
             setLicenses(data || []);
+            // Optional: When PAID is found we could clear interval early,
+            // but for now let's just update the list.
           } else {
             setLicenses(data || []);
           }
         });
 
-        if (attempts >= 5) {
+        // 30 attempts * 2s = 60 seconds of polling
+        if (attempts >= 30) {
           clearInterval(interval);
           setLoading(false);
           // Clean URL

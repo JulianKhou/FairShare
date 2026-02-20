@@ -17,7 +17,7 @@ export default function ShowVideoList({
   return (
     <div className="video-list flex items-center justify-center gap-4 flex-wrap">
       {videos.map((video) => (
-        <VideoItem video={video} userId={userId} />
+        <VideoItem key={video.id} video={video} userId={userId} />
       ))}
     </div>
   );

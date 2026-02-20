@@ -2,13 +2,16 @@ import { supabase } from "./client";
 
 export interface Profile {
     id: string;
+    is_admin?: boolean;
     auto_accept_reactions?: boolean;
+    auto_license_videos?: boolean;
     full_name?: string;
     address_street?: string;
     address_number?: string;
     address_city?: string;
     address_zip?: string;
     youtube_channel_id?: string;
+    subscriber_count?: number;
     stripe_connect_id?: string;
 }
 
@@ -24,6 +27,19 @@ export const getProfile = async (userId: string) => {
         return null;
     }
     return data as Profile;
+};
+
+export const getAllProfiles = async () => {
+    const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .order("id", { ascending: true }); // Simple ordering
+
+    if (error) {
+        console.error("Error fetching all profiles:", error);
+        throw error;
+    }
+    return data as Profile[];
 };
 
 export const updateProfile = async (userId: string, updates: Partial<Profile>) => {

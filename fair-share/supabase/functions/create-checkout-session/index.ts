@@ -70,6 +70,15 @@ serve(async (req) => {
 
     const stripeConnectId = licensorProfile.stripe_connect_id;
 
+    // Resolve Origin safely
+    let origin = req.headers.get("origin");
+    if (!origin) {
+      // Fallback if browser extensions stripped the Origin header
+      // Depending on environment, we might use a predefined env var 
+      origin = Deno.env.get("PUBLIC_APP_URL") || "https://example.com";
+      console.warn("Origin header missing, falling back to:", origin);
+    }
+
     // 3. Calculate Amounts & Determine Mode
     // Assuming pricing_value is in EUR currency unit (e.g. 50.00)
     // Stripe expects amounts in cents.
@@ -90,12 +99,8 @@ serve(async (req) => {
       metadata: {
         contractId: contract.id,
       },
-      success_url: `${
-        req.headers.get("origin")
-      }/explore?success=true&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${
-        req.headers.get("origin")
-      }/explore?canceled=true&contractId=${contract.id}`,
+      success_url: `${origin}/fairshare/explore?success=true&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/fairshare/explore?canceled=true&contractId=${contract.id}`,
     };
 
     if (contract.pricing_model_type === 1) {

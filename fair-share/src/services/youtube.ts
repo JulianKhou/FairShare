@@ -2,7 +2,7 @@ import { supabase } from './supabaseCollum/client';
 import { parseISO8601Duration } from '../lib/utils';
 
 
-export const fetchChannelId = async () => {
+export const fetchChannelData = async (): Promise<{ id: string; subscriberCount: number } | null> => {
   const { data: { session } } = await supabase.auth.getSession();
   const token = session?.provider_token;
 
@@ -10,13 +10,21 @@ export const fetchChannelId = async () => {
 
   try {
     const channelRes = await fetch(
-      'https://www.googleapis.com/youtube/v3/channels?part=id&mine=true',
+      'https://www.googleapis.com/youtube/v3/channels?part=id,statistics&mine=true',
       { headers: { Authorization: `Bearer ${token}` } }
     );
     const channelData = await channelRes.json();
-    return channelData.items?.[0]?.id || null;
+    const item = channelData.items?.[0];
+    
+    if (item) {
+        return {
+            id: item.id,
+            subscriberCount: parseInt(item.statistics?.subscriberCount || "0", 10)
+        };
+    }
+    return null;
   } catch (e) {
-    console.error("Error fetching channel ID:", e);
+    console.error("Error fetching channel data:", e);
     return null;
   }
 };

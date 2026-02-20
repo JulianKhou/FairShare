@@ -162,27 +162,51 @@ export default function SettingsPage() {
         {/* New: Auto-Accept Logic form Modal */}
         <FieldSet>
           <FieldLegend>Automatisierung</FieldLegend>
-          <Field
-            orientation="horizontal"
-            className="flex items-center justify-between p-4 border rounded-lg bg-card"
-          >
-            <FieldContent>
-              <FieldLabel className="text-base">
-                Anfragen automatisch akzeptieren
-              </FieldLabel>
-              <FieldDescription>
-                Wenn aktiviert, werden eingehende Lizenzanfragen für deine
-                Videos sofort genehmigt.
-              </FieldDescription>
-            </FieldContent>
-            <Switch
-              checked={profile.auto_accept_reactions || false}
-              onCheckedChange={(checked) =>
-                handleChange("auto_accept_reactions", checked)
-              }
-              className="ml-auto"
-            />
-          </Field>
+          <div className="flex flex-col gap-4">
+            <Field
+              orientation="horizontal"
+              className="flex items-center justify-between p-4 border rounded-lg bg-card"
+            >
+              <FieldContent>
+                <FieldLabel className="text-base">
+                  Anfragen automatisch akzeptieren
+                </FieldLabel>
+                <FieldDescription>
+                  Wenn aktiviert, werden eingehende Lizenzanfragen für deine
+                  Videos sofort genehmigt.
+                </FieldDescription>
+              </FieldContent>
+              <Switch
+                checked={profile.auto_accept_reactions || false}
+                onCheckedChange={(checked) =>
+                  handleChange("auto_accept_reactions", checked)
+                }
+                className="ml-auto"
+              />
+            </Field>
+
+            <Field
+              orientation="horizontal"
+              className="flex items-center justify-between p-4 border rounded-lg bg-card"
+            >
+              <FieldContent>
+                <FieldLabel className="text-base">
+                  Videos automatisch lizenzieren
+                </FieldLabel>
+                <FieldDescription>
+                  Wenn aktiviert, werden deine neu von YouTube importierten
+                  Videos sofort auf FairShare zur Lizenzierung freigegeben.
+                </FieldDescription>
+              </FieldContent>
+              <Switch
+                checked={profile.auto_license_videos || false}
+                onCheckedChange={(checked) =>
+                  handleChange("auto_license_videos", checked)
+                }
+                className="ml-auto"
+              />
+            </Field>
+          </div>
         </FieldSet>
 
         {/* Stripe Connect */}

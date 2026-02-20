@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useAuth } from "../auth/useAuth";
-import { getVideosFromSupabase, updateVideoStatistics, saveVideosToSupabase } from "../../services/supabaseCollum/database";
+import { updateVideoStatistics, saveVideosToSupabase } from "../../services/supabaseCollum/database";
 import { fetchAllVideos } from "../../services/youtube";
+import { getProfile } from "../../services/supabaseCollum/profiles";
 
 export const useUpdateVideos = () => {
     const [loading, setLoading] = useState(false);
@@ -19,8 +20,12 @@ export const useUpdateVideos = () => {
             console.log("Fetching videos from YouTube...");
             // 1. Daten von YouTube holen
             const videos = await fetchAllVideos();
+            
+            const profile = await getProfile(user.id);
+            const autoLicense = profile?.auto_license_videos ?? false;
+
             // Speichern (Upsert) immer ausführen, damit auch Änderungen übernommen werden
-            await saveVideosToSupabase(user.id, videos);
+            await saveVideosToSupabase(user.id, videos, autoLicense);
             
             // 2. Statistiken in Supabase aktualisieren
             // Wir warten auf alle Updates parallel

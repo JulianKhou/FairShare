@@ -3,6 +3,7 @@ import { useAuth } from "../../hooks/auth/useAuth";
 import { fetchAllVideos } from "../../services/youtube";
 import { saveVideosToSupabase } from "../../services/supabaseCollum/database";
 import { supabase } from "../../services/supabaseCollum/client";
+import { getProfile } from "../../services/supabaseCollum/profiles";
 
 type SyncStatus = "idle" | "syncing" | "success" | "error";
 
@@ -56,7 +57,9 @@ export const VideoSyncProvider: React.FC<{ children: React.ReactNode }> = ({
         const videos = await fetchAllVideos();
 
         if (videos && videos.length > 0) {
-          await saveVideosToSupabase(user.id, videos);
+          const profile = await getProfile(user.id);
+          const autoLicense = profile?.auto_license_videos ?? false;
+          await saveVideosToSupabase(user.id, videos, autoLicense);
           setStatus("success");
           setMessage(`${videos.length} Videos synchronisiert ✓`);
         } else {

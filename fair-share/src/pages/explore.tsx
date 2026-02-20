@@ -1,9 +1,9 @@
-// src/pages/explore.tsx
 import React, { useEffect, useRef } from "react";
 import ShowVideoList from "../components/showVideos/showVideoList";
 import { useAuth } from "../hooks/auth/useAuth";
 import { useSearchParams } from "react-router-dom";
 import { deleteReactionContract } from "../services/supabaseCollum/reactionContract";
+import { toast } from "sonner";
 
 function Explore() {
   const { user } = useAuth();
@@ -20,10 +20,9 @@ function Explore() {
 
     if (success) {
       alertShown.current = true;
-      // Delay alert to allow UI to render first
-      setTimeout(() => {
-        alert("Payment successful! Your license has been created.");
-      }, 500);
+      toast.success("Zahlung erfolgreich!", {
+        description: "Deine Lizenz wurde erfolgreich erstellt.",
+      });
       setSearchParams({}, { replace: true });
     }
 
@@ -32,20 +31,19 @@ function Explore() {
       if (contractId) {
         deleteReactionContract(contractId)
           .then(() => {
-            setTimeout(() => {
-              alert("Payment canceled. The pending contract has been deleted.");
-            }, 100);
+            toast.info("Zahlung abgebrochen", {
+              description: "Die ausstehende Anfrage wurde gelöscht.",
+            });
           })
           .catch((err) => {
             console.error("Failed to delete contract:", err);
-            setTimeout(() => {
-              alert("Payment canceled. Could not delete pending contract.");
-            }, 100);
+            toast.error("Zahlung abgebrochen", {
+              description:
+                "Die ausstehende Anfrage konnte nicht gelöscht werden.",
+            });
           });
       } else {
-        setTimeout(() => {
-          alert("Payment canceled.");
-        }, 100);
+        toast.info("Zahlung abgebrochen");
       }
       setSearchParams({}, { replace: true });
     }

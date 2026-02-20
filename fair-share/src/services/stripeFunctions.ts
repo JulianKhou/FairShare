@@ -45,18 +45,20 @@ export const createStripeCheckoutSession = async (
 
         if (error) {
             console.error("Invoke Error:", error);
-            // Attempt to read the specific error message from the function response
+            // Safely attempt to read specific error message
+            let errorMessage = "Unknown error during edge function invocation";
             if (error && typeof error === 'object' && 'context' in error) {
                  try {
-                     // @ts-ignore - access private context if available or standard property
+                     // @ts-ignore
                      const body = await (error as any).context.json();
                      console.error("Function Error Body:", body);
-                     if (body?.error) throw new Error(body.error);
+                     if (body?.error) errorMessage = body.error;
                  } catch (e) {
-                     console.warn("Could not parse error body", e);
+                     console.warn("Could not parse error body as JSON. Raw response might be text/html.", e);
+                     // If it's a 500 html Deno error, .json() will throw. We'll fallback to the default error message
                  }
             }
-            throw error;
+            throw new Error(errorMessage);
         }
         return data;
     } catch (error: any) {

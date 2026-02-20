@@ -79,8 +79,8 @@ serve(async (req) => {
     // 4. Create an Account Link for onboarding
     const accountLink = await stripe.accountLinks.create({
       account: stripeConnectId,
-      refresh_url: `${req.headers.get("origin")}/dashboard?refresh=true`, // Redirect back to dashboard on refresh/cancel
-      return_url: `${req.headers.get("origin")}/dashboard?success=true`, // Redirect back on success
+      refresh_url: `${req.headers.get("origin")}/fairshare/settings?refresh=true`, // Redirect back to settings on refresh/cancel
+      return_url: `${req.headers.get("origin")}/fairshare/settings?success=true`, // Redirect back on success
       type: "account_onboarding",
     });
 

@@ -1,0 +1,394 @@
+import { useEffect, useState } from "react";
+import { useAuth } from "@/hooks/auth/useAuth";
+import { useNavigate } from "react-router-dom";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { MyLicenses } from "@/components/profile/MyLicenses";
+import { CreatorContracts } from "@/components/profile/CreatorContracts";
+import { Analytics } from "@/components/profile/Analytics";
+import { getProfile } from "@/services/supabaseCollum/profiles";
+import { supabase } from "@/services/supabaseCollum/client";
+import { createStripeCheckoutSession } from "@/services/stripeFunctions";
+import { toast } from "sonner";
+import type { ReactionContract } from "@/services/supabaseCollum/reactionContract";
+import {
+  TrendingUp,
+  TrendingDown,
+  FileCheck,
+  Search,
+  Upload,
+  CreditCard,
+  Loader2,
+  Receipt,
+  ExternalLink,
+} from "lucide-react";
+
+interface DashboardStats {
+  totalEarnings: number;
+  totalSpent: number;
+  activeContracts: number;
+  pendingRequests: number;
+}
+
+export default function UserDashboard() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [profile, setProfile] = useState<any>(null);
+  const [stats, setStats] = useState<DashboardStats>({
+    totalEarnings: 0,
+    totalSpent: 0,
+    activeContracts: 0,
+    pendingRequests: 0,
+  });
+  const [loadingStats, setLoadingStats] = useState(true);
+  const [openInvoices, setOpenInvoices] = useState<ReactionContract[]>([]);
+  const [loadingInvoices, setLoadingInvoices] = useState(true);
+  const [payingId, setPayingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchData = async () => {
+      setLoadingStats(true);
+      setLoadingInvoices(true);
+
+      const [
+        profileData,
+        earningsData,
+        spentData,
+        activeData,
+        pendingData,
+        invoicesData,
+      ] = await Promise.allSettled([
+        getProfile(user.id),
+        supabase
+          .from("reaction_contracts")
+          .select("pricing_value")
+          .eq("licensor_id", user.id)
+          .in("status", ["PAID", "ACTIVE"]),
+        supabase
+          .from("reaction_contracts")
+          .select("pricing_value")
+          .eq("licensee_id", user.id)
+          .in("status", ["PAID", "ACTIVE"]),
+        supabase
+          .from("reaction_contracts")
+          .select("id", { count: "exact", head: true })
+          .eq("licensor_id", user.id)
+          .in("status", ["PAID", "ACTIVE"]),
+        supabase
+          .from("reaction_contracts")
+          .select("id", { count: "exact", head: true })
+          .eq("licensor_id", user.id)
+          .eq("accepted_by_licensor", false)
+          .neq("status", "REJECTED"),
+        // Open Invoices: contracts where I am licensee, accepted by licensor, but not yet paid
+        supabase
+          .from("reaction_contracts")
+          .select("*")
+          .eq("licensee_id", user.id)
+          .eq("accepted_by_licensor", true)
+          .eq("status", "PENDING")
+          .order("created_at", { ascending: false }),
+      ]);
+
+      if (profileData.status === "fulfilled") setProfile(profileData.value);
+
+      const earnings =
+        earningsData.status === "fulfilled" && earningsData.value.data
+          ? earningsData.value.data.reduce(
+              (sum: number, c: any) => sum + (c.pricing_value || 0),
+              0,
+            )
+          : 0;
+
+      const spent =
+        spentData.status === "fulfilled" && spentData.value.data
+          ? spentData.value.data.reduce(
+              (sum: number, c: any) => sum + (c.pricing_value || 0),
+              0,
+            )
+          : 0;
+
+      const active =
+        activeData.status === "fulfilled" ? activeData.value.count || 0 : 0;
+      const pending =
+        pendingData.status === "fulfilled" ? pendingData.value.count || 0 : 0;
+
+      setStats({
+        totalEarnings: earnings,
+        totalSpent: spent,
+        activeContracts: active,
+        pendingRequests: pending,
+      });
+      setLoadingStats(false);
+
+      if (invoicesData.status === "fulfilled" && invoicesData.value.data) {
+        setOpenInvoices(invoicesData.value.data as ReactionContract[]);
+      }
+      setLoadingInvoices(false);
+    };
+
+    fetchData();
+  }, [user]);
+
+  const handlePay = async (contractId: string) => {
+    setPayingId(contractId);
+    try {
+      const { url } = await createStripeCheckoutSession(contractId);
+      window.location.href = url;
+    } catch (e: any) {
+      toast.error("Zahlung fehlgeschlagen: " + e.message);
+      setPayingId(null);
+    }
+  };
+
+  if (!user) return null;
+
+  const greeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Guten Morgen";
+    if (hour < 18) return "Guten Tag";
+    return "Guten Abend";
+  };
+
+  const pricingModelLabel = (type: number) => {
+    if (type === 1) return "Festpreis";
+    if (type === 2) return "Views-basiert";
+    return "CPM-basiert";
+  };
+
+  return (
+    <div className="container mx-auto max-w-6xl py-10 px-4">
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold tracking-tight">
+          {greeting()},{" "}
+          <span className="text-primary">
+            {profile?.full_name || user.email?.split("@")[0] || "Creator"}
+          </span>{" "}
+          👋
+        </h1>
+        <p className="text-muted-foreground mt-1">
+          Hier ist dein persönlicher Überblick über alles rund um FairShare.
+        </p>
+      </div>
+
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Gesamteinnahmen
+            </CardTitle>
+            <TrendingUp className="w-4 h-4 text-emerald-500" />
+          </CardHeader>
+          <CardContent>
+            {loadingStats ? (
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            ) : (
+              <div className="text-2xl font-bold">
+                {stats.totalEarnings.toFixed(2)} €
+              </div>
+            )}
+            <p className="text-xs text-muted-foreground mt-1">
+              Aus bezahlten Lizenzen (als Creator)
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Gesamtausgaben
+            </CardTitle>
+            <TrendingDown className="w-4 h-4 text-rose-500" />
+          </CardHeader>
+          <CardContent>
+            {loadingStats ? (
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            ) : (
+              <div className="text-2xl font-bold">
+                {stats.totalSpent.toFixed(2)} €
+              </div>
+            )}
+            <p className="text-xs text-muted-foreground mt-1">
+              Für gekaufte Lizenzen (als Reactor)
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Aktive Lizenzen
+            </CardTitle>
+            <FileCheck className="w-4 h-4 text-primary" />
+          </CardHeader>
+          <CardContent>
+            {loadingStats ? (
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            ) : (
+              <div className="text-2xl font-bold">{stats.activeContracts}</div>
+            )}
+            <p className="text-xs text-muted-foreground mt-1">
+              Bezahlte Verträge für deine Videos
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card
+          className={
+            stats.pendingRequests > 0
+              ? "border-yellow-500/60 bg-yellow-50/5"
+              : ""
+          }
+        >
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Offene Anfragen
+            </CardTitle>
+            <span
+              className={`text-sm font-bold w-6 h-6 flex items-center justify-center rounded-full ${stats.pendingRequests > 0 ? "bg-yellow-500 text-white" : "bg-muted text-muted-foreground"}`}
+            >
+              {stats.pendingRequests}
+            </span>
+          </CardHeader>
+          <CardContent>
+            {loadingStats ? (
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            ) : (
+              <div className="text-2xl font-bold">{stats.pendingRequests}</div>
+            )}
+            <p className="text-xs text-muted-foreground mt-1">
+              Lizenzanfragen warten auf Genehmigung
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Open Invoices Section */}
+      {(loadingInvoices || openInvoices.length > 0) && (
+        <Card className="mb-8 border-rose-500/40">
+          <CardHeader className="flex flex-row items-center gap-2 pb-2">
+            <Receipt className="w-5 h-5 text-rose-500" />
+            <CardTitle className="text-base">
+              Offene Rechnungen
+              {openInvoices.length > 0 && (
+                <span className="ml-2 inline-flex items-center justify-center w-5 h-5 text-xs font-bold bg-rose-500 text-white rounded-full">
+                  {openInvoices.length}
+                </span>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loadingInvoices ? (
+              <div className="flex items-center gap-2 text-muted-foreground text-sm py-2">
+                <Loader2 className="h-4 w-4 animate-spin" /> Lade Rechnungen...
+              </div>
+            ) : (
+              <div className="divide-y">
+                {openInvoices.map((invoice) => (
+                  <div
+                    key={invoice.id}
+                    className="flex items-center justify-between py-3 gap-4"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm truncate">
+                        {invoice.original_video_title}
+                      </p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge variant="outline" className="text-xs">
+                          {pricingModelLabel(invoice.pricing_model_type)}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">
+                          von {invoice.licensor_name}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          ·{" "}
+                          {new Date(invoice.created_at).toLocaleDateString(
+                            "de-DE",
+                          )}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <span className="text-sm font-bold">
+                        {invoice.pricing_value.toFixed(2)}{" "}
+                        {invoice.pricing_currency?.toUpperCase() || "EUR"}
+                      </span>
+                      <Button
+                        size="sm"
+                        onClick={() => handlePay(invoice.id)}
+                        disabled={payingId === invoice.id}
+                      >
+                        {payingId === invoice.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin mr-1" />
+                        ) : (
+                          <ExternalLink className="w-4 h-4 mr-1" />
+                        )}
+                        Jetzt bezahlen
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Quick Actions */}
+      <div className="flex flex-wrap gap-3 mb-8">
+        <Button onClick={() => navigate("/explore")} variant="outline">
+          <Search className="w-4 h-4 mr-2" />
+          Videos erkunden
+        </Button>
+        <Button onClick={() => navigate("/upload")} variant="outline">
+          <Upload className="w-4 h-4 mr-2" />
+          Videos importieren
+        </Button>
+        {profile?.stripe_connect_id && (
+          <Button asChild variant="outline">
+            <a
+              href="https://connect.stripe.com/express_login"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <CreditCard className="w-4 h-4 mr-2" />
+              Stripe Payouts
+            </a>
+          </Button>
+        )}
+      </div>
+
+      {/* Main Content Tabs */}
+      <Tabs defaultValue="analytics" className="w-full">
+        <TabsList className="mb-6">
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          <TabsTrigger value="licenses">Meine Lizenzen</TabsTrigger>
+          <TabsTrigger value="creator-requests">
+            Creator Anfragen
+            {stats.pendingRequests > 0 && (
+              <span className="ml-2 inline-flex items-center justify-center w-5 h-5 text-xs font-bold bg-yellow-500 text-white rounded-full">
+                {stats.pendingRequests}
+              </span>
+            )}
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="analytics">
+          <Analytics />
+        </TabsContent>
+        <TabsContent value="licenses">
+          <MyLicenses />
+        </TabsContent>
+        <TabsContent value="creator-requests">
+          <CreatorContracts />
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
