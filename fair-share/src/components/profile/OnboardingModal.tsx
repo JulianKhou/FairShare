@@ -49,10 +49,10 @@ export function OnboardingModal({
   // Form State Step 2 (Automation)
   const [automationData, setAutomationData] = useState<{
     auto_accept_reactions: boolean;
-    auto_license_videos: boolean;
+    auto_license_videos: "none" | "public_only" | "all";
   }>({
     auto_accept_reactions: userProfile?.auto_accept_reactions ?? true,
-    auto_license_videos: userProfile?.auto_license_videos ?? true,
+    auto_license_videos: userProfile?.auto_license_videos ?? "public_only",
   });
 
   // Reset steps if re-opened
@@ -232,19 +232,35 @@ export function OnboardingModal({
                     Videos automatisch lizenzieren
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    Neue public YouTube-Videos rufen wir automatisch für dich ab
-                    und geben sie zur Lizenzierung auf FairShare frei.
+                    Neue YouTube-Videos automatisch zur Lizenzierung auf
+                    FairShare freigeben.
                   </p>
                 </div>
-                <Switch
-                  checked={automationData.auto_license_videos}
-                  onCheckedChange={(c) =>
-                    setAutomationData((prev) => ({
-                      ...prev,
-                      auto_license_videos: c,
-                    }))
-                  }
-                />
+              </div>
+              <div className="flex items-center bg-muted rounded-lg p-1 gap-1">
+                {[
+                  { value: "none" as const, label: "Nicht automatisch" },
+                  { value: "public_only" as const, label: "Nur öffentliche" },
+                  { value: "all" as const, label: "Alle Videos" },
+                ].map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() =>
+                      setAutomationData((prev) => ({
+                        ...prev,
+                        auto_license_videos: option.value,
+                      }))
+                    }
+                    className={`flex-1 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                      automationData.auto_license_videos === option.value
+                        ? "bg-background shadow text-foreground"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
               </div>
 
               <div className="flex items-start space-x-4 p-4 border rounded-lg bg-muted/20">

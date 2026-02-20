@@ -1,7 +1,12 @@
 import { useVideos } from "../../hooks/youtube/useVideos";
 import { VideoItem } from "./videoItem";
 interface ShowVideoListProps {
-  videoType?: "licensed" | "licensedByMe" | "myVideos";
+  videoType?:
+    | "licensed"
+    | "licensedByMe"
+    | "myVideos"
+    | "myVideosLicensed"
+    | "myVideosUnlicensed";
   userId?: string;
 }
 

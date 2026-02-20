@@ -5,7 +5,12 @@ import { parseISO8601Duration } from "../../lib/utils";
  * Speichert oder aktualisiert YouTube-Videos in der Supabase-Datenbank.
  * Nutzt 'id' (YouTube-ID) als Primary Key für den Upsert.
  */
-export const saveVideosToSupabase = async (userId: string, videos: any[], autoLicense: boolean = false) => {
+export const saveVideosToSupabase = async (
+  userId: string,
+  videos: any[],
+  autoLicense: "none" | "public_only" | "all" = "none",
+  autoLicenseSince?: string,
+) => {
   if (!videos || videos.length === 0) return;
   try {
     // 1. Fetch existing video IDs to know which ones are new
@@ -47,8 +52,19 @@ export const saveVideosToSupabase = async (userId: string, videos: any[], autoLi
       };
 
       // Apply auto_license preference only to newly synced videos
-      if (isNew && autoLicense) {
-        row.islicensed = true;
+      // published after the cutoff date
+      if (isNew && autoLicense !== "none") {
+        const publishedAt = video.snippet?.publishedAt || video.publishedAt;
+        const isAfterCutoff = !autoLicenseSince || !publishedAt ||
+          new Date(publishedAt) >= new Date(autoLicenseSince);
+
+        if (isAfterCutoff) {
+          if (autoLicense === "all") {
+            row.islicensed = true;
+          } else if (autoLicense === "public_only" && video.privacyStatus === "public") {
+            row.islicensed = true;
+          }
+        }
       }
 
       return row;
@@ -69,7 +85,7 @@ export const saveVideosToSupabase = async (userId: string, videos: any[], autoLi
 
 export const getVideosFromSupabase = async (
   userId: string,
-  videoType: "licensed" | "myVideos" | "licensedByMe",
+  videoType: "licensed" | "myVideos" | "licensedByMe" | "myVideosLicensed" | "myVideosUnlicensed",
 ) => {
   console.log(
     `Fetching videos from Supabase for user: ${userId}, type: ${videoType}`,
@@ -93,6 +109,10 @@ export const getVideosFromSupabase = async (
     }
   } else if (videoType === "licensedByMe") {
     query = query.eq("creator_id", userId).eq("islicensed", true);
+  } else if (videoType === "myVideosLicensed") {
+    query = query.eq("creator_id", userId).eq("islicensed", true);
+  } else if (videoType === "myVideosUnlicensed") {
+    query = query.eq("creator_id", userId).eq("islicensed", false);
   }
 
   const { data, error } = await query;

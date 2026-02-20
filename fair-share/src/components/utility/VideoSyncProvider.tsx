@@ -58,8 +58,14 @@ export const VideoSyncProvider: React.FC<{ children: React.ReactNode }> = ({
 
         if (videos && videos.length > 0) {
           const profile = await getProfile(user.id);
-          const autoLicense = profile?.auto_license_videos ?? false;
-          await saveVideosToSupabase(user.id, videos, autoLicense);
+          const autoLicense = profile?.auto_license_videos || "none";
+          const autoLicenseSince = profile?.auto_license_since;
+          await saveVideosToSupabase(
+            user.id,
+            videos,
+            autoLicense,
+            autoLicenseSince,
+          );
           setStatus("success");
           setMessage(`${videos.length} Videos synchronisiert ✓`);
         } else {

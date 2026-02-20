@@ -22,10 +22,11 @@ export const useUpdateVideos = () => {
             const videos = await fetchAllVideos();
             
             const profile = await getProfile(user.id);
-            const autoLicense = profile?.auto_license_videos ?? false;
+            const autoLicense = profile?.auto_license_videos || "none";
+            const autoLicenseSince = profile?.auto_license_since;
 
             // Speichern (Upsert) immer ausführen, damit auch Änderungen übernommen werden
-            await saveVideosToSupabase(user.id, videos, autoLicense);
+            await saveVideosToSupabase(user.id, videos, autoLicense, autoLicenseSince);
             
             // 2. Statistiken in Supabase aktualisieren
             // Wir warten auf alle Updates parallel

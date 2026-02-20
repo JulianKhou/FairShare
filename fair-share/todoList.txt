@@ -1,0 +1,49 @@
+== TODO: Email-Benachrichtigungen (n8n) ==
+
+1. Supabase: SQL-Trigger anlegen
+   - Trigger auf reaction_contracts (AFTER UPDATE)
+   - Feuert nur wenn sich "status" oder "accepted_by_licensor" ändert
+   - Sendet HTTP POST via pg_net an n8n Webhook
+   - Payload: contract_id, old_status, new_status, licensor_id, licensee_id, original_video_title, pricing_value, accepted_by_licensor
+   - Voraussetzung: pg_net Extension muss aktiviert sein
+
+2. n8n: Neuer Workflow "Contract Status Changed"
+   - Webhook-Trigger: POST /contract-status-changed
+   - Switch-Node nach new_status:
+     a) PENDING → Email an Creator: "Neue Lizenzanfrage für dein Video [title]"
+     b) accepted_by_licensor=true → Email an Reactor: "Antrag genehmigt - jetzt bezahlen" + Link
+     c) REJECTED → Email an Reactor: "Antrag wurde abgelehnt"
+     d) ACTIVE → Email an beide: "Lizenzvertrag aktiv"
+   - Für jede Branch: Supabase-Query um Email-Adresse des Empfängers zu holen (profiles → auth.users)
+   - Email-Node: Gmail / SMTP konfigurieren
+
+3. SQL zum Ausführen in Supabase:
+
+CREATE OR REPLACE FUNCTION notify_contract_change()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF OLD.status IS DISTINCT FROM NEW.status 
+     OR OLD.accepted_by_licensor IS DISTINCT FROM NEW.accepted_by_licensor THEN
+    PERFORM net.http_post(
+      url := 'https://n8n.srv1356974.hstgr.cloud/webhook/contract-status-changed',
+      headers := '{"Content-Type": "application/json"}'::jsonb,
+      body := jsonb_build_object(
+        'contract_id', NEW.id,
+        'old_status', OLD.status,
+        'new_status', NEW.status,
+        'licensor_id', NEW.licensor_id,
+        'licensee_id', NEW.licensee_id,
+        'original_video_title', NEW.original_video_title,
+        'pricing_value', NEW.pricing_value,
+        'accepted_by_licensor', NEW.accepted_by_licensor
+      )
+    );
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER on_contract_status_change
+  AFTER UPDATE ON reaction_contracts
+  FOR EACH ROW
+  EXECUTE FUNCTION notify_contract_change();

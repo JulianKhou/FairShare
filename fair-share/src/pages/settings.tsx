@@ -185,27 +185,124 @@ export default function SettingsPage() {
               />
             </Field>
 
+            <div className="p-4 border rounded-lg bg-card space-y-3">
+              <FieldContent>
+                <FieldLabel className="text-base">
+                  Videos automatisch lizenzieren
+                </FieldLabel>
+                <FieldDescription>
+                  Neue von YouTube importierte Videos automatisch zur
+                  Lizenzierung freigeben.
+                </FieldDescription>
+              </FieldContent>
+              <div className="flex items-center bg-muted rounded-lg p-1 gap-1">
+                {(
+                  [
+                    { value: "none", label: "Nicht automatisch" },
+                    { value: "public_only", label: "Nur öffentliche" },
+                    { value: "all", label: "Alle Videos" },
+                  ] as const
+                ).map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => {
+                      handleChange("auto_license_videos", option.value);
+                      // Set cutoff date when first activating
+                      if (
+                        option.value !== "none" &&
+                        !profile.auto_license_since
+                      ) {
+                        handleChange(
+                          "auto_license_since",
+                          new Date().toISOString(),
+                        );
+                      }
+                    }}
+                    className={`flex-1 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                      (profile.auto_license_videos || "none") === option.value
+                        ? "bg-background shadow text-foreground"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+              {profile.auto_license_videos &&
+                profile.auto_license_videos !== "none" &&
+                profile.auto_license_since && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Gilt für Videos ab dem{" "}
+                    {new Date(profile.auto_license_since).toLocaleDateString(
+                      "de-DE",
+                      {
+                        day: "2-digit",
+                        month: "long",
+                        year: "numeric",
+                      },
+                    )}
+                    . Ältere Videos müssen manuell freigegeben werden.
+                  </p>
+                )}
+            </div>
+          </div>
+        </FieldSet>
+
+        {/* Lizenzpreise */}
+        <FieldSet>
+          <FieldLegend>Lizenzpreise</FieldLegend>
+          <div className="flex flex-col gap-4">
             <Field
               orientation="horizontal"
               className="flex items-center justify-between p-4 border rounded-lg bg-card"
             >
               <FieldContent>
                 <FieldLabel className="text-base">
-                  Videos automatisch lizenzieren
+                  Automatische Preisberechnung
                 </FieldLabel>
                 <FieldDescription>
-                  Wenn aktiviert, werden deine neu von YouTube importierten
-                  Videos sofort auf FairShare zur Lizenzierung freigegeben.
+                  Der Preis wird automatisch durch den FairShare-Algorithmus
+                  basierend auf Video-Metriken berechnet.
                 </FieldDescription>
               </FieldContent>
               <Switch
-                checked={profile.auto_license_videos || false}
+                checked={profile.use_auto_pricing !== false}
                 onCheckedChange={(checked) =>
-                  handleChange("auto_license_videos", checked)
+                  handleChange("use_auto_pricing", checked)
                 }
                 className="ml-auto"
               />
             </Field>
+
+            {profile.use_auto_pricing === false && (
+              <Field className="max-w-xs">
+                <FieldLabel>Mindestpreis (EUR)</FieldLabel>
+                <FieldDescription>
+                  Dein Mindestpreis für eine Lizenz. Wenn der Algorithmus einen
+                  höheren Preis berechnet, wird dieser verwendet.
+                </FieldDescription>
+                <div className="relative mt-1">
+                  <Input
+                    type="number"
+                    min="0.50"
+                    step="0.50"
+                    value={profile.min_license_price ?? ""}
+                    onChange={(e) =>
+                      handleChange(
+                        "min_license_price",
+                        e.target.value ? parseFloat(e.target.value) : null,
+                      )
+                    }
+                    placeholder="z.B. 5.00"
+                    className="pr-10"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
+                    €
+                  </span>
+                </div>
+              </Field>
+            )}
           </div>
         </FieldSet>
 

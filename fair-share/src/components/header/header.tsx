@@ -124,9 +124,6 @@ function Header() {
         <NavLink to="/upload" className={navLinkClasses}>
           Upload
         </NavLink>
-        <NavLink to="/my-videos" className={navLinkClasses}>
-          My Videos
-        </NavLink>
       </nav>
 
       {/* Suche */}

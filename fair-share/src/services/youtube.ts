@@ -54,7 +54,7 @@ export const fetchAllVideos = async () => {
   const videosData = await videosRes.json();
   const videoIds = videosData.items.map((v: any) => v.snippet.resourceId.videoId);
   const statisticsRes = await fetch(
-    `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&id=${videoIds}`,
+    `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics,status&id=${videoIds}`,
     { headers: { Authorization: `Bearer ${token}` } }
   );
   const statisticsData = await statisticsRes.json();
@@ -72,5 +72,6 @@ export const fetchAllVideos = async () => {
     categoryId: item.snippet.categoryId,
     duration_seconds: parseISO8601Duration(item.contentDetails.duration),
     channel_title: item.snippet.channelTitle,
+    privacyStatus: item.status?.privacyStatus || "unknown",
   }));
 };

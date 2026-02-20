@@ -7,7 +7,7 @@ import { useSyncVideos } from "./syncVideos";
 import { supabase } from "../../services/supabaseCollum/client";
 
 export function useVideos(
-  videoType: "licensed" | "licensedByMe" | "myVideos",
+  videoType: "licensed" | "licensedByMe" | "myVideos" | "myVideosLicensed" | "myVideosUnlicensed",
   userId?: string,
 ) {
   const { user } = useAuth();

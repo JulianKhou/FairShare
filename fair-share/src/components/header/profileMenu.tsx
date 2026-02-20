@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { handleLogout, handleLogin } from "../../hooks/auth/useHandleAuth";
 import { useNavigate } from "react-router-dom";
 import { HelpRequestModal } from "../profile/HelpRequestModal";
@@ -56,28 +56,10 @@ export const UserMenu = ({
                   className="w-full text-left px-3 py-2 rounded-lg hover:bg-accent transition-colors text-sm"
                   onClick={() => {
                     onClose();
-                    navigate("/profile");
+                    navigate("/dashboard");
                   }}
                 >
-                  My Profile
-                </button>
-                <button
-                  className="w-full text-left px-3 py-2 rounded-lg hover:bg-accent transition-colors text-sm"
-                  onClick={() => {
-                    onClose();
-                    navigate("/profile?tab=analytics");
-                  }}
-                >
-                  Analytics
-                </button>
-                <button
-                  className="w-full text-left px-3 py-2 rounded-lg hover:bg-accent transition-colors text-sm"
-                  onClick={() => {
-                    onClose();
-                    navigate("/profile?tab=licenses");
-                  }}
-                >
-                  My Licenses
+                  Dashboard
                 </button>
                 {userProfile?.is_admin && (
                   <button

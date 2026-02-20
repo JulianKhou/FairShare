@@ -27,7 +27,7 @@ serve(async (req) => {
                 "id, stripe_subscription_id, reaction_video_id, last_reported_view_count, pricing_model_type",
             )
             .eq("status", "ACTIVE")
-            .in("pricing_model_type", [2, 3]) // Views or CPM
+            .eq("pricing_model_type", 2) // Views-based billing only
             .not("stripe_subscription_id", "is", null);
 
         if (error) throw error;

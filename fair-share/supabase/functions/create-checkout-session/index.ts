@@ -126,9 +126,9 @@ serve(async (req) => {
           destination: stripeConnectId,
         },
       };
-    } else {
+    } else if (contract.pricing_model_type === 2) {
       // --- USAGE BASED (Subscription) ---
-      // Models 2 (Views) & 3 (CPM)
+      // Model 2: Pay per 1000 Views (metered billing, quarterly invoicing)
       sessionParams.mode = "subscription";
 
       // We MUST create/get a Customer for subscriptions
@@ -153,7 +153,13 @@ serve(async (req) => {
         });
         customerId = customer.id;
 
-        // Optionally save back to profile here (skipped for brevity/permissions)
+        // Save stripe_customer_id back to this user's profile
+        await supabaseClient
+          .from("profiles")
+          .update({ stripe_customer_id: customerId })
+          .eq("id", contract.licensee_id);
+
+        console.log("Created and saved Stripe Customer:", customerId);
       }
 
       sessionParams.customer = customerId;

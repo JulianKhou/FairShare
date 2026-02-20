@@ -25,12 +25,19 @@ export const VideoItem = ({
       className={videoClasses + " " + videoClassesHover}
       onClick={() => toggleMenu()}
     >
-      <img
-        src={video.thumbnail}
-        alt={video.title}
-        className={imgClasses}
-        referrerPolicy="no-referrer"
-      />
+      <div className="relative">
+        <img
+          src={video.thumbnail}
+          alt={video.title}
+          className={imgClasses}
+          referrerPolicy="no-referrer"
+        />
+        {userId === video.creator_id && video.islicensed && (
+          <span className="absolute top-3 right-3 bg-green-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md shadow">
+            Lizenziert
+          </span>
+        )}
+      </div>
       <h3 className="text-foreground self-start ml-3">{video.title}</h3>
       <h2 className="text-muted-foreground self-start text-xs ml-3">
         {video.last_view_count} Views

@@ -24,10 +24,11 @@ export const useSyncVideos = () => {
 
       // Fetch user profile to check auto-license preference
       const profile = await getProfile(user.id);
-      const autoLicense = profile?.auto_license_videos || false;
+      const autoLicense = profile?.auto_license_videos || "none";
+      const autoLicenseSince = profile?.auto_license_since;
 
       // 2. Daten in Supabase speichern (Service 2)
-      await saveVideosToSupabase(user.id, videos, autoLicense);
+      await saveVideosToSupabase(user.id, videos, autoLicense, autoLicenseSince);
       return videos;
     } catch (err: any) {
       setError(err.message);

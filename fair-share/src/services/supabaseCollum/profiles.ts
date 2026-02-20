@@ -4,7 +4,8 @@ export interface Profile {
     id: string;
     is_admin?: boolean;
     auto_accept_reactions?: boolean;
-    auto_license_videos?: boolean;
+    auto_license_videos?: "none" | "public_only" | "all";
+    auto_license_since?: string; // ISO date — only videos after this date get auto-licensed
     full_name?: string;
     address_street?: string;
     address_number?: string;
@@ -13,6 +14,9 @@ export interface Profile {
     youtube_channel_id?: string;
     subscriber_count?: number;
     stripe_connect_id?: string;
+    stripe_customer_id?: string;
+    min_license_price?: number;
+    use_auto_pricing?: boolean;
 }
 
 export const getProfile = async (userId: string) => {

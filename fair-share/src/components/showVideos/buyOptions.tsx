@@ -29,9 +29,7 @@ interface BuyOptionsProps {
 
 export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
   const { user } = useAuth();
-  const [selectedPlan, setSelectedPlan] = useState<
-    "monthly" | "yearly" | "lifetime"
-  >("monthly");
+  const [selectedPlan, setSelectedPlan] = useState<"fixed" | "views">("fixed");
   const [loading, setLoading] = useState(false);
   const [existingContract, setExistingContract] = useState<{
     id: string;
@@ -40,6 +38,7 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
   } | null>(null);
   const [checkingLicense, setCheckingLicense] = useState(false);
   const [hasAnyLicense, setHasAnyLicense] = useState(false);
+  const [creatorMinPrice, setCreatorMinPrice] = useState<number>(0);
 
   // Fetch user's videos for selection
   const { videos: myVideos, isLoading: isLoadingVideos } = useVideos(
@@ -96,12 +95,39 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
     checkAnyLicense();
   }, [user, videoCreator]);
 
+  // Fetch creator's min license price
+  useEffect(() => {
+    const fetchCreatorMinPrice = async () => {
+      const creatorId = videoCreator?.creator_id || videoCreator?.id;
+      if (!creatorId) return;
+      try {
+        const creatorProfile = await getProfile(creatorId);
+        if (
+          creatorProfile?.use_auto_pricing === false &&
+          creatorProfile?.min_license_price
+        ) {
+          setCreatorMinPrice(creatorProfile.min_license_price);
+        } else {
+          setCreatorMinPrice(0);
+        }
+      } catch {
+        setCreatorMinPrice(0);
+      }
+    };
+    fetchCreatorMinPrice();
+  }, [videoCreator]);
+
   // Determine which video is selected
   const selectedVideo =
     myVideos.find((v) => v.id === selectedReactionVideoId) || videoReactor;
 
-  // Recalculate prices based on the selected video
-  const prices = getPrices(selectedVideo, videoCreator);
+  // Recalculate prices based on the selected video, applying creator min price
+  const rawPrices = getPrices(selectedVideo, videoCreator);
+  const prices = {
+    ...rawPrices,
+    oneTime: Math.max(rawPrices.oneTime, creatorMinPrice),
+    payPerViews: rawPrices.payPerViews, // Views-based stays algorithm-driven
+  };
 
   const handleBuy = async () => {
     if (!user) {
@@ -123,18 +149,14 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
       const autoAccept = creatorProfile?.auto_accept_reactions ?? false;
 
       // Map selection to model type and price
-      let modelType: 1 | 2 | 3 = 1; // Default Fixed
+      let modelType: 1 | 2 = 1;
       let price = prices.oneTime;
 
-      // Determine Pricing Model and Value
-      if (selectedPlan === "yearly") {
-        modelType = 2; // PayPerView / 1000 Views
+      if (selectedPlan === "views") {
+        modelType = 2; // PayPerView / 1000 Views (metered billing)
         price = prices.payPerViews;
-      } else if (selectedPlan === "lifetime") {
-        modelType = 3; // CPM
-        price = prices.payPerCpm;
       } else {
-        modelType = 1; // Fixed (monthly)
+        modelType = 1; // Fixed one-time payment
         price = prices.oneTime;
       }
 
@@ -265,33 +287,31 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
       </FieldSet>
 
       {!isPaid && !isPending && !isRejected && (
-        <FieldSet className="w-full max-w-xs space-y-1">
-          <FieldLegend variant="label">Subscription Plan</FieldLegend>
+        <FieldSet className="w-full max-w-xs space-y-2">
+          <FieldLegend variant="label">Preismodell</FieldLegend>
           <RadioGroup
             value={selectedPlan}
-            onValueChange={(val: "monthly" | "yearly" | "lifetime") =>
-              setSelectedPlan(val)
-            }
+            onValueChange={(val: "fixed" | "views") => setSelectedPlan(val)}
           >
             <Field orientation="horizontal">
-              <RadioGroupItem value="monthly" id="plan-monthly" />
-              <FieldLabel htmlFor="plan-monthly" className="font-normal">
+              <RadioGroupItem value="fixed" id="plan-fixed" />
+              <FieldLabel htmlFor="plan-fixed" className="font-normal">
                 Einmalzahlung {prices.oneTime.toFixed(2)} €
               </FieldLabel>
             </Field>
             <Field orientation="horizontal">
-              <RadioGroupItem value="yearly" id="plan-yearly" />
-              <FieldLabel htmlFor="plan-yearly" className="font-normal">
-                PayPer 1000 Views {prices.payPerViews.toFixed(2)} €
-              </FieldLabel>
-            </Field>
-            <Field orientation="horizontal">
-              <RadioGroupItem value="lifetime" id="plan-lifetime" />
-              <FieldLabel htmlFor="plan-lifetime" className="font-normal">
-                PayPer CPM {prices.payPerCpm.toFixed(2)} €
+              <RadioGroupItem value="views" id="plan-views" />
+              <FieldLabel htmlFor="plan-views" className="font-normal">
+                Pro 1.000 Views {prices.payPerViews.toFixed(2)} € / Quartal
               </FieldLabel>
             </Field>
           </RadioGroup>
+          {selectedPlan === "views" && (
+            <p className="text-xs text-muted-foreground italic mt-1">
+              💡 Views werden täglich automatisch erfasst und quartalsweise
+              abgerechnet.
+            </p>
+          )}
         </FieldSet>
       )}
 
