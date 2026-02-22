@@ -12,7 +12,7 @@ export const signInWithGoogle = async () => {
         access_type: "offline",
         prompt: "consent",
       },
-      redirectTo: `${window.location.origin}/fairshare`,
+      redirectTo: `${window.location.origin}/`,
     },
   });
 

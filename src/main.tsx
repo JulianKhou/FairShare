@@ -29,7 +29,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     <ThemeProvider>
       <AuthProvider>
         <VideoSyncProvider>
-          <BrowserRouter basename="/fairshare">
+          <BrowserRouter basename="/">
             <div className="flex flex-col min-h-screen">
               <Header />
 
