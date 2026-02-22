@@ -24,11 +24,13 @@ jobs:
       - name: Build Project
         run: npm run build
 
-      - name: Deploy via FTP
+       - name: Deploy via SFTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./dist/  # Bei Vite ist es 'dist', bei Create-React-App oft 'build'
+          port: 22             # SFTP nutzt Port 22
+          protocol: sftp       # Wichtig: Explizit auf SFTP umstellen
+          local-dir: ./dist/
           server-dir: ./public_html/
