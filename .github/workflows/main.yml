@@ -38,4 +38,3 @@ jobs:
           protocol: ftps
           local-dir: ./dist/
           server-dir: ./
-          dangerously-allow-unsecure-passive-mode: true
