@@ -3,7 +3,7 @@ name: Build and Deploy React to Hostinger
 on:
   push:
     branches:
-      - main  # Führt den Build bei jedem Push in den Main-Branch aus
+      - main
 
 jobs:
   build-and-deploy:
@@ -24,13 +24,13 @@ jobs:
       - name: Build Project
         run: npm run build
 
-       - name: Deploy via SFTP
+      - name: Deploy via SFTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          port: 22             # SFTP nutzt Port 22
-          protocol: sftp       # Wichtig: Explizit auf SFTP umstellen
+          port: 22
+          protocol: sftp
           local-dir: ./dist/
           server-dir: ./public_html/
