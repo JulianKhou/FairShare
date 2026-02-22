@@ -18,6 +18,7 @@ import {
   Profile,
 } from "@/services/supabaseCollum/profiles";
 import { Loader2, Save } from "lucide-react";
+import { createStripeConnectAccount } from "@/services/stripeFunctions";
 
 export default function SettingsPage() {
   const { user } = useAuth();
@@ -331,8 +332,6 @@ export default function SettingsPage() {
                   onClick={async () => {
                     try {
                       setSaving(true);
-                      const { createStripeConnectAccount } =
-                        await import("@/services/stripeFunctions");
                       const { url } = await createStripeConnectAccount();
                       if (url) window.location.href = url;
                     } catch (err) {
@@ -357,8 +356,6 @@ export default function SettingsPage() {
                 onClick={async () => {
                   try {
                     setSaving(true);
-                    const { createStripeConnectAccount } =
-                      await import("@/services/stripeFunctions");
                     const { url } = await createStripeConnectAccount();
                     if (url) window.location.href = url;
                   } catch (err) {
