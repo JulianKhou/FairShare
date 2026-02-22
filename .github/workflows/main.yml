@@ -21,7 +21,11 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
-      - name: Build Project
+      - name: Build project
+        env:
+        # These variables will be baked into your Vite frontend code
+         VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+         VITE_SUPABASE_KEY: ${{ secrets.VITE_SUPABASE_KEY }}
         run: npm run build
 
       - name: Deploy via FTPS
