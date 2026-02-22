@@ -21,6 +21,7 @@ import { useState, useEffect } from "react";
 import { generateUUID } from "@/lib/utils";
 import { useVideos } from "@/hooks/youtube/useVideos";
 import { AlertCircle, CheckCircle2, XCircle } from "lucide-react";
+import { createStripeCheckoutSession } from "@/services/stripeFunctions";
 
 interface BuyOptionsProps {
   videoCreator: any;
@@ -203,9 +204,7 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
       }
 
       // 3. If Auto-Accepted, Proceed to Stripe
-      const { url } = await import("@/services/stripeFunctions").then((mod) =>
-        mod.createStripeCheckoutSession(contractId),
-      );
+      const { url } = await createStripeCheckoutSession(contractId);
 
       if (url) {
         window.location.href = url;
@@ -357,10 +356,7 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
                 onClick={async () => {
                   setLoading(true);
                   try {
-                    const { url } =
-                      await import("@/services/stripeFunctions").then((mod) =>
-                        mod.createStripeCheckoutSession(existingContract.id),
-                      );
+                    const { url } = await createStripeCheckoutSession(existingContract.id);
                     if (url) window.location.href = url;
                   } catch (e) {
                     console.error(e);
