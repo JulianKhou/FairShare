@@ -33,4 +33,5 @@ jobs:
           port: 21
           protocol: ftps
           local-dir: ./dist/
-          server-dir: ./public_html/
+          server-dir: /home/u846196296/domains/simpleshare.eu/public_html/
+          dangerously-allow-unsecure-passive-mode: true
