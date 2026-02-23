@@ -1,0 +1,21 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # A. ERZWINGE HTTPS
+  RewriteCond %{HTTPS} off
+  RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+  # B. REDIRECT VON NON-WWW AUF WWW
+  # Damit https://simpleshare.eu zu https://www.simpleshare.eu wird
+  RewriteCond %{HTTP_HOST} ^simpleshare\.eu [NC]
+  RewriteRule ^(.*)$ https://www.simpleshare.eu/$1 [L,R=301]
+
+  # C. REACT ROUTING (SPA)
+  # Verhindert 404-Fehler beim Neuladen von Unterseiten
+  RewriteBase /
+  RewriteRule ^index\.html$ - [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteCond %{REQUEST_FILENAME} !-l
+  RewriteRule . /index.html [L]
+</IfModule>

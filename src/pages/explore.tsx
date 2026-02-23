@@ -34,45 +34,6 @@ function Explore() {
     );
   };
 
-  // Handle Stripe redirect params
-  useEffect(() => {
-    const success = searchParams.get("success");
-    const canceled = searchParams.get("canceled");
-    const contractId = searchParams.get("contractId");
-
-    if (alertShown.current) return;
-
-    if (success) {
-      alertShown.current = true;
-      toast.success("Zahlung erfolgreich!", {
-        description: "Deine Lizenz wurde erfolgreich erstellt.",
-      });
-      setSearchParams({}, { replace: true });
-    }
-
-    if (canceled) {
-      alertShown.current = true;
-      if (contractId) {
-        deleteReactionContract(contractId)
-          .then(() => {
-            toast.info("Zahlung abgebrochen", {
-              description: "Die ausstehende Anfrage wurde gelöscht.",
-            });
-          })
-          .catch((err) => {
-            console.error("Failed to delete contract:", err);
-            toast.error("Zahlung abgebrochen", {
-              description:
-                "Die ausstehende Anfrage konnte nicht gelöscht werden.",
-            });
-          });
-      } else {
-        toast.info("Zahlung abgebrochen");
-      }
-      setSearchParams({}, { replace: true });
-    }
-  }, [searchParams, setSearchParams]);
-
   return (
     <div className="flex flex-col items-center pt-20 gap-8 w-full">
       <div className="w-full max-w-6xl px-4">

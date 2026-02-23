@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useAuth } from "@/hooks/auth/useAuth";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { Analytics } from "@/components/profile/Analytics";
 import { getProfile } from "@/services/supabaseCollum/profiles";
 import { supabase } from "@/services/supabaseCollum/client";
 import { createStripeCheckoutSession } from "@/services/stripeFunctions";
+import { deleteReactionContract } from "@/services/supabaseCollum/reactionContract";
 import { toast } from "sonner";
 import type { ReactionContract } from "@/services/supabaseCollum/reactionContract";
 import {
@@ -35,6 +36,9 @@ interface DashboardStats {
 export default function UserDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const alertShown = useRef(false);
+
   const [profile, setProfile] = useState<any>(null);
   const [stats, setStats] = useState<DashboardStats>({
     totalEarnings: 0,
@@ -46,6 +50,45 @@ export default function UserDashboard() {
   const [openInvoices, setOpenInvoices] = useState<ReactionContract[]>([]);
   const [loadingInvoices, setLoadingInvoices] = useState(true);
   const [payingId, setPayingId] = useState<string | null>(null);
+
+  // Handle Stripe redirect params
+  useEffect(() => {
+    const success = searchParams.get("success");
+    const canceled = searchParams.get("canceled");
+    const contractId = searchParams.get("contractId");
+
+    if (alertShown.current) return;
+
+    if (success) {
+      alertShown.current = true;
+      toast.success("Zahlung erfolgreich!", {
+        description: "Deine Lizenz wurde erfolgreich erstellt.",
+      });
+      setSearchParams({}, { replace: true });
+    }
+
+    if (canceled) {
+      alertShown.current = true;
+      if (contractId) {
+        deleteReactionContract(contractId)
+          .then(() => {
+            toast.info("Zahlung abgebrochen", {
+              description: "Die ausstehende Anfrage wurde gelöscht.",
+            });
+          })
+          .catch((err) => {
+            console.error("Failed to delete contract:", err);
+            toast.error("Zahlung abgebrochen", {
+              description:
+                "Die ausstehende Anfrage konnte nicht gelöscht werden.",
+            });
+          });
+      } else {
+        toast.info("Zahlung abgebrochen");
+      }
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   useEffect(() => {
     if (!user) return;

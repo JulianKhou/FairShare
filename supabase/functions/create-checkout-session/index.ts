@@ -99,8 +99,8 @@ serve(async (req) => {
       metadata: {
         contractId: contract.id,
       },
-      success_url: `${origin}/explore?success=true&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/explore?canceled=true&contractId=${contract.id}`,
+      success_url: `https://simpleshare.eu/dashboard?success=true&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `https://simpleshare.eu/dashboard?canceled=true&contractId=${contract.id}`,
     };
 
     if (contract.pricing_model_type === 1) {
