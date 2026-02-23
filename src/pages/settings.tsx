@@ -263,7 +263,7 @@ export default function SettingsPage() {
                   Automatische Preisberechnung
                 </FieldLabel>
                 <FieldDescription>
-                  Der Preis wird automatisch durch den FairShare-Algorithmus
+                  Der Preis wird automatisch durch den SimpleShare-Algorithmus
                   basierend auf Video-Metriken berechnet.
                 </FieldDescription>
               </FieldContent>

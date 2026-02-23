@@ -79,11 +79,11 @@ export function OnboardingModal({
       await updateProfile(userId, updates);
 
       toast.success(
-        "Willkommen bei FairShare! Profil erfolgreich eingerichtet.",
+        "Willkommen bei SimpleShare! Profil erfolgreich eingerichtet.",
       );
       onComplete(); // trigger parent update / close
       onOpenChange(false);
-      localStorage.setItem(`fairshare_onboarding_done_${userId}`, "true");
+      localStorage.setItem(`simpleshare_onboarding_done_${userId}`, "true");
     } catch (error) {
       console.error("Failed to save onboarding data:", error);
       toast.error("Fehler beim Speichern der Daten.");
@@ -111,7 +111,7 @@ export function OnboardingModal({
                 <UserCircle className="w-6 h-6 text-primary" />
               </div>
               <DialogTitle className="text-center text-2xl">
-                Willkommen bei FairShare
+                Willkommen bei SimpleShare
               </DialogTitle>
               <DialogDescription className="text-center pt-2">
                 Bevor wir loslegen, benötigen wir noch eine kurze
@@ -220,7 +220,7 @@ export function OnboardingModal({
                 Automatisierung
               </DialogTitle>
               <DialogDescription className="text-center pt-2">
-                Mach es dir einfach. Du kannst FairShare so einstellen, dass
+                Mach es dir einfach. Du kannst SimpleShare so einstellen, dass
                 alles automatisch im Hintergrund abläuft.
               </DialogDescription>
             </DialogHeader>
@@ -233,7 +233,7 @@ export function OnboardingModal({
                   </p>
                   <p className="text-sm text-muted-foreground">
                     Neue YouTube-Videos automatisch zur Lizenzierung auf
-                    FairShare freigeben.
+                    SimpleShare freigeben.
                   </p>
                 </div>
               </div>

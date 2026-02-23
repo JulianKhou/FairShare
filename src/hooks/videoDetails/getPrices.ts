@@ -1,4 +1,4 @@
-import { calculateFairShare } from "../../services/fairShareAlgo";
+import { calculateSimpleShare } from "../../services/simpleShareAlgo";
 import { useEffect } from "react";
 import { useState } from "react";
 import { getNicheRPM } from "../../data/NicheData";
@@ -23,7 +23,7 @@ interface VideoCreator {
   averageViewsPerCategory: number;
   durationCreatorMinutes: number;
 }
-interface fairShareParams {
+interface simpleShareParams {
   viewsReactor: number;
   viewsCreator: number;
   durationReactorSeconds: number;
@@ -38,7 +38,7 @@ export function getPrices(videoReactor: any, videoCreator: any) {
     payPerViews: 0,
     payPerCpm: 0,
   };
-  const fairShareParams: fairShareParams = {
+  const simpleShareParams: simpleShareParams = {
     viewsReactor: videoReactor.views || 0,
     viewsCreator: videoCreator.views || 0,
     durationReactorSeconds: videoReactor.duration_seconds || 10, // Fallback to 10 min to avoid div/0
@@ -47,11 +47,11 @@ export function getPrices(videoReactor: any, videoCreator: any) {
     daysSinceUpload: videoCreator.daysSinceUpload || 0,
   };
   const nicheRPM = getNicheRPM(Number(videoReactor.category_id));
-  const fairShare = calculateFairShare(fairShareParams);
+  const simpleShare = calculateSimpleShare(simpleShareParams);
 
   console.group("getPrices Debug");
   console.log("Niche RPM:", nicheRPM);
-  console.log("FairShare:", fairShare);
+  console.log("SimpleShare:", simpleShare);
   console.groupEnd();
 
   try {
@@ -60,16 +60,16 @@ export function getPrices(videoReactor: any, videoCreator: any) {
       // Fallback to current views or 10k if average is missing.
       const baseViews = videoCreator.averageViewsPerCategory || videoCreator.views || 10000;
 
-      // Formula: (Estimated Views * FairShare * RPM) / 1000
-      const calculatedOneTime = (baseViews * fairShare * nicheRPM) / 1000;
+      // Formula: (Estimated Views * SimpleShare * RPM) / 1000
+      const calculatedOneTime = (baseViews * simpleShare * nicheRPM) / 1000;
       prices.oneTime = Math.max(calculatedOneTime, 0.50);
 
       // PayPerView: Price per 1000 Views
-      // Formula: FairShare * RPM
-      prices.payPerViews = fairShare * nicheRPM;
+      // Formula: SimpleShare * RPM
+      prices.payPerViews = simpleShare * nicheRPM;
 
       // CPM: Same as above (displayed differently or conceptually linked)
-      prices.payPerCpm = fairShare * nicheRPM;
+      prices.payPerCpm = simpleShare * nicheRPM;
     }
     return prices;
 

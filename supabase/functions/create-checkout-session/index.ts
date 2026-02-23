@@ -146,7 +146,7 @@ serve(async (req) => {
         // Note: In production, save this ID back to profile!
         const customer = await stripe.customers.create({
           email: `user-${contract.licensee_id}@example.com`, // Fallback if no email
-          name: contract.licensee_name || "FairShare User",
+          name: contract.licensee_name || "SimpleShare User",
           metadata: {
             supabase_id: contract.licensee_id,
           },

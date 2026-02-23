@@ -215,7 +215,7 @@ export default function UserDashboard() {
           👋
         </h1>
         <p className="text-muted-foreground mt-1">
-          Hier ist dein persönlicher Überblick über alles rund um FairShare.
+          Hier ist dein persönlicher Überblick über alles rund um SimpleShare.
         </p>
       </div>
 

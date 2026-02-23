@@ -306,7 +306,7 @@ export default function AdminContracts() {
                   </div>
                   <div>
                     <p className="font-semibold text-muted-foreground mb-1">
-                      FairShare Score
+                      SimpleShare Score
                     </p>
                     <p>{selectedContract.fairshare_score}</p>
                   </div>

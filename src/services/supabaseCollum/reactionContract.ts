@@ -22,7 +22,7 @@ export interface ReactionContract {
     pricing_value: number; // Der Betrag/Satz [cite: 370]
     pricing_currency: string;
 
-    // FairShare Metadaten [cite: 341]
+    // SimpleShare Metadaten [cite: 341]
     fairshare_score: number;
     fairshare_metadata: {
         marktmacht_score: number; // [cite: 342]
@@ -87,7 +87,7 @@ export const getAllReactionContracts = async () => {
         .from("reaction_contracts")
         .select("*")
         .order("created_at", { ascending: false });
-    
+
     if (error) throw error;
     return data as ReactionContract[];
 };
@@ -124,14 +124,14 @@ export const adminDeleteReactionContract = async (id: string) => {
     const { data, error } = await supabase.from("reaction_contracts").delete()
         .eq("id", id);
     if (error) throw error;
-    
+
     // 2. Check if really deleted (RLS might absorb the delete without error)
     const { data: checkData, error: checkError } = await supabase.from("reaction_contracts").select("id").eq("id", id).maybeSingle();
-    
+
     if (checkData) {
         throw new Error("Missing Permission: Supabase Row Level Security (RLS) prevented the deletion. Please ensure the admin role has delete access on reaction_contracts.");
     }
-    
+
     return data;
 };
 
@@ -217,7 +217,7 @@ export const withdrawReactionContract = async (contractId: string) => {
         .delete()
         .eq("id", contractId)
         .eq("accepted_by_licensor", false); // Security: only delete if not accepted yet
-    
+
     if (error) throw error;
     return true;
 };

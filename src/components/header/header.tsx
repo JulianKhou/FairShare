@@ -1,4 +1,4 @@
-import { FairShareLogo } from "../ui/fairShareLogo.tsx";
+import { SimpleShareLogo } from "../ui/simpleShareLogo.tsx";
 import lupe from "../../assets/lupeIcon.svg";
 import ProfileIcon from "./profileIcon";
 import { UserMenu } from "./profileMenu";
@@ -33,7 +33,7 @@ function Header() {
         // Check onboarding trigger
         if (profile && !isProfileComplete(profile)) {
           if (
-            localStorage.getItem(`fairshare_onboarding_done_${user.id}`) !==
+            localStorage.getItem(`simpleshare_onboarding_done_${user.id}`) !==
             "true"
           ) {
             setShowOnboarding(true);
@@ -86,7 +86,7 @@ function Header() {
         to="/"
         className="flex gap-4 items-center hover:opacity-80 transition-opacity"
       >
-        <FairShareLogo size={40} />
+        <SimpleShareLogo size={40} />
         <h1 className="text-2xl font-bold tracking-tight">
           Fair<span className="text-fair-purple">Share</span>
         </h1>

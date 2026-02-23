@@ -127,7 +127,7 @@ export default function AdminDashboard() {
     <div className="flex flex-col gap-6">
       <h1 className="text-3xl font-bold tracking-tight">Übersicht</h1>
       <p className="text-muted-foreground">
-        Willkommen im Admin-Panel von FairShare.
+        Willkommen im Admin-Panel von SimpleShare.
       </p>
 
       {loading ? (

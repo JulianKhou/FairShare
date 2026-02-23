@@ -1,5 +1,5 @@
 import { ReactionContract } from "../services/supabaseCollum/reactionContract";
-import { calculateFairShare } from "../services/fairShareAlgo";
+import { calculateSimpleShare } from "../services/simpleShareAlgo";
 
 interface PrepareContractParams {
     videoCreator: any;
@@ -44,7 +44,7 @@ export const prepareContractData = ({
 
     // 2. Recalculate FairShare Metadata
     // We do this here to ensure the contract stores the EXACT snapshot of parameters used at creation time.
-    const fairShareParams = {
+    const simpleShareParams = {
         viewsReactor: videoReactor.views || 0,
         viewsCreator: videoCreator.views || 0,
         durationReactorSeconds: videoReactor.duration_seconds || 10,
@@ -53,7 +53,7 @@ export const prepareContractData = ({
         daysSinceUpload: videoCreator.daysSinceUpload || 0,
     };
 
-    const fairShareScore = calculateFairShare(fairShareParams);
+    const simpleShareScore = calculateSimpleShare(simpleShareParams);
 
     // Hardcoded metadata for now, as in previous logic - usually these would come from the algo result or inputs
     const fairshareMetadata = {
@@ -96,7 +96,7 @@ export const prepareContractData = ({
         pricing_value: pricingValue,
         pricing_currency: "EUR",
 
-        fairshare_score: fairShareScore,
+        fairshare_score: simpleShareScore,
         fairshare_metadata: fairshareMetadata,
 
         accepted_by_licensor: false,

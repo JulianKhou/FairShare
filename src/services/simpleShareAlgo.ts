@@ -2,7 +2,7 @@
  * Konfigurationswerte für den Algorithmus.
  * Ausgelagert, damit sie leicht angepasst werden können.
  */
-const FAIR_SHARE_CONFIG = {
+const SIMPLE_SHARE_CONFIG = {
   BASE_SHARE: 0.5, // Startwert: 50%
   HYPE_WINDOW_DAYS: 2, // Zeitraum für "Hype-Strafe"
   HYPE_FACTOR: 1.5, // Straffaktor
@@ -14,7 +14,7 @@ const FAIR_SHARE_CONFIG = {
  * Interface für die Eingabeparameter.
  * Verwendung eines Objekts statt einzelner Argumente erhöht die Lesbarkeit.
  */
-export interface FairShareParams {
+export interface SimpleShareParams {
   viewsReactor: number; // Ø Views des React-Kanals
   viewsCreator: number; // Ø Views des Original-Creators
   durationReactorSeconds: number; // Länge der Reaction
@@ -26,10 +26,10 @@ export interface FairShareParams {
 /**
  * Berechnet den fairen Revenue-Share basierend auf der Master-Formel.
  *
- * @param params - Das FairShareParams Objekt
+ * @param params - Das SimpleShareParams Objekt
  * @returns number - Der faire Anteil als Dezimalwert (0.0 - 1.0)
  */
-export const calculateFairShare = (params: FairShareParams): number => {
+export const calculateSimpleShare = (params: SimpleShareParams): number => {
   const {
     viewsReactor,
     viewsCreator,
@@ -47,10 +47,10 @@ export const calculateFairShare = (params: FairShareParams): number => {
 
   // 2. Zeit-Faktor (Z) bestimmen
   let timeFactor = 1.0;
-  if (daysSinceUpload <= FAIR_SHARE_CONFIG.HYPE_WINDOW_DAYS) {
-    timeFactor = FAIR_SHARE_CONFIG.HYPE_FACTOR;
-  } else if (daysSinceUpload > FAIR_SHARE_CONFIG.EVERGREEN_DAYS) {
-    timeFactor = FAIR_SHARE_CONFIG.EVERGREEN_FACTOR;
+  if (daysSinceUpload <= SIMPLE_SHARE_CONFIG.HYPE_WINDOW_DAYS) {
+    timeFactor = SIMPLE_SHARE_CONFIG.HYPE_FACTOR;
+  } else if (daysSinceUpload > SIMPLE_SHARE_CONFIG.EVERGREEN_DAYS) {
+    timeFactor = SIMPLE_SHARE_CONFIG.EVERGREEN_FACTOR;
   }
 
   // 3. Content Score berechnen
@@ -58,7 +58,7 @@ export const calculateFairShare = (params: FairShareParams): number => {
   const transformFactor = durationCreatorSeconds / safeReactDuration;
 
   const contentScore =
-    FAIR_SHARE_CONFIG.BASE_SHARE * percentShown * transformFactor * timeFactor;
+    SIMPLE_SHARE_CONFIG.BASE_SHARE * percentShown * transformFactor * timeFactor;
 
   // 4. Reichweiten-Rabatt (E) berechnen
   // Ratio: Wie viel größer ist der Reactor?
@@ -76,7 +76,7 @@ export const calculateFairShare = (params: FairShareParams): number => {
   // 5. Finalisierung
   const finalShare = contentScore * discountFactor;
 
-  console.group("FairShare Calculation Debug");
+  console.group("SimpleShare Calculation Debug");
   console.log("Params:", params);
   console.log("Time Factor:", timeFactor, "(Days:", daysSinceUpload, ")");
   console.log("Transform Factor:", transformFactor, "(Creator:", durationCreatorSeconds, "/ Reactor:", safeReactDuration, ")");

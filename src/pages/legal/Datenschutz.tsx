@@ -66,12 +66,12 @@ export default function Datenschutz() {
             Google/YouTube Login
           </h3>
           <p className="text-muted-foreground text-sm leading-relaxed">
-            Für die Nutzung von FairShare ist eine Anmeldung über Google (OAuth
+            Für die Nutzung von SimpleShare ist eine Anmeldung über Google (OAuth
             2.0) erforderlich. Dabei werden folgende Daten von Google
             übermittelt: Name, E-Mail-Adresse und Profilbild. Zusätzlich
             erhalten wir Zugriff auf Ihre öffentlichen YouTube-Videodaten
             (Titel, Views, Kategorie, Veröffentlichungsdatum), um den
-            FairShare-Algorithmus anzuwenden.
+            SimpleShare-Algorithmus anzuwenden.
           </p>
 
           <h3 className="text-lg font-medium mb-1 mt-4">Supabase</h3>
@@ -133,7 +133,7 @@ export default function Datenschutz() {
         <section>
           <h2 className="text-xl font-semibold mb-2">7. YouTube API</h2>
           <p className="text-muted-foreground text-sm leading-relaxed">
-            FairShare nutzt die YouTube Data API v3. Durch die Nutzung unseres
+            SimpleShare nutzt die YouTube Data API v3. Durch die Nutzung unseres
             Dienstes stimmen Sie den YouTube-Nutzungsbedingungen zu:{" "}
             <a
               href="https://www.youtube.com/t/terms"

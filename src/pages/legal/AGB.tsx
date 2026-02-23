@@ -10,7 +10,7 @@ export default function AGB() {
           <h2 className="text-xl font-semibold mb-2">§ 1 Geltungsbereich</h2>
           <p className="text-muted-foreground text-sm leading-relaxed">
             Diese Allgemeinen Geschäftsbedingungen gelten für die Nutzung der
-            Plattform FairShare (nachfolgend „Plattform") und alle darüber
+            Plattform SimpleShare (nachfolgend „Plattform") und alle darüber
             abgeschlossenen Lizenzverträge zwischen Content-Erstellern
             (nachfolgend „Lizenzgeber") und Reaktions-Erstellern (nachfolgend
             „Lizenznehmer").
@@ -22,12 +22,12 @@ export default function AGB() {
             § 2 Leistungsbeschreibung
           </h2>
           <p className="text-muted-foreground text-sm leading-relaxed">
-            FairShare ist eine Plattform zur Lizenzierung von YouTube-Inhalten
+            SimpleShare ist eine Plattform zur Lizenzierung von YouTube-Inhalten
             für Reaktionsvideos. Die Plattform bietet:
           </p>
           <ul className="text-muted-foreground text-sm list-disc list-inside mt-2 space-y-1">
             <li>
-              Automatische Preisberechnung auf Basis des FairShare-Algorithmus
+              Automatische Preisberechnung auf Basis des SimpleShare-Algorithmus
             </li>
             <li>Verwaltung von Lizenzanfragen und -verträgen</li>
             <li>Sichere Zahlungsabwicklung über Stripe</li>
@@ -53,7 +53,7 @@ export default function AGB() {
           <ul className="text-muted-foreground text-sm list-disc list-inside mt-2 space-y-1">
             <li>
               <strong>Einmalzahlung:</strong> Der Lizenznehmer zahlt einen
-              einmaligen Festpreis, berechnet durch den FairShare-Algorithmus
+              einmaligen Festpreis, berechnet durch den SimpleShare-Algorithmus
               oder den vom Lizenzgeber festgelegten Mindestpreis (je nachdem,
               welcher höher ist).
             </li>
@@ -74,7 +74,7 @@ export default function AGB() {
             Alle Zahlungen werden über den Zahlungsdienstleister Stripe
             abgewickelt. Die Preise verstehen sich inklusive der gesetzlichen
             Mehrwertsteuer. Lizenzgeber müssen ein Stripe Connect-Konto
-            einrichten, um Auszahlungen erhalten zu können. FairShare ist
+            einrichten, um Auszahlungen erhalten zu können. SimpleShare ist
             lediglich Vermittler und nicht Vertragspartei der Lizenzen.
           </p>
         </section>
@@ -82,7 +82,7 @@ export default function AGB() {
         <section>
           <h2 className="text-xl font-semibold mb-2">§ 6 Lizenzumfang</h2>
           <p className="text-muted-foreground text-sm leading-relaxed">
-            Die über FairShare erteilte Lizenz berechtigt den Lizenznehmer
+            Die über SimpleShare erteilte Lizenz berechtigt den Lizenznehmer
             ausschließlich zur Erstellung und Veröffentlichung eines
             Reaktionsvideos auf YouTube unter Verwendung des lizenzierten
             Originalvideos. Eine Unterlizenzierung oder anderweitige Nutzung ist
@@ -105,10 +105,10 @@ export default function AGB() {
         <section>
           <h2 className="text-xl font-semibold mb-2">§ 8 Haftung</h2>
           <p className="text-muted-foreground text-sm leading-relaxed">
-            FairShare haftet nicht für die Inhalte der lizenzierten Videos oder
-            der darauf basierenden Reaktionsvideos. Die Haftung von FairShare
+            SimpleShare haftet nicht für die Inhalte der lizenzierten Videos oder
+            der darauf basierenden Reaktionsvideos. Die Haftung von SimpleShare
             ist auf Fälle von Vorsatz und grober Fahrlässigkeit beschränkt.
-            FairShare übernimmt keine Garantie für die Verfügbarkeit der
+            SimpleShare übernimmt keine Garantie für die Verfügbarkeit der
             Plattform.
           </p>
         </section>
@@ -118,7 +118,7 @@ export default function AGB() {
           <p className="text-muted-foreground text-sm leading-relaxed">
             Nutzer können ihr Konto jederzeit löschen. Bestehende Lizenzverträge
             bleiben hiervon unberührt. Bei Vertragsverletzungen oder Missbrauch
-            behält sich FairShare das Recht vor, Konten zu sperren oder zu
+            behält sich SimpleShare das Recht vor, Konten zu sperren oder zu
             löschen.
           </p>
         </section>

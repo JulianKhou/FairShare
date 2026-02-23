@@ -1,6 +1,6 @@
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
-import { FairShareLogo } from "../components/ui/fairShareLogo";
+import { SimpleShareLogo } from "../components/ui/simpleShareLogo";
 import {
   IconCurrencyDollar,
   IconShieldCheck,
@@ -24,7 +24,7 @@ function LandingPage() {
       {/* Hero Section */}
       <section className="flex flex-col items-center justify-center px-4 py-20 md:py-32 bg-linear-to-b from-fair-purple/10 to-background">
         <div className="flex items-center gap-4 mb-8 animate-fade-in">
-          <FairShareLogo size={80} />
+          <SimpleShareLogo size={80} />
         </div>
 
         <h1 className="text-4xl md:text-6xl font-bold text-center mb-6 tracking-tight animate-fade-in">
@@ -64,7 +64,7 @@ function LandingPage() {
       {/* Features Section */}
       <section className="px-4 py-16 md:py-24 max-w-6xl mx-auto w-full">
         <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
-          Warum FairShare?
+          Warum SimpleShare?
         </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -153,7 +153,7 @@ function LandingPage() {
       {/* Footer */}
       <footer className="mt-auto py-8 px-4 border-t border-border">
         <div className="max-w-6xl mx-auto text-center text-sm text-muted-foreground">
-          <p>© 2026 FairShare. Alle Rechte vorbehalten.</p>
+          <p>© 2026 SimpleShare. Alle Rechte vorbehalten.</p>
         </div>
       </footer>
     </div>
