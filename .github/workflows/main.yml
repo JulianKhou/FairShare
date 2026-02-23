@@ -21,12 +21,16 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
-      - name: Build project
-        env:
-        # These variables will be baked into your Vite frontend code
-         VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-         VITE_SUPABASE_KEY: ${{ secrets.VITE_SUPABASE_KEY }}
+      - name: Build Project
         run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_SUPABASE_KEY: ${{ secrets.VITE_SUPABASE_KEY }} # Füge das sicherheitshalber hinzu
+
+      # NEU: Kopiert die .htaccess in den dist Ordner, damit sie mit hochgeladen wird
+      - name: Copy .htaccess to dist
+        run: cp .htaccess ./dist/ || echo ".htaccess nicht gefunden, überspringe Kopieren"
 
       - name: Deploy via FTPS
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
@@ -38,3 +42,4 @@ jobs:
           protocol: ftps
           local-dir: ./dist/
           server-dir: ./
+          dangerously-allow-unsecure-passive-mode: true
