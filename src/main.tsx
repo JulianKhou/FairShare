@@ -4,7 +4,7 @@ import "./index.css";
 import { AuthProvider } from "./hooks/auth/useAuth.tsx";
 import Header from "./components/header/header.tsx";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Explore from "./pages/explore.tsx";
+import Overview from "./pages/overview.tsx";
 import Upload from "./pages/upload.tsx";
 import { Navigate } from "react-router-dom";
 import LandingPage from "./pages/LandingPage.tsx";
@@ -36,11 +36,11 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
               <main className="flex-1 relative top-[70px]">
                 <Routes>
                   <Route path="/" element={<LandingPage />} />
-                  <Route path="/explore" element={<Explore />} />
+                  <Route path="/overview" element={<Overview />} />
                   <Route path="/upload" element={<Upload />} />
                   <Route
                     path="/my-videos"
-                    element={<Navigate to="/explore?view=mine" replace />}
+                    element={<Navigate to="/overview?view=mine" replace />}
                   />
                   <Route path="/dashboard" element={<UserDashboard />} />
                   <Route path="/profile" element={<UserDashboard />} />

@@ -180,7 +180,7 @@ export const MyLicenses = () => {
             Du hast noch keine Lizenzen erworben. Stöbere in den Videos, um
             Inhalte für deine Reaktionen zu finden.
           </p>
-          <Button onClick={() => (window.location.href = "/explore")}>
+          <Button onClick={() => (window.location.href = "/overview")}>
             Videos entdecken
           </Button>
         </CardContent>

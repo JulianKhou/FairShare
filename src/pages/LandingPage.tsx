@@ -16,7 +16,7 @@ function LandingPage() {
 
   const handleGetStarted = () => {
     // Navigate to explore, which will trigger auth flow if needed
-    navigate("/explore");
+    navigate("/overview");
   };
 
   return (

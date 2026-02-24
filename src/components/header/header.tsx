@@ -118,8 +118,8 @@ function Header() {
             Dashboard
           </NavLink>
         )}
-        <NavLink to="/explore" className={navLinkClasses}>
-          Explore
+        <NavLink to="/overview" className={navLinkClasses}>
+          Übersicht
         </NavLink>
         <NavLink to="/upload" className={navLinkClasses}>
           Upload
