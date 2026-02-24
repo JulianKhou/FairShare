@@ -63,12 +63,20 @@ export default function CreatorProfile() {
           </button>
           
           <div className="flex items-center gap-3">
-            <div className="bg-primary/10 p-2 rounded-full">
-              <IconUserCircle className="w-8 h-8 text-primary" />
-            </div>
+            {profile?.youtube_channel_avatar ? (
+              <img 
+                src={profile.youtube_channel_avatar} 
+                alt={profile.youtube_channel_title || "Kanal Avatar"} 
+                className="w-10 h-10 rounded-full object-cover ring-2 ring-primary/20"
+              />
+            ) : (
+              <div className="bg-primary/10 p-2 rounded-full">
+                <IconUserCircle className="w-8 h-8 text-primary" />
+              </div>
+            )}
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-foreground">
-                {profile?.youtube_channel_title || profile?.full_name || "Unbekannter Kanal"}
+                {profile?.youtube_channel_title || "Unbekannter Kanal"}
               </h1>
               <p className="text-sm text-muted-foreground">
                 Öffentliche Videos

@@ -41,12 +41,13 @@ function Header() {
         }
 
         // Auto-fetch channel data if missing
-        if (profile && !profile.youtube_channel_id) {
+        if (profile && (!profile.youtube_channel_id || !profile.youtube_channel_title || !profile.youtube_channel_avatar)) {
           const channelData = await fetchChannelData();
           if (channelData) {
             await updateProfile(user.id, {
               youtube_channel_id: channelData.id,
               youtube_channel_title: channelData.title,
+              youtube_channel_avatar: channelData.avatar,
               subscriber_count: channelData.subscriberCount,
             });
             // Update local state to remove warning if this was the only missing field
@@ -56,6 +57,7 @@ function Header() {
                     ...prev,
                     youtube_channel_id: channelData.id,
                     youtube_channel_title: channelData.title,
+                    youtube_channel_avatar: channelData.avatar,
                     subscriber_count: channelData.subscriberCount,
                   }
                 : null,

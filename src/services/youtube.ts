@@ -2,7 +2,7 @@ import { supabase } from './supabaseCollum/client';
 import { parseISO8601Duration } from '../lib/utils';
 
 
-export const fetchChannelData = async (): Promise<{ id: string; subscriberCount: number; title: string } | null> => {
+export const fetchChannelData = async (): Promise<{ id: string; subscriberCount: number; title: string; avatar: string } | null> => {
   const { data: { session } } = await supabase.auth.getSession();
   const token = session?.provider_token;
 
@@ -20,7 +20,8 @@ export const fetchChannelData = async (): Promise<{ id: string; subscriberCount:
       return {
         id: item.id,
         subscriberCount: parseInt(item.statistics?.subscriberCount || "0", 10),
-        title: item.snippet?.title || ""
+        title: item.snippet?.title || "",
+        avatar: item.snippet?.thumbnails?.high?.url || item.snippet?.thumbnails?.default?.url || "",
       };
     }
     return null;

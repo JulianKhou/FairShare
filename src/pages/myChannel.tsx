@@ -56,12 +56,20 @@ export default function MyChannel() {
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8 border-b border-border/50 pb-6">
           <div className="flex items-center gap-4">
-            <div className="bg-primary/10 p-3 rounded-full">
-              <IconUserCircle className="w-12 h-12 text-primary" />
-            </div>
+            {profile?.youtube_channel_avatar ? (
+              <img 
+                src={profile.youtube_channel_avatar} 
+                alt={profile.youtube_channel_title || "Mein Kanal Avatar"} 
+                className="w-16 h-16 rounded-full object-cover ring-2 ring-primary/20"
+              />
+            ) : (
+              <div className="bg-primary/10 p-3 rounded-full">
+                <IconUserCircle className="w-12 h-12 text-primary" />
+              </div>
+            )}
             <div>
               <h1 className="text-3xl font-bold tracking-tight text-foreground">
-                {profile?.youtube_channel_title || profile?.full_name || "Mein Kanal"}
+                {profile?.youtube_channel_title || "Mein Kanal"}
               </h1>
               <p className="text-sm text-muted-foreground">
                 Dein öffentliches Creator-Profil

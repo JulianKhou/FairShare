@@ -13,6 +13,7 @@ export interface Profile {
     address_zip?: string;
     youtube_channel_id?: string;
     youtube_channel_title?: string;
+    youtube_channel_avatar?: string;
     subscriber_count?: number;
     stripe_connect_id?: string;
     stripe_customer_id?: string;
