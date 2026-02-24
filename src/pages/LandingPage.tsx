@@ -22,13 +22,13 @@ function LandingPage() {
   return (
     <div className="flex flex-col min-h-screen bg-background">
       {/* Hero Section */}
-      <section className="flex flex-col items-center justify-center px-4 py-20 md:py-32 bg-linear-to-b from-fair-purple/10 to-background">
+      <section className="flex flex-col items-center justify-center px-4 py-20 md:py-32 bg-linear-to-b from-simple-purple/10 to-background">
         <div className="flex items-center gap-4 mb-8 animate-fade-in">
           <SimpleShareLogo size={80} />
         </div>
 
         <h1 className="text-4xl md:text-6xl font-bold text-center mb-6 tracking-tight animate-fade-in">
-          Fair<span className="text-fair-purple">Share</span>
+          Fair<span className="text-simple-purple">Share</span>
         </h1>
 
         <p className="text-xl md:text-2xl text-center mb-4 text-muted-foreground max-w-2xl animate-fade-in">
@@ -53,7 +53,7 @@ function LandingPage() {
               onClick={handleLogin}
               size="lg"
               variant="outline"
-              className="text-lg px-8 py-6 hover:scale-105 transition-transform bg-background/50 backdrop-blur-md border-fair-purple/50 text-foreground hover:bg-fair-purple/20"
+              className="text-lg px-8 py-6 hover:scale-105 transition-transform bg-background/50 backdrop-blur-md border-simple-purple/50 text-foreground hover:bg-simple-purple/20"
             >
               Anmelden
             </Button>
@@ -71,8 +71,8 @@ function LandingPage() {
           {/* Feature 1: Fair Prices */}
           <Card className="p-6 hover:shadow-lg transition-shadow">
             <div className="flex justify-center mb-4">
-              <div className="p-3 bg-fair-purple/10 rounded-full">
-                <IconCurrencyDollar size={40} className="text-fair-purple" />
+              <div className="p-3 bg-simple-purple/10 rounded-full">
+                <IconCurrencyDollar size={40} className="text-simple-purple" />
               </div>
             </div>
             <h3 className="text-xl font-semibold text-center mb-3">
@@ -87,8 +87,8 @@ function LandingPage() {
           {/* Feature 2: Easy Processing */}
           <Card className="p-6 hover:shadow-lg transition-shadow">
             <div className="flex justify-center mb-4">
-              <div className="p-3 bg-fair-teal/10 rounded-full">
-                <IconBolt size={40} className="text-fair-teal" />
+              <div className="p-3 bg-simple-teal/10 rounded-full">
+                <IconBolt size={40} className="text-simple-teal" />
               </div>
             </div>
             <h3 className="text-xl font-semibold text-center mb-3">
@@ -119,7 +119,7 @@ function LandingPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="px-4 py-16 md:py-24 bg-linear-to-t from-fair-purple/10 to-background">
+      <section className="px-4 py-16 md:py-24 bg-linear-to-t from-simple-purple/10 to-background">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">
             Bereit loszulegen?
@@ -141,7 +141,7 @@ function LandingPage() {
                 onClick={handleLogin}
                 size="lg"
                 variant="outline"
-                className="text-lg px-8 py-6 hover:scale-105 transition-transform bg-background/50 backdrop-blur-md border-fair-purple/50 text-foreground hover:bg-fair-purple/20"
+                className="text-lg px-8 py-6 hover:scale-105 transition-transform bg-background/50 backdrop-blur-md border-simple-purple/50 text-foreground hover:bg-simple-purple/20"
               >
                 Anmelden
               </Button>

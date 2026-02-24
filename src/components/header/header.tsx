@@ -88,7 +88,7 @@ function Header() {
       >
         <SimpleShareLogo size={40} />
         <h1 className="text-2xl font-bold tracking-tight">
-          Fair<span className="text-fair-purple">Share</span>
+          Simple<span className="text-simple-purple">Share</span>
         </h1>
       </NavLink>
       {userProfile &&
@@ -127,7 +127,7 @@ function Header() {
       </nav>
 
       {/* Suche */}
-      <div className="flex gap-2 items-center bg-white/5 rounded-full px-4 py-1 border border-white/10 focus-within:border-fair-teal/50 transition-all">
+      <div className="flex gap-2 items-center bg-white/5 rounded-full px-4 py-1 border border-white/10 focus-within:border-simple-teal/50 transition-all">
         <input
           type="text"
           placeholder="Search..."

@@ -2,7 +2,7 @@
 import { useAuth } from "../../hooks/auth/useAuth";
 function ProfileIcon() {
     const { user,loading } = useAuth();
-    const userIcon = user?.user_metadata.avatar_url || "../../assets/profile-circle-svgrepo-com.svg";
+    const userIcon = user?.user_metadata.avatar_url || "../src/assets/profile-circle-svgrepo-com.svg";
     
     return (
         <div className="flex items-center gap-2 border-2 border-gray-500 rounded-full ">

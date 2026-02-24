@@ -31,7 +31,7 @@ export default function Datenschutz() {
             <br />
             [PLZ und Ort]
             <br />
-            E-Mail: kontakt@fairshare.de
+            E-Mail: kontakt@simpleshare.de
           </p>
         </section>
 

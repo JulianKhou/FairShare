@@ -49,10 +49,10 @@
 
 :root {
   /* Main Colors */
-  --fair-purple: #a855f7;
-  --fair-teal: #2dd4bf;
-  --fair-bg: #0f172a;
-  --fair-surface: #1e293b;
+  --simple-purple: #a855f7;
+  --simple-teal: #2dd4bf;
+  --simple-bg: #0f172a;
+  --simple-surface: #1e293b;
 
   /* Shadcn Mapping (Dark Mode Default) */
   --radius: 0.625rem;
@@ -72,7 +72,7 @@
   --secondary-foreground: oklch(0.21 0.006 285.885);
 
   --muted: oklch(0.97 0 0); /* Slate-700 */
-  --muted-foreground: oklch(0.556 0 0); /* Slate-400 */
+  --muted-foreground: oklch(20.443% 0.00252 16.017); /* Slate-400 */
 
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
@@ -126,7 +126,7 @@
   --secondary: oklch(0.274 0.006 286.033);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
+  --muted-foreground: oklch(81.406% 0.00009 271.152);
   --accent: oklch(0.371 0 0);
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.704 0.191 22.216);

@@ -42,7 +42,7 @@ export const prepareContractData = ({
     }
 
 
-    // 2. Recalculate FairShare Metadata
+    // 2. Recalculate SimpleShare Metadata
     // We do this here to ensure the contract stores the EXACT snapshot of parameters used at creation time.
     const simpleShareParams = {
         viewsReactor: videoReactor.views || 0,
@@ -59,7 +59,7 @@ export const prepareContractData = ({
     const fairshareMetadata = {
         marktmacht_score: 0.5, // Placeholder
         schoepferische_leistung: 0.5, // Placeholder
-        parameter_dokumentation_url: "https://fairshare.com/algo/v1",
+        parameter_dokumentation_url: "https://simpleshare.com/algo/v1",
     };
 
     // 3. Extract Channel Names
