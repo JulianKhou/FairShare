@@ -57,7 +57,8 @@ export default function AdminUsers() {
               <TableHeader>
                 <TableRow>
                   <TableHead>UUID</TableHead>
-                  <TableHead>Name</TableHead>
+                  <TableHead>Kanal Name</TableHead>
+                  <TableHead>Vollständiger Name</TableHead>
                   <TableHead>Rolle</TableHead>
                   <TableHead>YouTube ID</TableHead>
                 </TableRow>
@@ -72,7 +73,10 @@ export default function AdminUsers() {
                       {profile.id.substring(0, 12)}...
                     </TableCell>
                     <TableCell className="font-medium">
-                      {profile.full_name || "Unbekannt"}
+                      {profile.youtube_channel_title || <span className="text-muted-foreground italic text-xs">Ohne Kanal</span>}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {profile.full_name || <span className="italic text-xs">Fehlt</span>}
                     </TableCell>
                     <TableCell>
                       {profile.is_admin ? (
@@ -97,7 +101,7 @@ export default function AdminUsers() {
                 {profiles.length === 0 && (
                   <TableRow>
                     <TableCell
-                      colSpan={4}
+                      colSpan={5}
                       className="text-center text-muted-foreground py-8"
                     >
                       Keine Profile gefunden.

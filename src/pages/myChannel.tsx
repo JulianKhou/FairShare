@@ -61,7 +61,7 @@ export default function MyChannel() {
             </div>
             <div>
               <h1 className="text-3xl font-bold tracking-tight text-foreground">
-                {profile?.full_name || "Mein Kanal"}
+                {profile?.youtube_channel_title || profile?.full_name || "Mein Kanal"}
               </h1>
               <p className="text-sm text-muted-foreground">
                 Dein öffentliches Creator-Profil

@@ -46,6 +46,7 @@ function Header() {
           if (channelData) {
             await updateProfile(user.id, {
               youtube_channel_id: channelData.id,
+              youtube_channel_title: channelData.title,
               subscriber_count: channelData.subscriberCount,
             });
             // Update local state to remove warning if this was the only missing field
@@ -54,6 +55,7 @@ function Header() {
                 ? {
                     ...prev,
                     youtube_channel_id: channelData.id,
+                    youtube_channel_title: channelData.title,
                     subscriber_count: channelData.subscriberCount,
                   }
                 : null,
@@ -113,17 +115,17 @@ function Header() {
 
       {/* Navigation */}
       <nav className="flex gap-8 h-full">
+        <NavLink to="/overview" className={navLinkClasses}>
+          Übersicht
+        </NavLink>
+        <NavLink to="/my-channel" className={navLinkClasses}>
+          Meine Videos
+        </NavLink>
         {user && (
           <NavLink to="/dashboard" className={navLinkClasses}>
             Dashboard
           </NavLink>
         )}
-        <NavLink to="/overview" className={navLinkClasses}>
-          Übersicht
-        </NavLink>
-        <NavLink to="/my-channel" className={navLinkClasses}>
-          Mein Kanal
-        </NavLink>
       </nav>
 
       {/* Suche */}

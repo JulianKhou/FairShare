@@ -2,7 +2,7 @@ import { supabase } from './supabaseCollum/client';
 import { parseISO8601Duration } from '../lib/utils';
 
 
-export const fetchChannelData = async (): Promise<{ id: string; subscriberCount: number } | null> => {
+export const fetchChannelData = async (): Promise<{ id: string; subscriberCount: number; title: string } | null> => {
   const { data: { session } } = await supabase.auth.getSession();
   const token = session?.provider_token;
 
@@ -10,17 +10,18 @@ export const fetchChannelData = async (): Promise<{ id: string; subscriberCount:
 
   try {
     const channelRes = await fetch(
-      'https://www.googleapis.com/youtube/v3/channels?part=id,statistics&mine=true',
+      'https://www.googleapis.com/youtube/v3/channels?part=id,statistics,snippet&mine=true',
       { headers: { Authorization: `Bearer ${token}` } }
     );
     const channelData = await channelRes.json();
     const item = channelData.items?.[0];
-    
+
     if (item) {
-        return {
-            id: item.id,
-            subscriberCount: parseInt(item.statistics?.subscriberCount || "0", 10)
-        };
+      return {
+        id: item.id,
+        subscriberCount: parseInt(item.statistics?.subscriberCount || "0", 10),
+        title: item.snippet?.title || ""
+      };
     }
     return null;
   } catch (e) {

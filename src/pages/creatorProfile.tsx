@@ -68,7 +68,7 @@ export default function CreatorProfile() {
             </div>
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-foreground">
-                {profile?.full_name || "Unbekannter Creator"}
+                {profile?.youtube_channel_title || profile?.full_name || "Unbekannter Kanal"}
               </h1>
               <p className="text-sm text-muted-foreground">
                 Öffentliche Videos

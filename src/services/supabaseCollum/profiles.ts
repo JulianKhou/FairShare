@@ -12,6 +12,7 @@ export interface Profile {
     address_city?: string;
     address_zip?: string;
     youtube_channel_id?: string;
+    youtube_channel_title?: string;
     subscriber_count?: number;
     stripe_connect_id?: string;
     stripe_customer_id?: string;
@@ -59,6 +60,21 @@ export const updateProfile = async (userId: string, updates: Partial<Profile>) =
         throw error;
     }
     return data as Profile;
+};
+
+export const getProfilesByIds = async (userIds: string[]) => {
+    if (!userIds || userIds.length === 0) return [];
+
+    const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .in("id", userIds);
+
+    if (error) {
+        console.error("Error fetching profiles by ids:", error);
+        return [];
+    }
+    return data as Profile[];
 };
 
 export const isProfileComplete = (profile: Profile): boolean => {
