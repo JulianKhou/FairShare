@@ -73,7 +73,7 @@ function Header() {
 
   // Gemeinsame Styles für alle Nav-Links
   const navLinkClasses = ({ isActive }: { isActive: boolean }) =>
-    `flex items-center h-full px-2 border-b-2 transition-all ${
+    `flex items-center h-full px-2 border-b-2 transition-colors ${
       isActive
         ? "border-primary text-primary"
         : "border-transparent text-card-foreground bg-background hover:text-primary hover:border-primary"

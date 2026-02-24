@@ -33,19 +33,28 @@ export function ThemeProvider({
   useEffect(() => {
     const root = window.document.documentElement;
 
-    root.classList.remove("light", "dark");
+    const resolvedTheme =
+      theme === "system"
+        ? window.matchMedia("(prefers-color-scheme: dark)").matches
+          ? "dark"
+          : "light"
+        : theme;
 
-    if (theme === "system") {
-      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
-        .matches
-        ? "dark"
-        : "light";
+    const otherTheme = resolvedTheme === "dark" ? "light" : "dark";
 
-      root.classList.add(systemTheme);
-      return;
-    }
+    // Disable transitions to prevent flickering during theme switch
+    root.classList.add("disable-transitions");
 
-    root.classList.add(theme);
+    // Only remove the opposite theme, then add the resolved one
+    root.classList.remove(otherTheme);
+    root.classList.add(resolvedTheme);
+
+    // Re-enable transitions after the browser has painted
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        root.classList.remove("disable-transitions");
+      }, 0);
+    });
   }, [theme]);
 
   const value = {

@@ -3,7 +3,7 @@ import ShowVideoList from "../components/showVideos/showVideoList";
 import LoadVideosButton from "../components/showVideos/loadVideosButton";
 import { useAuth } from "../hooks/auth/useAuth";
 import { useSearchParams } from "react-router-dom";
-import { IconVideoOff } from "@tabler/icons-react";
+import { IconVideoOff, IconWorld, IconFolder } from "@tabler/icons-react";
 
 type VideoMode = "public" | "mine";
 
@@ -52,7 +52,7 @@ function Overview() {
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              🌐 Öffentlich
+              <IconWorld className="h-4 w-4 inline-block" /> Öffentlich
             </button>
             <button
               onClick={() => switchMode("mine")}
@@ -62,7 +62,7 @@ function Overview() {
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              🎥 Meine Videos
+              <IconFolder className="h-4 w-4 inline-block" /> Meine Videos
             </button>
           </div>
         </div>

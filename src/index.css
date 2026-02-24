@@ -156,3 +156,9 @@
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
 }
+
+/* Suppress all transitions during theme switch to prevent flickering */
+html.disable-transitions,
+html.disable-transitions * {
+  transition: none !important;
+}

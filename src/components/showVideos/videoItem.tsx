@@ -48,6 +48,11 @@ export const VideoItem = ({
           >
             {video.title}
           </h3>
+          {userId !== video.creator_id && video.channel_title && (
+            <p className="text-xs text-muted-foreground/80 font-medium truncate">
+              {video.channel_title}
+            </p>
+          )}
           <p className="text-muted-foreground text-xs font-medium">
             {video.last_view_count?.toLocaleString()} Aufrufe
           </p>
