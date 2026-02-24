@@ -2,6 +2,7 @@ import { useToggle } from "../../hooks/useToggle";
 import { VideoDetails } from "./videoDetails";
 import { createPortal } from "react-dom";
 import { Backdrop } from "../utility/backdrop";
+import { Link } from "react-router-dom";
 
 export const VideoItem = ({
   video,
@@ -49,9 +50,13 @@ export const VideoItem = ({
             {video.title}
           </h3>
           {userId !== video.creator_id && video.channel_title && (
-            <p className="text-xs text-muted-foreground/80 font-medium truncate">
+            <Link 
+              to={`/creator/${video.creator_id}`}
+              onClick={(e) => e.stopPropagation()}
+              className="group/link text-xs text-muted-foreground/80 font-medium truncate hover:text-primary transition-colors flex items-center gap-1"
+            >
               {video.channel_title}
-            </p>
+            </Link>
           )}
           <p className="text-muted-foreground text-xs font-medium">
             {video.last_view_count?.toLocaleString()} Aufrufe
