@@ -121,8 +121,8 @@ function Header() {
         <NavLink to="/overview" className={navLinkClasses}>
           Übersicht
         </NavLink>
-        <NavLink to="/upload" className={navLinkClasses}>
-          Upload
+        <NavLink to="/my-channel" className={navLinkClasses}>
+          Mein Kanal
         </NavLink>
       </nav>
 
