@@ -25,6 +25,7 @@ import Impressum from "./pages/legal/Impressum.tsx";
 import Datenschutz from "./pages/legal/Datenschutz.tsx";
 import AGB from "./pages/legal/AGB.tsx";
 import Footer from "./components/Footer.tsx";
+import VideoPage from "./pages/VideoPage.tsx";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
@@ -47,6 +48,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                   <Route path="/dashboard" element={<UserDashboard />} />
                   <Route path="/profile" element={<UserDashboard />} />
                   <Route path="/creator/:id" element={<CreatorProfile />} />
+                  <Route path="/video/:videoId" element={<VideoPage />} />
                   <Route path="/my-channel" element={<MyChannel />} />
                   <Route path="/settings" element={<SettingsPage />} />
 
