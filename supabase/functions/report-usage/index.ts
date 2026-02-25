@@ -11,6 +11,8 @@ serve(async (req) => {
     }
 
     try {
+        const { contractId, mockViews } = await req.json().catch(() => ({}));
+
         const supabaseClient = createClient(
             Deno.env.get("SUPABASE_URL") ?? "",
             Deno.env.get("SERVICE_ROLE_KEY") ?? "",
@@ -21,7 +23,7 @@ serve(async (req) => {
         });
 
         // 1. Fetch Active Subscription Contracts
-        const { data: contracts, error } = await supabaseClient
+        let query = supabaseClient
             .from("reaction_contracts")
             .select(
                 "id, stripe_subscription_id, reaction_video_id, last_reported_view_count, pricing_model_type",
@@ -29,6 +31,12 @@ serve(async (req) => {
             .eq("status", "ACTIVE")
             .eq("pricing_model_type", 2) // Views-based billing only
             .not("stripe_subscription_id", "is", null);
+
+        if (contractId) {
+            query = query.eq("id", contractId);
+        }
+
+        const { data: contracts, error } = await query;
 
         if (error) throw error;
 
@@ -38,10 +46,17 @@ serve(async (req) => {
 
         for (const contract of contracts || []) {
             try {
-                // 2. Fetch Current Views from YouTube
-                const currentViews = await fetchYouTubeViews(
-                    contract.reaction_video_id,
-                );
+                // 2. Fetch Current Views (or use mock if provided)
+                let currentViews: number | null = null;
+
+                if (contractId === contract.id && typeof mockViews === "number") {
+                    console.log(`🧪 Using MOCK views for contract ${contract.id}: ${mockViews}`);
+                    currentViews = mockViews;
+                } else {
+                    currentViews = await fetchYouTubeViews(
+                        contract.reaction_video_id,
+                    );
+                }
 
                 if (currentViews === null) {
                     console.warn(`⚠️  Could not fetch views for video ${contract.reaction_video_id}`);
@@ -111,12 +126,12 @@ serve(async (req) => {
                         status: "no_change",
                     });
                 }
-            } catch (e) {
+            } catch (e: any) {
                 console.error(`Error processing contract ${contract.id}:`, e);
                 reportResults.push({
                     id: contract.id,
                     status: "error",
-                    error: e.message,
+                    error: (e as Error).message,
                 });
             }
         }
@@ -127,7 +142,7 @@ serve(async (req) => {
         });
     } catch (error) {
         console.error("Error in report-usage:", error);
-        return new Response(JSON.stringify({ error: error.message }), {
+        return new Response(JSON.stringify({ error: (error as Error).message }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
             status: 400,
         });

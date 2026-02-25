@@ -337,7 +337,36 @@ export default function AdminContracts() {
               </div>
 
               {/* Admin Actions */}
-              <div className="mt-4 flex justify-end pt-4 border-t border-muted/20">
+              <div className="mt-4 flex flex-wrap gap-4 justify-end pt-4 border-t border-muted/20">
+                {selectedContract.status === "ACTIVE" &&
+                  selectedContract.pricing_model_type === 2 && (
+                    <Button
+                      variant="outline"
+                      className="border-yellow-500 text-yellow-600 hover:bg-yellow-500/10"
+                      onClick={async () => {
+                        const mockViews =
+                          (selectedContract.last_reported_view_count || 0) +
+                          5000;
+                        toast.promise(
+                          import(
+                            "@/services/supabaseCollum/reactionContract"
+                          ).then((m) =>
+                            m.adminReportUsage(selectedContract.id, mockViews),
+                          ),
+                          {
+                            loading: "Sende Test-Views...",
+                            success: (res: any) => {
+                              console.log("Mock report result:", res);
+                              return `Erfolgreich gemeldet! (Delta: ${res.processed[0]?.viewsDelta || "Unbekannt"})`;
+                            },
+                            error: "Fehler beim Melden der Test-Views",
+                          },
+                        );
+                      }}
+                    >
+                      Test: +5000 Views melden
+                    </Button>
+                  )}
                 <Button
                   variant="destructive"
                   onClick={handleDeleteContract}

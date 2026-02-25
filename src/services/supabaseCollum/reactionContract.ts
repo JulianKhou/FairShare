@@ -221,3 +221,11 @@ export const withdrawReactionContract = async (contractId: string) => {
     if (error) throw error;
     return true;
 };
+
+export const adminReportUsage = async (contractId: string, mockViews: number) => {
+    const { data, error } = await supabase.functions.invoke("report-usage", {
+        body: { contractId, mockViews },
+    });
+    if (error) throw error;
+    return data;
+};
