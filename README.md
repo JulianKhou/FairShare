@@ -1,16 +1,59 @@
-# React + Vite
+# SimpleShare
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+![SimpleShare Logo](src/assets/simpleShareLogo.svg)
+<!-- Add this later if there is an actual file or remove it -->
 
-Currently, two official plugins are available:
+**SimpleShare** ist eine Plattform, auf der du deine Videos verkaufen oder
+Lizenzen erwerben kannst, um Creator zu unterstützen. Alles fair, transparent
+und rechtssicher.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🚀 Technologien
 
-## React Compiler
+Dieses Projekt wurde mit modernsten Webtechnologien entwickelt:
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **Frontend:** [React](https://reactjs.org/) + [Vite](https://vitejs.dev/) +
+  TypeScript
+- **Styling:** [Tailwind CSS](https://tailwindcss.com/)
+- **UI Komponenten:** [shadcn/ui](https://ui.shadcn.com/)
+- **Icons:** [Tabler Icons](https://tablericons.com/)
+- **Backend & Datenbank:** [Supabase](https://supabase.com/)
+- **Zahlungsabwicklung:** [Stripe](https://stripe.com/)
 
-## Expanding the ESLint configuration
+## 🛠️ Entwicklungsserver starten
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Um das Projekt lokal auszuführen, folge diesen Schritten:
+
+1. **Abhängigkeiten installieren:**
+   ```bash
+   npm install
+   ```
+
+2. **Entwicklungsserver starten:**
+   ```bash
+   npm run dev
+   ```
+
+3. Öffne `http://localhost:5173` in deinem Browser.
+
+## 📦 Build für Produktion
+
+Um eine optimierte Version für die Produktion zu erstellen:
+
+```bash
+npm run build
+```
+
+Das generierte Bundle befindet sich anschließend im `dist`-Ordner.
+
+## 🔑 Umgebungsvariablen
+
+Bevor du das Projekt startest, stelle sicher, dass du die benötigten
+Umgebungsvariablen (`.env` oder `.env.local` Datei) konfiguriert hast, unter
+anderem für:
+
+- Supabase (URL & Anon Key)
+- Stripe (Private/Public Keys)
+
+## 📄 Lizenz
+
+SimpleShare - Alle Rechte vorbehalten.

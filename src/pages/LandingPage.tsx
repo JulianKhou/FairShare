@@ -28,7 +28,7 @@ function LandingPage() {
         </div>
 
         <h1 className="text-4xl md:text-6xl font-bold text-center mb-6 tracking-tight animate-fade-in">
-          Fair<span className="text-simple-purple">Share</span>
+          Simple<span className="text-simple-purple">Share</span>
         </h1>
 
         <p className="text-xl md:text-2xl text-center mb-4 text-muted-foreground max-w-2xl animate-fade-in">
@@ -36,7 +36,7 @@ function LandingPage() {
         </p>
 
         <p className="text-base md:text-lg text-center mb-8 text-muted-foreground max-w-3xl animate-fade-in">
-          Verkaufe deine Videos oder kaufe Lizenzen für exklusiven Content.
+          Verkaufe deine Videos oder kaufe Lizenzen um Creator zu unterstützen.
           Fair, transparent und rechtssicher.
         </p>
 

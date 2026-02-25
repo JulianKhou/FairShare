@@ -6,7 +6,10 @@ export const fetchChannelData = async (): Promise<{ id: string; subscriberCount:
   const { data: { session } } = await supabase.auth.getSession();
   const token = session?.provider_token;
 
-  if (!token) return null; // Silent fail if no token
+  if (!token) {
+    console.warn("fetchChannelData: Kein Google Provider Token in der Session gefunden. Bitte neu einloggen.");
+    return null; // Silent fail if no token
+  }
 
   try {
     const channelRes = await fetch(
