@@ -73,6 +73,21 @@ serve(async (req) => {
           updatePayload.status = "ACTIVE";
           if (typeof session.subscription === "string") {
             updatePayload.stripe_subscription_id = session.subscription;
+
+            // SCHEDULING 1-YEAR AUTO-CANCELLATION
+            try {
+              // Get current date, add exactly 1 year, and convert to unix timestamp (seconds).
+              const oneYearFromNow = new Date();
+              oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+              const cancelAtUnixTimestamp = Math.floor(oneYearFromNow.getTime() / 1000);
+
+              await stripe.subscriptions.update(session.subscription, {
+                cancel_at: cancelAtUnixTimestamp,
+              });
+              console.log(`⏱️ Scheduled subscription ${session.subscription} to auto-cancel on ${oneYearFromNow.toISOString()}`);
+            } catch (err: any) {
+              console.error("❌ Failed to set cancel_at for subscription:", err);
+            }
           }
           if (typeof session.customer === "string") {
             updatePayload.stripe_customer_id = session.customer;
