@@ -59,7 +59,7 @@ export default function VideoPage() {
       <VideoDetails
         video={video}
         isOpen={true}
-        onClose={() => navigate(-1)}
+        onClose={() => navigate("/overview")}
         mode="public"
       />
     </div>
