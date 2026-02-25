@@ -20,7 +20,7 @@ function LandingPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
+    <div className="flex flex-col flex-1 bg-background">
       {/* Hero Section */}
       <section className="flex flex-col items-center justify-center px-4 py-20 md:py-32 bg-linear-to-b from-simple-purple/10 to-background">
         <div className="flex items-center gap-4 mb-8 animate-fade-in">
@@ -150,12 +150,6 @@ function LandingPage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="mt-auto py-8 px-4 border-t border-border">
-        <div className="max-w-6xl mx-auto text-center text-sm text-muted-foreground">
-          <p>© 2026 SimpleShare. Alle Rechte vorbehalten.</p>
-        </div>
-      </footer>
     </div>
   );
 }

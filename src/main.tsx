@@ -36,7 +36,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             <div className="flex flex-col min-h-screen">
               <Header />
 
-              <main className="flex-1 relative top-[70px]">
+              <main className="flex-1 pt-20">
                 <Routes>
                   <Route path="/" element={<LandingPage />} />
                   <Route path="/overview" element={<Overview />} />
