@@ -112,6 +112,17 @@ export const updateReactionContract = async (
 };
 
 export const deleteReactionContract = async (id: string) => {
+    // 1. Try to cancel Stripe Subscription first, if it exists
+    try {
+        await supabase.functions.invoke("cancel-subscription", {
+            body: { contractId: id }
+        });
+    } catch (e) {
+        console.error("Failed to cancel Stripe subscription before deletion:", e);
+        // Continue with deletion anyway to avoid orphan UI records if Stripe edge case fails
+    }
+
+    // 2. Delete from Database
     const { data, error } = await supabase.from("reaction_contracts").delete()
         .eq("id", id);
     if (error) throw error;
@@ -120,12 +131,21 @@ export const deleteReactionContract = async (id: string) => {
 
 // Spezielle Funktion für Admins (Ohne RLS/Business Logic Restriktionen im Code)
 export const adminDeleteReactionContract = async (id: string) => {
-    // 1. Delete
+    // 1. Try to cancel Stripe Subscription first
+    try {
+        await supabase.functions.invoke("cancel-subscription", {
+            body: { contractId: id }
+        });
+    } catch (e) {
+        console.error("Admin: Failed to cancel Stripe subscription before deletion:", e);
+    }
+
+    // 2. Delete
     const { data, error } = await supabase.from("reaction_contracts").delete()
         .eq("id", id);
     if (error) throw error;
 
-    // 2. Check if really deleted (RLS might absorb the delete without error)
+    // 3. Check if really deleted (RLS might absorb the delete without error)
     const { data: checkData, error: checkError } = await supabase.from("reaction_contracts").select("id").eq("id", id).maybeSingle();
 
     if (checkData) {
