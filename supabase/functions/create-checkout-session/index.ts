@@ -174,7 +174,7 @@ serve(async (req) => {
         unit_amount: amount,
         recurring: {
           interval: "month",
-          interval_count: 3, // Quarterly
+          interval_count: 1, // Change from 3 (Quarterly) to 1 (Monthly) to fix confusing Checkout UI
           usage_type: "metered",
           aggregate_usage: "sum",
         },

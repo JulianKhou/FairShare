@@ -80,10 +80,8 @@ serve(async (req) => {
                     );
                     const itemId = subscription.items.data[0].id;
 
-                    // Report units: 1 unit = 1000 views (matches pricing from getPrices.ts)
-                    // Use Math.floor to only bill full units; remainder carries over to next report
+                    // Report units: 1 unit = 1000 views
                     const unitsToReport = Math.floor(delta / 1000);
-                    // Track actual views consumed (in multiples of 1000)
                     const viewsConsumed = unitsToReport * 1000;
 
                     if (unitsToReport > 0) {
@@ -97,7 +95,6 @@ serve(async (req) => {
                         );
 
                         // 4. Update Database — only add the views we actually billed
-                        // Remaining views (delta % 1000) carry over to next report
                         await supabaseClient
                             .from("reaction_contracts")
                             .update({ last_reported_view_count: lastReported + viewsConsumed })

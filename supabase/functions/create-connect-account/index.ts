@@ -11,7 +11,7 @@ serve(async (req) => {
   }
 
   console.log("Request Headers:", Object.fromEntries(req.headers.entries()));
-  
+
   try {
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
@@ -29,14 +29,14 @@ serve(async (req) => {
     } = await supabaseClient.auth.getUser();
 
     if (authError) {
-        console.error("Auth Error:", authError);
+      console.error("Auth Error:", authError);
     }
 
     if (!user) {
       console.error("No user found in auth.getUser()");
       throw new Error("User not found");
     }
-    
+
     console.log("User authenticated:", user.id);
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") ?? "", {
@@ -76,20 +76,44 @@ serve(async (req) => {
       if (updateError) throw updateError;
     }
 
-    // 4. Create an Account Link for onboarding
-    const accountLink = await stripe.accountLinks.create({
-      account: stripeConnectId,
-      refresh_url: `${req.headers.get("origin")}/settings?refresh=true`, // Redirect back to settings on refresh/cancel
-      return_url: `${req.headers.get("origin")}/settings?success=true`, // Redirect back on success
-      type: "account_onboarding",
-    });
+    // Resolve Origin safely
+    let origin = req.headers.get("origin");
+    if (!origin) {
+      origin = Deno.env.get("PUBLIC_APP_URL") || "https://simpleshare.eu";
+      console.warn("Origin header missing, falling back to:", origin);
+    }
 
-    return new Response(JSON.stringify({ url: accountLink.url }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 200,
-    });
-  } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
+    try {
+      // 4. Create an Account Link for onboarding
+      const accountLink = await stripe.accountLinks.create({
+        account: stripeConnectId,
+        refresh_url: `${origin}/settings?refresh=true`, // Redirect back to settings on refresh/cancel
+        return_url: `${origin}/settings?success=true`, // Redirect back on success
+        type: "account_onboarding",
+      });
+
+      return new Response(JSON.stringify({ url: accountLink.url }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    } catch (stripeError: any) {
+      console.error("Stripe accountLink creation failed:", stripeError);
+
+      // If the account doesn't exist (e.g. deleted in test mode), clear it from DB
+      if (stripeError.code === "resource_missing") {
+        console.log("Stripe account is missing, clearing from DB.");
+        await supabaseClient
+          .from("profiles")
+          .update({ stripe_connect_id: null })
+          .eq("id", user.id);
+        throw new Error("Stripe Account wurde nicht gefunden (evtl. gelöscht). Bitte versuche es erneut, um einen neuen Account zu erstellen.");
+      }
+
+      throw stripeError;
+    }
+  } catch (error: any) {
+    console.error("Edge Function Error:", error);
+    return new Response(JSON.stringify({ error: error.message || "Unknown error" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 400,
     });

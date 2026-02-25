@@ -36,7 +36,7 @@ serve(async (req) => {
       signature,
       webhookSecret,
     );
-  } catch (err) {
+  } catch (err: any) {
     console.error(`⚠️  Webhook signature verification failed:`, err.message);
     return new Response(`Webhook Error: ${err.message}`, { status: 400 });
   }
@@ -93,6 +93,28 @@ serve(async (req) => {
 
         console.log("✅ DB Update successful:", updateData);
 
+        // Record Revenue for One-Time Payments
+        if (updateData && updateData.length > 0 && session.mode === "payment" && session.payment_status === "paid") {
+          const contract = updateData[0];
+          const amountCents = session.amount_total || 0;
+          if (amountCents > 0) {
+            const { error: revenueError } = await supabaseClient.from("revenue_events").insert({
+              contract_id: contract.id,
+              licensor_id: contract.licensor_id,
+              licensee_id: contract.licensee_id,
+              amount_cents: amountCents,
+              currency: session.currency || "eur",
+              stripe_session_id: session.id,
+              payment_type: "ONE_TIME"
+            });
+            if (revenueError) {
+              console.error("❌ Failed to insert revenue event:", revenueError);
+            } else {
+              console.log(`✅ Revenue event recorded for ONE_TIME payment (${amountCents} cents)`);
+            }
+          }
+        }
+
         // 2. Trigger License Generation
         console.log("🚀 Triggering generate-license-pdf...");
         const { data: funcData, error: functionError } = await supabaseClient
@@ -132,17 +154,39 @@ serve(async (req) => {
       console.log(`   Period: ${new Date((invoice.period_start || 0) * 1000).toISOString()} - ${new Date((invoice.period_end || 0) * 1000).toISOString()}`);
 
       // Ensure contract status stays ACTIVE after successful payment
-      const { error: invoicePaidError } = await supabaseClient
+      const { data: contractData, error: invoicePaidError } = await supabaseClient
         .from("reaction_contracts")
         .update({
           status: "ACTIVE",
         })
-        .eq("stripe_subscription_id", subscriptionId);
+        .eq("stripe_subscription_id", subscriptionId)
+        .select();
 
       if (invoicePaidError) {
         console.error("❌ Failed to update contract after invoice.paid:", invoicePaidError);
       } else {
         console.log("✅ Contract confirmed ACTIVE after successful payment");
+
+        if (contractData && contractData.length > 0) {
+          const contract = contractData[0];
+          const amountCents = invoice.amount_paid || 0;
+          if (amountCents > 0) {
+            const { error: revenueError } = await supabaseClient.from("revenue_events").insert({
+              contract_id: contract.id,
+              licensor_id: contract.licensor_id,
+              licensee_id: contract.licensee_id,
+              amount_cents: amountCents,
+              currency: invoice.currency || "eur",
+              stripe_invoice_id: invoice.id,
+              payment_type: "SUBSCRIPTION"
+            });
+            if (revenueError) {
+              console.error("❌ Failed to insert revenue event:", revenueError);
+            } else {
+              console.log(`✅ Revenue event recorded for SUBSCRIPTION payment (${amountCents} cents)`);
+            }
+          }
+        }
       }
       break;
     }

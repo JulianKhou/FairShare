@@ -16,11 +16,25 @@ export const createStripeConnectAccount = async (): Promise<{ url: string }> => 
             }
         );
 
-        if (error) throw error;
+        if (error) {
+            console.error("Invoke Error:", error);
+            let errorMessage = "Unknown error during edge function invocation";
+            if (error && typeof error === 'object' && 'context' in error) {
+                try {
+                    // @ts-ignore
+                    const body = await (error as any).context.json();
+                    console.error("Function Error Body:", body);
+                    if (body?.error) errorMessage = body.error;
+                } catch (e) {
+                    console.warn("Could not parse error body as JSON.", e);
+                }
+            }
+            throw new Error(errorMessage);
+        }
         return data;
-    } catch (error) {
+    } catch (error: any) {
         console.error("Failed to create Stripe Connect account:", error);
-        throw error;
+        throw new Error(error.message || "Account creation failed");
     }
 };
 
@@ -48,15 +62,15 @@ export const createStripeCheckoutSession = async (
             // Safely attempt to read specific error message
             let errorMessage = "Unknown error during edge function invocation";
             if (error && typeof error === 'object' && 'context' in error) {
-                 try {
-                     // @ts-ignore
-                     const body = await (error as any).context.json();
-                     console.error("Function Error Body:", body);
-                     if (body?.error) errorMessage = body.error;
-                 } catch (e) {
-                     console.warn("Could not parse error body as JSON. Raw response might be text/html.", e);
-                     // If it's a 500 html Deno error, .json() will throw. We'll fallback to the default error message
-                 }
+                try {
+                    // @ts-ignore
+                    const body = await (error as any).context.json();
+                    console.error("Function Error Body:", body);
+                    if (body?.error) errorMessage = body.error;
+                } catch (e) {
+                    console.warn("Could not parse error body as JSON. Raw response might be text/html.", e);
+                    // If it's a 500 html Deno error, .json() will throw. We'll fallback to the default error message
+                }
             }
             throw new Error(errorMessage);
         }
