@@ -8,6 +8,7 @@ interface UserMenuProps {
   onClose: () => void;
   user: any;
   userProfile?: any;
+  onOpenOnboarding?: () => void;
 }
 
 export const UserMenu = ({
@@ -15,6 +16,7 @@ export const UserMenu = ({
   onClose,
   user,
   userProfile,
+  onOpenOnboarding,
 }: UserMenuProps) => {
   const navigate = useNavigate();
   const [isHelpOpen, setIsHelpOpen] = useState(false);
@@ -62,15 +64,28 @@ export const UserMenu = ({
                   Dashboard
                 </button>
                 {userProfile?.is_admin && (
-                  <button
-                    className="w-full text-left px-3 py-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors text-sm font-semibold mb-2"
-                    onClick={() => {
-                      onClose();
-                      navigate("/admin");
-                    }}
-                  >
-                    Admin Panel
-                  </button>
+                  <>
+                    <button
+                      className="w-full text-left px-3 py-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors text-sm font-semibold mb-2"
+                      onClick={() => {
+                        onClose();
+                        navigate("/admin");
+                      }}
+                    >
+                      Admin Panel
+                    </button>
+                    {onOpenOnboarding && (
+                      <button
+                        className="w-full text-left px-3 py-2 rounded-lg bg-orange-500/10 text-orange-500 hover:bg-orange-500/20 transition-colors text-sm font-semibold mb-2"
+                        onClick={() => {
+                          onClose();
+                          onOpenOnboarding();
+                        }}
+                      >
+                        [Debug] Onboarding
+                      </button>
+                    )}
+                  </>
                 )}
                 <button
                   className="w-full text-left px-3 py-2 rounded-lg hover:bg-accent transition-colors text-sm"

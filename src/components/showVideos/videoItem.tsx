@@ -3,6 +3,8 @@ import { VideoDetails } from "./videoDetails";
 import { createPortal } from "react-dom";
 import { Backdrop } from "../utility/backdrop";
 import { Link } from "react-router-dom";
+import { useState } from "react";
+import { Video } from "lucide-react";
 
 export const VideoItem = ({
   video,
@@ -11,6 +13,7 @@ export const VideoItem = ({
   video: any;
   userId?: string;
 }) => {
+  const [imgError, setImgError] = useState(false);
   const {
     value: isMenuOpen,
     toggle: toggleMenu,
@@ -26,17 +29,25 @@ export const VideoItem = ({
       >
         {/* Thumbnail Container */}
         <div className="relative aspect-video w-full overflow-hidden bg-muted">
-          <img
-            src={video.thumbnail}
-            alt={video.title}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-            referrerPolicy="no-referrer"
-          />
+          {!video.thumbnail || imgError ? (
+            <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground/50 bg-secondary/20">
+              <Video className="w-10 h-10 mb-2 opacity-50" />
+              <span className="text-xs font-medium">Kein Thumbnail</span>
+            </div>
+          ) : (
+            <img
+              src={video.thumbnail}
+              alt={video.title}
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              referrerPolicy="no-referrer"
+              onError={() => setImgError(true)}
+            />
+          )}
           
           {/* Lizenziert Badge */}
           {userId === video.creator_id && video.islicensed && (
             <div className="absolute top-2 right-2 bg-green-500/90 backdrop-blur-sm text-white text-xs font-semibold px-2 py-1 rounded-md shadow-sm border border-green-400/30">
-              Lizenziert
+              Lizenz verfügbar
             </div>
           )}
         </div>

@@ -18,6 +18,7 @@ import {
 import { useEffect, useState } from "react";
 import { fetchChannelData } from "../../services/youtube";
 import { OnboardingModal } from "../profile/OnboardingModal";
+import { toast } from "sonner";
 
 function Header() {
   const { user } = useAuth();
@@ -120,7 +121,16 @@ function Header() {
         <NavLink to="/overview" className={navLinkClasses}>
           Übersicht
         </NavLink>
-        <NavLink to="/my-channel" className={navLinkClasses}>
+        <NavLink 
+          to={user ? "/my-channel" : "#"} 
+          className={navLinkClasses}
+          onClick={(e) => {
+            if (!user) {
+              e.preventDefault();
+              toast.info("Bitte logge dich ein, um deine Videos zu sehen.");
+            }
+          }}
+        >
           Meine Videos
         </NavLink>
         {user && (
@@ -155,12 +165,12 @@ function Header() {
         >
           <ProfileIcon />
         </button>
-        {/* Das Menü sollte absolut zum Button positioniert sein */}
         <UserMenu
           isOpen={isMenuOpen}
           onClose={closeMenu}
           user={user}
           userProfile={userProfile}
+          onOpenOnboarding={() => setShowOnboarding(true)}
         />
       </div>
 

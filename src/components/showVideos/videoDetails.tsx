@@ -192,7 +192,7 @@ export const VideoDetails = ({
                 <div className="flex flex-wrap items-center gap-2 mb-2">
                   {isLicensed && (
                     <Badge className="bg-green-500 text-white border-transparent text-xs px-2 py-0.5">
-                      <Shield className="h-3 w-3 mr-1" /> Licensed
+                      <Shield className="h-3 w-3 mr-1" /> Lizenz verfügbar
                     </Badge>
                   )}
                   {video.channel_title && (
