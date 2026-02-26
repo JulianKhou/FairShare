@@ -33,6 +33,9 @@ export const MyLicenses = ({ filter = "active" }: MyLicensesProps) => {
   const [loading, setLoading] = useState(true);
   const [payingId, setPayingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [licenseSpents, setLicenseSpents] = useState<Record<string, number>>(
+    {},
+  );
 
   // Auto-refresh logic for incoming payments
   useEffect(() => {
@@ -93,6 +96,21 @@ export const MyLicenses = ({ filter = "active" }: MyLicensesProps) => {
               videos.forEach((v) => (titleMap[v.id] = v.title));
               setReactionTitles(titleMap);
             }
+          }
+
+          // Fetch actual accumulated spent per contract
+          const { data: spents } = await supabase
+            .from("revenue_events")
+            .select("contract_id, amount_cents")
+            .eq("licensee_id", user.id);
+
+          if (spents) {
+            const spentMap: Record<string, number> = {};
+            spents.forEach((s) => {
+              if (!spentMap[s.contract_id]) spentMap[s.contract_id] = 0;
+              spentMap[s.contract_id] += s.amount_cents / 100;
+            });
+            setLicenseSpents(spentMap);
           }
         })
         .catch((err) => {
@@ -318,21 +336,51 @@ export const MyLicenses = ({ filter = "active" }: MyLicensesProps) => {
 
               {/* Footer Actions */}
               <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-border">
-                <div className="flex items-center gap-2 text-sm">
-                  <span className="text-muted-foreground">Preis:</span>
-                  <span className="font-semibold px-2 py-1 bg-muted rounded-md">
-                    {license.pricing_value.toFixed(2)}{" "}
-                    {license.pricing_currency}
-                    <span className="text-xs ml-1 font-normal opacity-70">
-                      (
-                      {license.pricing_model_type === 1
-                        ? "Fixpreis"
-                        : license.pricing_model_type === 2
-                          ? "pro 1000 Views"
-                          : "pro 1000 Views (CPM)"}
-                      )
-                    </span>
-                  </span>
+                <div className="flex flex-col gap-1 text-sm">
+                  {licenseSpents[license.id] !== undefined && licenseSpents[license.id] > 0 ? (
+                    <>
+                      <div className="flex items-center gap-2">
+                        <span className="text-muted-foreground uppercase tracking-wider text-xs font-semibold text-emerald-600">Bisher gezahlt:</span>
+                        <span className="font-bold text-lg text-emerald-600">
+                          {licenseSpents[license.id].toFixed(2)}{" "}
+                          {license.pricing_currency}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <span>Basispreis:</span>
+                        <span>
+                          {license.pricing_value.toFixed(2)}{" "}
+                          {license.pricing_currency}
+                          <span className="ml-1 opacity-70">
+                            (
+                            {license.pricing_model_type === 1
+                              ? "Fixpreis"
+                              : license.pricing_model_type === 2
+                                ? "pro 1000 Views"
+                                : "pro 1000 Views (CPM)"}
+                            )
+                          </span>
+                        </span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <span className="text-muted-foreground">Preis:</span>
+                      <span className="font-semibold px-2 py-1 bg-muted rounded-md">
+                        {license.pricing_value.toFixed(2)}{" "}
+                        {license.pricing_currency}
+                        <span className="text-xs ml-1 font-normal opacity-70">
+                          (
+                          {license.pricing_model_type === 1
+                            ? "Fixpreis"
+                            : license.pricing_model_type === 2
+                              ? "pro 1000 Views"
+                              : "pro 1000 Views (CPM)"}
+                          )
+                        </span>
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex gap-3 w-full sm:w-auto">

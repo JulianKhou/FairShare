@@ -20,60 +20,95 @@ serve(async (req) => {
             httpClient: Stripe.createFetchHttpClient(),
         });
 
-        // Fetch all contracts with a stripe_subscription_id that are currently ACTIVE, PAID, or PENDING
-        const { data: contracts, error: fetchError } = await supabaseClient
+        // Fetch contracts with subscription IDs
+        const { data: subContracts, error: subError } = await supabaseClient
             .from("reaction_contracts")
-            .select("id, stripe_subscription_id, status")
+            .select("id, stripe_subscription_id, stripe_session_id, status")
             .not("stripe_subscription_id", "is", null)
             .in("status", ["ACTIVE", "PAID", "PENDING"]);
 
-        if (fetchError) throw fetchError;
+        if (subError) throw subError;
 
-        console.log(`📊 Found ${contracts?.length || 0} subscription contracts to sync`);
+        // Fetch contracts stuck in PENDING with a session ID but NO subscription ID
+        const { data: sessionContracts, error: sessionError } = await supabaseClient
+            .from("reaction_contracts")
+            .select("id, stripe_subscription_id, stripe_session_id, status")
+            .is("stripe_subscription_id", null)
+            .not("stripe_session_id", "is", null)
+            .eq("status", "PENDING");
+
+        if (sessionError) throw sessionError;
+
+        const allContracts = [...(subContracts || []), ...(sessionContracts || [])];
+        console.log(`📊 Found ${allContracts.length} contracts to inspect (${subContracts?.length} with sub, ${sessionContracts?.length} with session only)`);
 
         const results: any[] = [];
 
-        for (const contract of contracts || []) {
+        for (const contract of allContracts) {
             try {
-                const subscription = await stripe.subscriptions.retrieve(
-                    contract.stripe_subscription_id,
-                );
-
-                const stripeStatus = subscription.status;
+                let stripeStatus: string | null = null;
                 let newDbStatus: string | null = null;
-                let debugInfo = `Raw status from Stripe: ${stripeStatus}, current DB status: ${contract.status}`;
+                let debugInfo = "";
+                let updatedSubId: string | null = null;
 
-                // Map Stripe subscription status to our DB status
-                if (stripeStatus === "active" || stripeStatus === "trialing") {
-                    newDbStatus = "ACTIVE";
-                } else if (stripeStatus === "canceled") {
-                    newDbStatus = "CANCELLED";
-                } else if (stripeStatus === "unpaid" || stripeStatus === "incomplete_expired") {
-                    newDbStatus = "PAYMENT_FAILED";
-                } else if (stripeStatus === "past_due") {
-                    newDbStatus = "PAYMENT_FAILED";
-                } else if (stripeStatus === "incomplete") {
-                    newDbStatus = "PENDING";
+                // Case 1: Contract already knows its subscription ID
+                if (contract.stripe_subscription_id) {
+                    const subscription = await stripe.subscriptions.retrieve(contract.stripe_subscription_id);
+                    stripeStatus = subscription.status;
+                    debugInfo = `[Sub Sync] Stripe status: ${stripeStatus}`;
+
+                    if (stripeStatus === "active" || stripeStatus === "trialing") {
+                        newDbStatus = "ACTIVE";
+                    } else if (stripeStatus === "canceled") {
+                        newDbStatus = "CANCELLED";
+                    } else if (stripeStatus === "unpaid" || stripeStatus === "incomplete_expired" || stripeStatus === "past_due") {
+                        newDbStatus = "PAYMENT_FAILED";
+                    } else if (stripeStatus === "incomplete") {
+                        newDbStatus = "PENDING";
+                    }
+                }
+                // Case 2: Contract only has a session ID (webhook missed)
+                else if (contract.stripe_session_id) {
+                    const session = await stripe.checkout.sessions.retrieve(contract.stripe_session_id);
+                    stripeStatus = session.status;
+                    debugInfo = `[Session Recovery] Session status: ${stripeStatus}, Payment status: ${session.payment_status}`;
+
+                    if (session.status === "complete") {
+                        if (session.subscription) {
+                            // It's a completed subscription! Save the ID and mark ACTIVE
+                            updatedSubId = session.subscription as string;
+                            newDbStatus = "ACTIVE";
+                            debugInfo += ` -> Recovered subscription ID: ${updatedSubId}`;
+                        } else if (session.payment_status === "paid") {
+                            // One-time payment completed
+                            newDbStatus = "PAID";
+                        }
+                    } else if (session.status === "expired") {
+                        newDbStatus = "CANCELLED";
+                    }
                 }
 
-                if (newDbStatus && newDbStatus !== contract.status) {
+                // If we found a new status or a newly discovered subscription ID, update the DB
+                if ((newDbStatus && newDbStatus !== contract.status) || updatedSubId) {
+                    const updates: any = {};
+                    if (newDbStatus) updates.status = newDbStatus;
+                    if (updatedSubId) updates.stripe_subscription_id = updatedSubId;
+
                     await supabaseClient
                         .from("reaction_contracts")
-                        .update({ status: newDbStatus })
+                        .update(updates)
                         .eq("id", contract.id);
 
+                    const finalStatus = newDbStatus || contract.status;
                     results.push({
                         id: contract.id,
                         action: "updated",
                         from: contract.status,
-                        to: newDbStatus,
+                        to: finalStatus,
                         stripeStatus,
                         debugInfo,
                     });
-
-                    console.log(
-                        `✅ Contract ${contract.id}: ${contract.status} → ${newDbStatus} (Stripe: ${stripeStatus})`,
-                    );
+                    console.log(`✅ Contract ${contract.id} updated -> ${finalStatus} (Stripe: ${stripeStatus})`);
                 } else {
                     results.push({
                         id: contract.id,
@@ -81,32 +116,16 @@ serve(async (req) => {
                         status: contract.status,
                         stripeStatus,
                         debugInfo,
-                        reason: newDbStatus ? "DB status already matches Stripe status" : `Stripe status '${stripeStatus}' not mapped to a new DB status`,
+                        reason: "No actionable status change found in Stripe",
                     });
                 }
             } catch (stripeErr: any) {
-                // If the subscription doesn't exist in Stripe, mark as CANCELLED
-                if (stripeErr.statusCode === 404 || stripeErr.code === "resource_missing") {
-                    await supabaseClient
-                        .from("reaction_contracts")
-                        .update({ status: "CANCELLED" })
-                        .eq("id", contract.id);
-
-                    results.push({
-                        id: contract.id,
-                        action: "cancelled_missing",
-                        error: "Subscription not found in Stripe",
-                    });
-
-                    console.warn(`⚠️ Contract ${contract.id}: Subscription not found in Stripe → CANCELLED`);
-                } else {
-                    results.push({
-                        id: contract.id,
-                        action: "error",
-                        error: stripeErr.message,
-                    });
-                    console.error(`❌ Error syncing contract ${contract.id}:`, stripeErr.message);
-                }
+                results.push({
+                    id: contract.id,
+                    action: "error",
+                    error: stripeErr.message,
+                });
+                console.error(`❌ Error syncing contract ${contract.id}:`, stripeErr.message);
             }
         }
 
@@ -118,7 +137,7 @@ serve(async (req) => {
 
         return new Response(
             JSON.stringify({
-                total: contracts?.length || 0,
+                total: allContracts.length,
                 updated,
                 unchanged,
                 errors,

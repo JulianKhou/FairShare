@@ -28,6 +28,7 @@ export const CreatorContracts = () => {
   const [licenseeNames, setLicenseeNames] = useState<Record<string, string>>(
     {},
   );
+  const [contractRevenues, setContractRevenues] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [filter, setFilter] = useState<FilterStatus>("all");
@@ -56,6 +57,21 @@ export const CreatorContracts = () => {
           profiles.forEach((p) => (nameMap[p.id] = p.full_name || "Unbekannt"));
           setLicenseeNames(nameMap);
         }
+      }
+
+      // Fetch actual accumulated revenue per contract
+      const { data: revenues } = await supabase
+        .from("revenue_events")
+        .select("contract_id, amount_cents")
+        .eq("licensor_id", user.id);
+
+      if (revenues) {
+        const revMap: Record<string, number> = {};
+        revenues.forEach((r) => {
+          if (!revMap[r.contract_id]) revMap[r.contract_id] = 0;
+          revMap[r.contract_id] += r.amount_cents / 100;
+        });
+        setContractRevenues(revMap);
       }
     }
     setLoading(false);
@@ -338,17 +354,36 @@ export const CreatorContracts = () => {
                   {/* Price + Actions */}
                   <div className="flex flex-col items-end justify-between gap-3 shrink-0">
                     <div className="text-right">
-                      <p className="text-lg font-bold">
-                        {contract.pricing_value.toFixed(2)}{" "}
-                        {contract.pricing_currency}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {contract.pricing_model_type === 1
-                          ? "Einmalzahlung"
-                          : contract.pricing_model_type === 2
-                            ? "pro 1000 Views"
-                            : "pro 1000 Views (CPM)"}
-                      </p>
+                      {contractRevenues[contract.id] !== undefined && contractRevenues[contract.id] > 0 ? (
+                        <>
+                          <p className="text-xs text-emerald-600 font-semibold mb-1 uppercase tracking-wider">
+                            Bisher verdient:
+                          </p>
+                          <p className="text-xl font-bold text-emerald-600">
+                            {contractRevenues[contract.id].toFixed(2)} {contract.pricing_currency}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Modell: {contract.pricing_value.toFixed(2)} {contract.pricing_currency}{" "}
+                            {contract.pricing_model_type === 1
+                              ? "Festpreis"
+                              : "pro 1000 Views"}
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-lg font-bold">
+                            {contract.pricing_value.toFixed(2)}{" "}
+                            {contract.pricing_currency}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {contract.pricing_model_type === 1
+                              ? "Einmalzahlung"
+                              : contract.pricing_model_type === 2
+                                ? "pro 1000 Views"
+                                : "pro 1000 Views (CPM)"}
+                          </p>
+                        </>
+                      )}
                     </div>
 
                     {isPending && (

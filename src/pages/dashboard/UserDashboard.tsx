@@ -140,19 +140,17 @@ export default function UserDashboard() {
       ] = await Promise.allSettled([
         getProfile(user.id),
         supabase
-          .from("reaction_contracts")
-          .select("pricing_value")
-          .eq("licensor_id", user.id)
-          .in("status", ["PAID", "ACTIVE"]),
+          .from("revenue_events")
+          .select("amount_cents")
+          .eq("licensor_id", user.id),
         supabase
-          .from("reaction_contracts")
-          .select("pricing_value")
-          .eq("licensee_id", user.id)
-          .in("status", ["PAID", "ACTIVE"]),
+          .from("revenue_events")
+          .select("amount_cents")
+          .eq("licensee_id", user.id),
         supabase
           .from("reaction_contracts")
           .select("id", { count: "exact", head: true })
-          .eq("licensor_id", user.id)
+          .or(`licensor_id.eq.${user.id},licensee_id.eq.${user.id}`)
           .in("status", ["PAID", "ACTIVE"]),
         supabase
           .from("reaction_contracts")
@@ -177,7 +175,7 @@ export default function UserDashboard() {
       const earnings =
         earningsData.status === "fulfilled" && earningsData.value.data
           ? earningsData.value.data.reduce(
-              (sum: number, c: any) => sum + (c.pricing_value || 0),
+              (sum: number, r: any) => sum + (r.amount_cents || 0) / 100,
               0,
             )
           : 0;
@@ -185,7 +183,7 @@ export default function UserDashboard() {
       const spent =
         spentData.status === "fulfilled" && spentData.value.data
           ? spentData.value.data.reduce(
-              (sum: number, c: any) => sum + (c.pricing_value || 0),
+              (sum: number, r: any) => sum + (r.amount_cents || 0) / 100,
               0,
             )
           : 0;
