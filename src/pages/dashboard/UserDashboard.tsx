@@ -143,12 +143,12 @@ export default function UserDashboard() {
         getProfile(user.id),
         supabase
           .from("reaction_contracts")
-          .select("id, pricing_value")
+          .select("id, pricing_value, pricing_model_type")
           .eq("licensor_id", user.id)
           .in("status", ["PAID", "ACTIVE"]),
         supabase
           .from("reaction_contracts")
-          .select("id, pricing_value")
+          .select("id, pricing_value, pricing_model_type")
           .eq("licensee_id", user.id)
           .in("status", ["PAID", "ACTIVE"]),
         supabase
@@ -201,23 +201,27 @@ export default function UserDashboard() {
         });
       }
 
-      // Calculate total earnings (fallback to pricing_value if no revenue event exists)
+      // Calculate total earnings (fallback to pricing_value ONLY for one-time payments)
       let earnings = 0;
       if (contractsLicensor.status === "fulfilled" && contractsLicensor.value.data) {
         contractsLicensor.value.data.forEach((c: any) => {
-          earnings += revenuesLicensor[c.id] !== undefined && revenuesLicensor[c.id] > 0
-            ? revenuesLicensor[c.id]
-            : c.pricing_value || 0;
+          if (revenuesLicensor[c.id] !== undefined && revenuesLicensor[c.id] > 0) {
+            earnings += revenuesLicensor[c.id];
+          } else if (c.pricing_model_type === 1) {
+            earnings += c.pricing_value || 0;
+          }
         });
       }
 
-      // Calculate total spent (fallback to pricing_value if no revenue event exists)
+      // Calculate total spent (fallback to pricing_value ONLY for one-time payments)
       let spent = 0;
       if (contractsLicensee.status === "fulfilled" && contractsLicensee.value.data) {
         contractsLicensee.value.data.forEach((c: any) => {
-          spent += revenuesLicensee[c.id] !== undefined && revenuesLicensee[c.id] > 0
-            ? revenuesLicensee[c.id]
-            : c.pricing_value || 0;
+          if (revenuesLicensee[c.id] !== undefined && revenuesLicensee[c.id] > 0) {
+            spent += revenuesLicensee[c.id];
+          } else if (c.pricing_model_type === 1) {
+            spent += c.pricing_value || 0;
+          }
         });
       }
 
