@@ -164,10 +164,6 @@ serve(async (req) => {
 
       sessionParams.customer = customerId;
 
-      // Reuse existing payment method if the customer already has one saved.
-      // 'if_required' = Stripe skips the payment form if a default method exists.
-      sessionParams.payment_method_collection = "if_required";
-
       const USAGE_PRODUCT_ID = "prod_TyiT0TPODEVOFx";
 
       // Create a Price for this specific contract/amount because price_data
