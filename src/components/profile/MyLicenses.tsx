@@ -20,7 +20,11 @@ import { createStripeCheckoutSession } from "@/services/stripeFunctions";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
-export const MyLicenses = () => {
+interface MyLicensesProps {
+  filter?: "active" | "expired";
+}
+
+export const MyLicenses = ({ filter = "active" }: MyLicensesProps) => {
   const { user } = useAuth();
   const [licenses, setLicenses] = useState<ReactionContract[]>([]);
   const [reactionTitles, setReactionTitles] = useState<Record<string, string>>(
@@ -164,7 +168,16 @@ export const MyLicenses = () => {
     );
   }
 
-  if (licenses.length === 0) {
+  const filteredLicenses = licenses.filter((l) => {
+    const s = l.status || "ACTIVE";
+    if (filter === "active") {
+      return ["PAID", "ACTIVE", "PENDING"].includes(s);
+    } else {
+      return ["CANCELLED", "PAYMENT_FAILED", "REJECTED", "EXPIRED"].includes(s);
+    }
+  });
+
+  if (filteredLicenses.length === 0) {
     return (
       <Card className="text-center p-12 border-dashed bg-muted/30">
         <CardContent>
@@ -177,12 +190,15 @@ export const MyLicenses = () => {
             Keine Lizenzen gefunden
           </h3>
           <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
-            Du hast noch keine Lizenzen erworben. Stöbere in den Videos, um
-            Inhalte für deine Reaktionen zu finden.
+            {filter === "active"
+              ? "Du hast noch keine aktiven Lizenzen erworben. Stöbere in den Videos, um Inhalte für deine Reaktionen zu finden."
+              : "Du hast keine abgelaufenen oder stornierten Lizenzen."}
           </p>
-          <Button onClick={() => (window.location.href = "/overview")}>
-            Videos entdecken
-          </Button>
+          {filter === "active" && (
+            <Button onClick={() => (window.location.href = "/overview")}>
+              Videos entdecken
+            </Button>
+          )}
         </CardContent>
       </Card>
     );
@@ -190,7 +206,7 @@ export const MyLicenses = () => {
 
   return (
     <div className="space-y-6">
-      {licenses.map((license) => {
+      {filteredLicenses.map((license) => {
         const reactionTitle = license.reaction_video_id
           ? reactionTitles[license.reaction_video_id] || "Unbekanntes Video"
           : "Noch nicht verknüpft";

@@ -69,3 +69,20 @@ export const updateHelpRequestStatus = async (
   }
   return data as HelpRequest;
 };
+
+export const getUserHelpRequests = async () => {
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData?.user) throw new Error("Not authenticated");
+
+  const { data, error } = await supabase
+    .from("help_requests")
+    .select("*")
+    .eq("user_id", userData.user.id)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching user help requests:", error);
+    throw error;
+  }
+  return data as HelpRequest[];
+};

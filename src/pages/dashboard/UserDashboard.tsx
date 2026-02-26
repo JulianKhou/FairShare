@@ -318,7 +318,7 @@ export default function UserDashboard() {
           <CardHeader className="flex flex-row items-center gap-2 pb-2">
             <Receipt className="w-5 h-5 text-rose-500" />
             <CardTitle className="text-base">
-              Offene Rechnungen
+              Offene Rechnungen & Abonnements
               {openInvoices.length > 0 && (
                 <span className="ml-2 inline-flex items-center justify-center w-5 h-5 text-xs font-bold bg-rose-500 text-white rounded-full">
                   {openInvoices.length}
@@ -359,8 +359,20 @@ export default function UserDashboard() {
                     </div>
                     <div className="flex items-center gap-3 shrink-0">
                       <span className="text-sm font-bold">
-                        {invoice.pricing_value.toFixed(2)}{" "}
-                        {invoice.pricing_currency?.toUpperCase() || "EUR"}
+                        {invoice.pricing_model_type === 1 ? (
+                          <>
+                            {invoice.pricing_value.toFixed(2)}{" "}
+                            {invoice.pricing_currency?.toUpperCase() || "EUR"}
+                          </>
+                        ) : (
+                          <>
+                            {invoice.pricing_value.toFixed(2)}{" "}
+                            {invoice.pricing_currency?.toUpperCase() || "EUR"}
+                            <span className="text-xs font-normal text-muted-foreground ml-1">
+                              / 1000 Views
+                            </span>
+                          </>
+                        )}
                       </span>
                       <Button
                         size="sm"
@@ -370,9 +382,9 @@ export default function UserDashboard() {
                         {payingId === invoice.id ? (
                           <Loader2 className="w-4 h-4 animate-spin mr-1" />
                         ) : (
-                          <ExternalLink className="w-4 h-4 mr-1" />
+                           <ExternalLink className="w-4 h-4 mr-1" />
                         )}
-                        Jetzt bezahlen
+                        {invoice.pricing_model_type === 1 ? "Jetzt bezahlen" : "Zahlungsart hinterlegen"}
                       </Button>
                     </div>
                   </div>
@@ -409,9 +421,10 @@ export default function UserDashboard() {
 
       {/* Main Content Tabs */}
       <Tabs defaultValue="analytics" className="w-full">
-        <TabsList className="mb-6">
+        <TabsList className="mb-6 flex-wrap h-auto">
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
-          <TabsTrigger value="licenses">Meine Lizenzen</TabsTrigger>
+          <TabsTrigger value="licenses">Aktive Lizenzen</TabsTrigger>
+          <TabsTrigger value="license-history">Abgelaufene Lizenzen</TabsTrigger>
           <TabsTrigger value="creator-requests">
             Creator Anfragen
             {stats.pendingRequests > 0 && (
@@ -426,7 +439,10 @@ export default function UserDashboard() {
           <Analytics />
         </TabsContent>
         <TabsContent value="licenses">
-          <MyLicenses />
+          <MyLicenses filter="active" />
+        </TabsContent>
+        <TabsContent value="license-history">
+          <MyLicenses filter="expired" />
         </TabsContent>
         <TabsContent value="creator-requests">
           <CreatorContracts />

@@ -22,14 +22,19 @@ export default function ProfilePage() {
         onValueChange={(value) => setSearchParams({ tab: value })}
         className="w-full"
       >
-        <TabsList className="mb-8">
+        <TabsList className="mb-8 flex-wrap h-auto">
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
-          <TabsTrigger value="licenses">My Licenses</TabsTrigger>
+          <TabsTrigger value="licenses">Aktive Lizenzen</TabsTrigger>
+          <TabsTrigger value="license-history">Abgelaufene Lizenzen</TabsTrigger>
           <TabsTrigger value="creator-requests">Creator Anfragen</TabsTrigger>
         </TabsList>
 
         <TabsContent value="licenses">
-          <MyLicenses />
+          <MyLicenses filter="active" />
+        </TabsContent>
+
+        <TabsContent value="license-history">
+          <MyLicenses filter="expired" />
         </TabsContent>
 
         <TabsContent value="creator-requests">
