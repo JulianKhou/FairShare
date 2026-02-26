@@ -161,12 +161,14 @@ export default function UserDashboard() {
           .eq("accepted_by_licensor", false)
           .neq("status", "REJECTED"),
         // Open Invoices: contracts where I am licensee, accepted by licensor, but not yet paid
+        // Exclude contracts that already have a stripe_subscription_id (checkout completed, webhook pending)
         supabase
           .from("reaction_contracts")
           .select("*")
           .eq("licensee_id", user.id)
           .eq("accepted_by_licensor", true)
           .eq("status", "PENDING")
+          .is("stripe_subscription_id", null)
           .order("created_at", { ascending: false }),
       ]);
 
