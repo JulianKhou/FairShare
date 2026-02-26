@@ -20,12 +20,12 @@ serve(async (req) => {
             httpClient: Stripe.createFetchHttpClient(),
         });
 
-        // Fetch all contracts with a stripe_subscription_id that are currently ACTIVE
+        // Fetch all contracts with a stripe_subscription_id that are currently ACTIVE, PAID, or PENDING
         const { data: contracts, error: fetchError } = await supabaseClient
             .from("reaction_contracts")
             .select("id, stripe_subscription_id, status")
             .not("stripe_subscription_id", "is", null)
-            .in("status", ["ACTIVE", "PAID"]);
+            .in("status", ["ACTIVE", "PAID", "PENDING"]);
 
         if (fetchError) throw fetchError;
 
