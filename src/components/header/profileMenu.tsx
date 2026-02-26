@@ -2,6 +2,7 @@ import { useState } from "react";
 import { handleLogout, handleLogin } from "../../hooks/auth/useHandleAuth";
 import { useNavigate } from "react-router-dom";
 import { HelpRequestModal } from "../profile/HelpRequestModal";
+import { useUnreadAdminReplies } from "@/hooks/support/useUnreadAdminReplies";
 
 interface UserMenuProps {
   isOpen: boolean;
@@ -20,6 +21,7 @@ export const UserMenu = ({
 }: UserMenuProps) => {
   const navigate = useNavigate();
   const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const { unreadCount } = useUnreadAdminReplies(isHelpOpen);
 
   if (!isOpen && !isHelpOpen) return null;
 
@@ -97,13 +99,18 @@ export const UserMenu = ({
                   Einstellungen
                 </button>
                 <button
-                  className="w-full text-left px-3 py-2 rounded-lg hover:bg-accent transition-colors text-sm"
+                  className="w-full text-left px-3 py-2 rounded-lg hover:bg-accent transition-colors text-sm flex items-center justify-between"
                   onClick={() => {
                     setIsHelpOpen(true);
-                    onClose(); // Close the menu, but the modal stays open because of the condition
+                    onClose();
                   }}
                 >
-                  Hilfe & Support
+                  <span>Hilfe &amp; Support</span>
+                  {unreadCount > 0 && (
+                    <span className="ml-2 min-w-[20px] h-5 flex items-center justify-center rounded-full bg-red-500 text-white text-xs font-bold px-1">
+                      {unreadCount > 99 ? "99+" : unreadCount}
+                    </span>
+                  )}
                 </button>
                 <hr className="border-border my-2" />
                 <button
