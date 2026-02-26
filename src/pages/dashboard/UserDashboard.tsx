@@ -132,20 +132,32 @@ export default function UserDashboard() {
 
       const [
         profileData,
-        earningsData,
-        spentData,
+        contractsLicensor,
+        contractsLicensee,
+        revLicensorData,
+        revLicenseeData,
         activeData,
         pendingData,
         invoicesData,
       ] = await Promise.allSettled([
         getProfile(user.id),
         supabase
+          .from("reaction_contracts")
+          .select("id, pricing_value")
+          .eq("licensor_id", user.id)
+          .in("status", ["PAID", "ACTIVE"]),
+        supabase
+          .from("reaction_contracts")
+          .select("id, pricing_value")
+          .eq("licensee_id", user.id)
+          .in("status", ["PAID", "ACTIVE"]),
+        supabase
           .from("revenue_events")
-          .select("amount_cents")
+          .select("contract_id, amount_cents")
           .eq("licensor_id", user.id),
         supabase
           .from("revenue_events")
-          .select("amount_cents")
+          .select("contract_id, amount_cents")
           .eq("licensee_id", user.id),
         supabase
           .from("reaction_contracts")
@@ -172,21 +184,42 @@ export default function UserDashboard() {
 
       if (profileData.status === "fulfilled") setProfile(profileData.value);
 
-      const earnings =
-        earningsData.status === "fulfilled" && earningsData.value.data
-          ? earningsData.value.data.reduce(
-              (sum: number, r: any) => sum + (r.amount_cents || 0) / 100,
-              0,
-            )
-          : 0;
+      // Map accumulated revenue by contract ID
+      const revenuesLicensor: Record<string, number> = {};
+      if (revLicensorData.status === "fulfilled" && revLicensorData.value.data) {
+        revLicensorData.value.data.forEach((r: any) => {
+          if (!revenuesLicensor[r.contract_id]) revenuesLicensor[r.contract_id] = 0;
+          revenuesLicensor[r.contract_id] += r.amount_cents / 100;
+        });
+      }
 
-      const spent =
-        spentData.status === "fulfilled" && spentData.value.data
-          ? spentData.value.data.reduce(
-              (sum: number, r: any) => sum + (r.amount_cents || 0) / 100,
-              0,
-            )
-          : 0;
+      const revenuesLicensee: Record<string, number> = {};
+      if (revLicenseeData.status === "fulfilled" && revLicenseeData.value.data) {
+        revLicenseeData.value.data.forEach((r: any) => {
+          if (!revenuesLicensee[r.contract_id]) revenuesLicensee[r.contract_id] = 0;
+          revenuesLicensee[r.contract_id] += r.amount_cents / 100;
+        });
+      }
+
+      // Calculate total earnings (fallback to pricing_value if no revenue event exists)
+      let earnings = 0;
+      if (contractsLicensor.status === "fulfilled" && contractsLicensor.value.data) {
+        contractsLicensor.value.data.forEach((c: any) => {
+          earnings += revenuesLicensor[c.id] !== undefined && revenuesLicensor[c.id] > 0
+            ? revenuesLicensor[c.id]
+            : c.pricing_value || 0;
+        });
+      }
+
+      // Calculate total spent (fallback to pricing_value if no revenue event exists)
+      let spent = 0;
+      if (contractsLicensee.status === "fulfilled" && contractsLicensee.value.data) {
+        contractsLicensee.value.data.forEach((c: any) => {
+          spent += revenuesLicensee[c.id] !== undefined && revenuesLicensee[c.id] > 0
+            ? revenuesLicensee[c.id]
+            : c.pricing_value || 0;
+        });
+      }
 
       const active =
         activeData.status === "fulfilled" ? activeData.value.count || 0 : 0;
