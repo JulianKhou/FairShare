@@ -198,6 +198,8 @@ serve(async (req) => {
         metadata: {
           contractId: contract.id,
         },
+        // Explicitly ensure invoices are auto-charged, not sent as manual invoices
+        collection_method: "charge_automatically",
       };
     }
 

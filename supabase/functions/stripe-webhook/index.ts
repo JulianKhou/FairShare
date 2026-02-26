@@ -91,6 +91,49 @@ serve(async (req) => {
           }
           if (typeof session.customer === "string") {
             updatePayload.stripe_customer_id = session.customer;
+
+            // FIX: Set the payment method from Checkout as the customer's default
+            // for future invoices. Without this, Stripe can't auto-charge metered invoices.
+            try {
+              const checkoutSession = await stripe.checkout.sessions.retrieve(session.id, {
+                expand: ["setup_intent"],
+              });
+
+              // For subscription mode, the payment method is on the subscription's default_payment_method
+              // or we can get it from the customer's payment methods list
+              const sub = await stripe.subscriptions.retrieve(session.subscription as string);
+              const subPaymentMethod = sub.default_payment_method;
+
+              if (subPaymentMethod) {
+                await stripe.customers.update(session.customer, {
+                  invoice_settings: {
+                    default_payment_method: typeof subPaymentMethod === "string"
+                      ? subPaymentMethod
+                      : subPaymentMethod.id,
+                  },
+                });
+                console.log(`✅ Set default payment method for customer ${session.customer}`);
+              } else {
+                // Fallback: get the most recent payment method from the customer
+                const paymentMethods = await stripe.paymentMethods.list({
+                  customer: session.customer,
+                  type: "card",
+                  limit: 1,
+                });
+                if (paymentMethods.data.length > 0) {
+                  await stripe.customers.update(session.customer, {
+                    invoice_settings: {
+                      default_payment_method: paymentMethods.data[0].id,
+                    },
+                  });
+                  console.log(`✅ Set default payment method (fallback) for customer ${session.customer}`);
+                } else {
+                  console.warn("⚠️  No payment method found for customer — future invoices may fail!");
+                }
+              }
+            } catch (pmError: any) {
+              console.error("❌ Failed to set default payment method:", pmError.message);
+            }
           }
         }
 
