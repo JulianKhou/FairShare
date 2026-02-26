@@ -345,88 +345,131 @@ export default function UserDashboard() {
         </Card>
       </div>
 
-      {/* Open Invoices Section */}
-      {(loadingInvoices || openInvoices.length > 0) && (
-        <Card className="mb-8 border-rose-500/40">
-          <CardHeader className="flex flex-row items-center gap-2 pb-2">
-            <Receipt className="w-5 h-5 text-rose-500" />
-            <CardTitle className="text-base">
-              Offene Rechnungen & Abonnements
-              {openInvoices.length > 0 && (
-                <span className="ml-2 inline-flex items-center justify-center w-5 h-5 text-xs font-bold bg-rose-500 text-white rounded-full">
-                  {openInvoices.length}
-                </span>
-              )}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loadingInvoices ? (
-              <div className="flex items-center gap-2 text-muted-foreground text-sm py-2">
-                <Loader2 className="h-4 w-4 animate-spin" /> Lade Rechnungen...
+      {/* Open Invoices & Subscriptions Section */}
+      {(loadingInvoices || openInvoices.length > 0) && (() => {
+        const oneTimeInvoices = openInvoices.filter((i) => i.pricing_model_type === 1);
+        const subscriptionInvoices = openInvoices.filter((i) => i.pricing_model_type !== 1);
+        return (
+          <Card className="mb-8 border-rose-500/40">
+            <CardHeader className="pb-2">
+              <div className="flex items-center gap-2">
+                <Receipt className="w-5 h-5 text-rose-500" />
+                <CardTitle className="text-base">
+                  Offene Zahlungen
+                  {openInvoices.length > 0 && (
+                    <span className="ml-2 inline-flex items-center justify-center w-5 h-5 text-xs font-bold bg-rose-500 text-white rounded-full">
+                      {openInvoices.length}
+                    </span>
+                  )}
+                </CardTitle>
               </div>
-            ) : (
-              <div className="divide-y">
-                {openInvoices.map((invoice) => (
-                  <div
-                    key={invoice.id}
-                    className="flex items-center justify-between py-3 gap-4"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">
-                        {invoice.original_video_title}
-                      </p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Badge variant="outline" className="text-xs">
-                          {pricingModelLabel(invoice.pricing_model_type)}
-                        </Badge>
-                        <span className="text-xs text-muted-foreground">
-                          von {invoice.licensor_name}
+            </CardHeader>
+            <CardContent>
+              {loadingInvoices ? (
+                <div className="flex items-center gap-2 text-muted-foreground text-sm py-2">
+                  <Loader2 className="h-4 w-4 animate-spin" /> Lade Rechnungen...
+                </div>
+              ) : (
+                <Tabs defaultValue={oneTimeInvoices.length > 0 ? "invoices" : "subscriptions"} className="w-full">
+                  <TabsList className="w-full grid grid-cols-2 mb-4">
+                    <TabsTrigger value="invoices" className="text-sm">
+                      Offene Rechnungen
+                      {oneTimeInvoices.length > 0 && (
+                        <span className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] text-[10px] font-bold bg-rose-500 text-white rounded-full px-1">
+                          {oneTimeInvoices.length}
                         </span>
-                        <span className="text-xs text-muted-foreground">
-                          ·{" "}
-                          {new Date(invoice.created_at).toLocaleDateString(
-                            "de-DE",
-                          )}
+                      )}
+                    </TabsTrigger>
+                    <TabsTrigger value="subscriptions" className="text-sm">
+                      Abonnements
+                      {subscriptionInvoices.length > 0 && (
+                        <span className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] text-[10px] font-bold bg-blue-500 text-white rounded-full px-1">
+                          {subscriptionInvoices.length}
                         </span>
+                      )}
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="invoices" className="mt-0">
+                    {oneTimeInvoices.length === 0 ? (
+                      <p className="text-sm text-muted-foreground text-center py-4">Keine offenen Rechnungen.</p>
+                    ) : (
+                      <div className="divide-y">
+                        {oneTimeInvoices.map((invoice) => (
+                          <div key={invoice.id} className="flex items-center justify-between py-3 gap-4">
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-sm truncate">{invoice.original_video_title}</p>
+                              <div className="flex items-center gap-2 mt-1">
+                                <Badge variant="outline" className="text-xs">Festpreis</Badge>
+                                <span className="text-xs text-muted-foreground">von {invoice.licensor_name}</span>
+                                <span className="text-xs text-muted-foreground">
+                                  · {new Date(invoice.created_at).toLocaleDateString("de-DE")}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-3 shrink-0">
+                              <span className="text-sm font-bold">
+                                {invoice.pricing_value.toFixed(2)} {invoice.pricing_currency?.toUpperCase() || "EUR"}
+                              </span>
+                              <Button size="sm" onClick={() => handlePay(invoice.id)} disabled={payingId === invoice.id}>
+                                {payingId === invoice.id ? (
+                                  <Loader2 className="w-4 h-4 animate-spin mr-1" />
+                                ) : (
+                                  <ExternalLink className="w-4 h-4 mr-1" />
+                                )}
+                                Jetzt bezahlen
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    </div>
-                    <div className="flex items-center gap-3 shrink-0">
-                      <span className="text-sm font-bold">
-                        {invoice.pricing_model_type === 1 ? (
-                          <>
-                            {invoice.pricing_value.toFixed(2)}{" "}
-                            {invoice.pricing_currency?.toUpperCase() || "EUR"}
-                          </>
-                        ) : (
-                          <>
-                            {invoice.pricing_value.toFixed(2)}{" "}
-                            {invoice.pricing_currency?.toUpperCase() || "EUR"}
-                            <span className="text-xs font-normal text-muted-foreground ml-1">
-                              / 1000 Views
-                            </span>
-                          </>
-                        )}
-                      </span>
-                      <Button
-                        size="sm"
-                        onClick={() => handlePay(invoice.id)}
-                        disabled={payingId === invoice.id}
-                      >
-                        {payingId === invoice.id ? (
-                          <Loader2 className="w-4 h-4 animate-spin mr-1" />
-                        ) : (
-                           <ExternalLink className="w-4 h-4 mr-1" />
-                        )}
-                        {invoice.pricing_model_type === 1 ? "Jetzt bezahlen" : "Zahlungsart hinterlegen"}
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
+                    )}
+                  </TabsContent>
+
+                  <TabsContent value="subscriptions" className="mt-0">
+                    {subscriptionInvoices.length === 0 ? (
+                      <p className="text-sm text-muted-foreground text-center py-4">Keine offenen Abonnements.</p>
+                    ) : (
+                      <div className="divide-y">
+                        {subscriptionInvoices.map((invoice) => (
+                          <div key={invoice.id} className="flex items-center justify-between py-3 gap-4">
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-sm truncate">{invoice.original_video_title}</p>
+                              <div className="flex items-center gap-2 mt-1">
+                                <Badge variant="outline" className="text-xs text-blue-600 border-blue-500">
+                                  Views-basiert
+                                </Badge>
+                                <span className="text-xs text-muted-foreground">von {invoice.licensor_name}</span>
+                                <span className="text-xs text-muted-foreground">
+                                  · {new Date(invoice.created_at).toLocaleDateString("de-DE")}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-3 shrink-0">
+                              <span className="text-sm font-bold">
+                                {invoice.pricing_value.toFixed(2)} {invoice.pricing_currency?.toUpperCase() || "EUR"}
+                                <span className="text-xs font-normal text-muted-foreground ml-1">/ 1000 Views</span>
+                              </span>
+                              <Button size="sm" onClick={() => handlePay(invoice.id)} disabled={payingId === invoice.id}>
+                                {payingId === invoice.id ? (
+                                  <Loader2 className="w-4 h-4 animate-spin mr-1" />
+                                ) : (
+                                  <ExternalLink className="w-4 h-4 mr-1" />
+                                )}
+                                Abo abschließen
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </TabsContent>
+                </Tabs>
+              )}
+            </CardContent>
+          </Card>
+        );
+      })()}
 
       {/* Quick Actions */}
       <div className="flex flex-wrap gap-3 mb-8">
