@@ -164,6 +164,21 @@ serve(async (req) => {
 
       sessionParams.customer = customerId;
 
+      // Reuse existing payment method if the customer already has one saved.
+      // 'if_required' = Stripe only shows the payment form if no default method exists.
+      sessionParams.payment_method_collection = "if_required";
+
+      // Allow Stripe to automatically update/reuse the stored payment method.
+      sessionParams.customer_update = {
+        payment_method: "auto",
+      };
+
+      // Show saved payment methods at the top of the Checkout form.
+      sessionParams.saved_payment_method_options = {
+        payment_method_order: ["last_used"],
+        allow_redisplay_filters: ["always"],
+      };
+
       const USAGE_PRODUCT_ID = "prod_TyiT0TPODEVOFx";
 
       // Create a Price for this specific contract/amount because price_data
