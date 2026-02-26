@@ -9,7 +9,15 @@ export interface HelpRequest {
   status: "OPEN" | "IN_PROGRESS" | "CLOSED";
   // Join fields from profiles
   user_full_name?: string;
-  user_email?: string; // If exists in profiles or auth
+  user_email?: string;
+}
+
+export interface HelpRequestMessage {
+  id: string;
+  help_request_id: string;
+  sender_role: "user" | "admin";
+  message: string;
+  created_at: string;
 }
 
 export const createHelpRequest = async (subject: string, message: string) => {
@@ -29,9 +37,39 @@ export const createHelpRequest = async (subject: string, message: string) => {
   return data as HelpRequest;
 };
 
-// Admin Functions
+// --- Thread Messages ---
+
+export const getThreadMessages = async (helpRequestId: string): Promise<HelpRequestMessage[]> => {
+  const { data, error } = await supabase
+    .from("help_request_messages")
+    .select("*")
+    .eq("help_request_id", helpRequestId)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    console.error("Error fetching thread messages:", error);
+    throw error;
+  }
+  return (data || []) as HelpRequestMessage[];
+};
+
+export const addAdminReply = async (helpRequestId: string, message: string): Promise<HelpRequestMessage> => {
+  const { data, error } = await supabase
+    .from("help_request_messages")
+    .insert([{ help_request_id: helpRequestId, sender_role: "admin", message }])
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error adding admin reply:", error);
+    throw error;
+  }
+  return data as HelpRequestMessage;
+};
+
+// --- Admin Functions ---
+
 export const getAllHelpRequests = async () => {
-  // Try to join with profiles to get user names for the admin view
   const { data, error } = await supabase
     .from("help_requests")
     .select(`
@@ -45,7 +83,6 @@ export const getAllHelpRequests = async () => {
     throw error;
   }
 
-  // Map the joined profile data to flat fields for easier use in Datatables
   return (data || []).map((req: any) => ({
     ...req,
     user_full_name: req.profiles?.full_name || "Unknown User",

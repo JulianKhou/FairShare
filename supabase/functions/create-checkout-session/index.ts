@@ -99,7 +99,7 @@ serve(async (req) => {
       metadata: {
         contractId: contract.id,
       },
-      success_url: `https://simpleshare.eu/dashboard?success=true&session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `https://simpleshare.eu/dashboard?success=true&contractId=${contract.id}&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `https://simpleshare.eu/dashboard?canceled=true&contractId=${contract.id}`,
     };
 

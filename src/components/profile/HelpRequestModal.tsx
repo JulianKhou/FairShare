@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -11,31 +11,37 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Send, HelpCircle, MessageSquare } from "lucide-react";
+import { Loader2, Send, HelpCircle, MessageSquare, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import {
   createHelpRequest,
   getUserHelpRequests,
+  getThreadMessages,
   HelpRequest,
+  HelpRequestMessage,
 } from "@/services/supabaseCollum/helpRequests";
 import { supabase } from "@/services/supabaseCollum/client";
+import { cn } from "@/lib/utils";
 
 interface HelpRequestModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export function HelpRequestModal({
-  isOpen,
-  onOpenChange,
-}: HelpRequestModalProps) {
+export function HelpRequestModal({ isOpen, onOpenChange }: HelpRequestModalProps) {
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  
+
   const [activeTab, setActiveTab] = useState("new");
   const [myRequests, setMyRequests] = useState<HelpRequest[]>([]);
   const [loadingRequests, setLoadingRequests] = useState(false);
+
+  // Thread detail state
+  const [selectedRequest, setSelectedRequest] = useState<HelpRequest | null>(null);
+  const [threadMessages, setThreadMessages] = useState<HelpRequestMessage[]>([]);
+  const [threadLoading, setThreadLoading] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isOpen && activeTab === "mine") {
@@ -43,26 +49,51 @@ export function HelpRequestModal({
     }
   }, [isOpen, activeTab]);
 
+  // Realtime: refresh request list
   useEffect(() => {
     if (!isOpen) return;
 
     const channel = supabase
       .channel("user-support-channel")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "help_requests" },
-        () => {
-          if (activeTab === "mine") {
-            fetchMyRequests();
-          }
-        },
-      )
+      .on("postgres_changes", { event: "*", schema: "public", table: "help_requests" }, () => {
+        if (activeTab === "mine") fetchMyRequests();
+      })
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
   }, [isOpen, activeTab]);
+
+  // Realtime: listen for new thread messages in the selected ticket
+  useEffect(() => {
+    if (!selectedRequest) return;
+
+    const channel = supabase
+      .channel(`user-thread-${selectedRequest.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "help_request_messages",
+          filter: `help_request_id=eq.${selectedRequest.id}`,
+        },
+        (payload) => {
+          setThreadMessages((prev) => [...prev, payload.new as HelpRequestMessage]);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [selectedRequest]);
+
+  // Auto-scroll to latest message
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [threadMessages]);
 
   const fetchMyRequests = async () => {
     setLoadingRequests(true);
@@ -77,6 +108,25 @@ export function HelpRequestModal({
     }
   };
 
+  const handleTicketClick = async (req: HelpRequest) => {
+    setSelectedRequest(req);
+    setThreadMessages([]);
+    setThreadLoading(true);
+    try {
+      const msgs = await getThreadMessages(req.id);
+      setThreadMessages(msgs);
+    } catch (error) {
+      console.error("Fehler beim Laden des Threads:", error);
+    } finally {
+      setThreadLoading(false);
+    }
+  };
+
+  const handleBackToList = () => {
+    setSelectedRequest(null);
+    setThreadMessages([]);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!subject.trim() || !message.trim()) return;
@@ -87,7 +137,7 @@ export function HelpRequestModal({
       toast.success("Deine Anfrage wurde erfolgreich abgeschickt!");
       setSubject("");
       setMessage("");
-      setActiveTab("mine"); // Switch to "Meine Anfragen" tab after successful submission
+      setActiveTab("mine");
     } catch (error: any) {
       console.error("Fehler beim Senden:", error);
       toast.error("Fehler beim Senden: " + (error.message || "Unbekannt"));
@@ -102,25 +152,101 @@ export function HelpRequestModal({
         return <Badge variant="destructive">OFFEN</Badge>;
       case "IN_PROGRESS":
         return (
-          <Badge
-            variant="outline"
-            className="text-yellow-600 border-yellow-600"
-          >
+          <Badge variant="outline" className="text-yellow-600 border-yellow-600">
             BEARBEITUNG
           </Badge>
         );
       case "CLOSED":
         return (
-          <Badge
-            variant="default"
-            className="bg-emerald-500 hover:bg-emerald-600"
-          >
+          <Badge variant="default" className="bg-emerald-500 hover:bg-emerald-600">
             GESCHLOSSEN
           </Badge>
         );
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
+  };
+
+  const renderTicketDetail = () => {
+    if (!selectedRequest) return null;
+    return (
+      <div className="flex flex-col h-full">
+        {/* Back button */}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="w-fit mb-3 -ml-2 text-muted-foreground"
+          onClick={handleBackToList}
+        >
+          <ArrowLeft className="w-4 h-4 mr-1" />
+          Zurück zur Übersicht
+        </Button>
+
+        {/* Subject + status */}
+        <div className="flex items-start justify-between mb-3 shrink-0">
+          <h4 className="font-semibold text-base">{selectedRequest.subject}</h4>
+          {getStatusBadge(selectedRequest.status)}
+        </div>
+
+        {/* Chat thread */}
+        <div className="flex-1 overflow-y-auto space-y-3 pr-1">
+          {/* Original user message */}
+          <div className="flex justify-end">
+            <div className="max-w-[85%] space-y-1">
+              <p className="text-xs text-muted-foreground text-right mr-1">
+                Du · {new Date(selectedRequest.created_at).toLocaleString()}
+              </p>
+              <div className="bg-primary text-primary-foreground rounded-2xl rounded-tr-sm px-4 py-3 text-sm whitespace-pre-wrap">
+                {selectedRequest.message}
+              </div>
+            </div>
+          </div>
+
+          {/* Thread replies */}
+          {threadLoading ? (
+            <div className="flex justify-center py-6">
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            threadMessages.map((msg) => (
+              <div
+                key={msg.id}
+                className={cn("flex", msg.sender_role === "user" ? "justify-end" : "justify-start")}
+              >
+                <div className="max-w-[85%] space-y-1">
+                  <p
+                    className={cn(
+                      "text-xs text-muted-foreground",
+                      msg.sender_role === "user" ? "text-right mr-1" : "ml-1"
+                    )}
+                  >
+                    {msg.sender_role === "admin" ? "Support-Team" : "Du"} ·{" "}
+                    {new Date(msg.created_at).toLocaleString()}
+                  </p>
+                  <div
+                    className={cn(
+                      "rounded-2xl px-4 py-3 text-sm whitespace-pre-wrap",
+                      msg.sender_role === "user"
+                        ? "bg-primary text-primary-foreground rounded-tr-sm"
+                        : "bg-muted/50 border rounded-tl-sm"
+                    )}
+                  >
+                    {msg.message}
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+
+          {threadMessages.length === 0 && !threadLoading && (
+            <p className="text-center text-xs text-muted-foreground py-4">
+              Noch keine Antwort vom Support-Team. Wir melden uns bald!
+            </p>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+      </div>
+    );
   };
 
   const renderRequestList = (statusFilter: string[] | null) => {
@@ -148,18 +274,20 @@ export function HelpRequestModal({
     return (
       <div className="space-y-3">
         {filtered.map((req) => (
-          <div key={req.id} className="border rounded-lg p-4 bg-muted/20">
-            <div className="flex justify-between items-start mb-2">
+          <button
+            key={req.id}
+            onClick={() => handleTicketClick(req)}
+            className="w-full text-left border rounded-lg p-4 bg-muted/20 hover:bg-muted/40 transition-colors cursor-pointer"
+          >
+            <div className="flex justify-between items-start mb-1">
               <h4 className="font-semibold text-sm mr-2">{req.subject}</h4>
               {getStatusBadge(req.status)}
             </div>
-            <p className="text-xs text-muted-foreground mb-3">
+            <p className="text-xs text-muted-foreground">
               {new Date(req.created_at).toLocaleString()}
             </p>
-            <div className="text-sm bg-background p-3 rounded border whitespace-pre-wrap">
-              {req.message}
-            </div>
-          </div>
+            <p className="text-sm mt-2 text-muted-foreground line-clamp-2">{req.message}</p>
+          </button>
         ))}
       </div>
     );
@@ -172,22 +300,19 @@ export function HelpRequestModal({
           <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-2">
             <HelpCircle className="w-6 h-6 text-primary" />
           </div>
-          <DialogTitle className="text-center text-2xl">
-            Hilfe & Support
-          </DialogTitle>
+          <DialogTitle className="text-center text-2xl">Hilfe & Support</DialogTitle>
           <DialogDescription className="text-center pt-1">
-            Reiche eine neue Anfrage ein oder verfolge den Status deiner
-            bisherigen Tickets.
+            Reiche eine neue Anfrage ein oder verfolge den Status deiner bisherigen Tickets.
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex-1 overflow-hidden flex flex-col mt-4">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full">
-            <TabsList className="grid w-full grid-cols-2">
+          <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); setSelectedRequest(null); }} className="flex flex-col h-full">
+            <TabsList className="grid w-full grid-cols-2 shrink-0">
               <TabsTrigger value="new">Neue Anfrage</TabsTrigger>
               <TabsTrigger value="mine">Meine Anfragen</TabsTrigger>
             </TabsList>
-            
+
             <div className="flex-1 overflow-y-auto mt-4 pr-1">
               <TabsContent value="new" className="mt-0 h-full">
                 <form onSubmit={handleSubmit} className="space-y-4">
@@ -239,48 +364,44 @@ export function HelpRequestModal({
                 </form>
               </TabsContent>
 
-              <TabsContent value="mine" className="mt-0 h-full">
-                <Tabs defaultValue="all" className="w-full">
-                  <TabsList className="w-full justify-start overflow-x-auto bg-transparent border-b rounded-none p-0 mb-4 h-auto">
-                    <TabsTrigger
-                      value="all"
-                      className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none shadow-none"
-                    >
-                      Alle
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="open"
-                      className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none shadow-none text-red-500 data-[state=active]:text-red-500"
-                    >
-                      Offen
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="progress"
-                      className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none shadow-none text-yellow-600 data-[state=active]:text-yellow-600"
-                    >
-                      In Bearbeitung
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="closed"
-                      className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none shadow-none text-emerald-500 data-[state=active]:text-emerald-500"
-                    >
-                      Geschlossen
-                    </TabsTrigger>
-                  </TabsList>
+              <TabsContent value="mine" className="mt-0 h-full flex flex-col">
+                {selectedRequest ? (
+                  renderTicketDetail()
+                ) : (
+                  <Tabs defaultValue="all" className="w-full">
+                    <TabsList className="w-full justify-start overflow-x-auto bg-transparent border-b rounded-none p-0 mb-4 h-auto">
+                      <TabsTrigger
+                        value="all"
+                        className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none shadow-none"
+                      >
+                        Alle
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="open"
+                        className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none shadow-none text-red-500 data-[state=active]:text-red-500"
+                      >
+                        Offen
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="progress"
+                        className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none shadow-none text-yellow-600 data-[state=active]:text-yellow-600"
+                      >
+                        In Bearbeitung
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="closed"
+                        className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none shadow-none text-emerald-500 data-[state=active]:text-emerald-500"
+                      >
+                        Geschlossen
+                      </TabsTrigger>
+                    </TabsList>
 
-                  <TabsContent value="all" className="mt-0">
-                    {renderRequestList(null)}
-                  </TabsContent>
-                  <TabsContent value="open" className="mt-0">
-                    {renderRequestList(["OPEN"])}
-                  </TabsContent>
-                  <TabsContent value="progress" className="mt-0">
-                    {renderRequestList(["IN_PROGRESS"])}
-                  </TabsContent>
-                  <TabsContent value="closed" className="mt-0">
-                    {renderRequestList(["CLOSED"])}
-                  </TabsContent>
-                </Tabs>
+                    <TabsContent value="all" className="mt-0">{renderRequestList(null)}</TabsContent>
+                    <TabsContent value="open" className="mt-0">{renderRequestList(["OPEN"])}</TabsContent>
+                    <TabsContent value="progress" className="mt-0">{renderRequestList(["IN_PROGRESS"])}</TabsContent>
+                    <TabsContent value="closed" className="mt-0">{renderRequestList(["CLOSED"])}</TabsContent>
+                  </Tabs>
+                )}
               </TabsContent>
             </div>
           </Tabs>

@@ -232,6 +232,17 @@ export const checkAnyExistingLicense = async (
 };
 
 export const withdrawReactionContract = async (contractId: string) => {
+    // 1. Try to cancel Stripe Subscription first, if it exists
+    try {
+        await supabase.functions.invoke("cancel-subscription", {
+            body: { contractId }
+        });
+    } catch (e) {
+        console.error("Failed to cancel Stripe subscription before withdrawal:", e);
+        // Continue with deletion to avoid orphaned UI records
+    }
+
+    // 2. Delete from Database (only if not yet accepted by licensor)
     const { error } = await supabase
         .from("reaction_contracts")
         .delete()

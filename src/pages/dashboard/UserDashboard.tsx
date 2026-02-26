@@ -64,6 +64,39 @@ export default function UserDashboard() {
       toast.success("Zahlung erfolgreich!", {
         description: "Deine Lizenz wurde erfolgreich erstellt.",
       });
+
+      // Immediately remove the paid contract from open invoices (webhook may be delayed)
+      if (contractId) {
+        setOpenInvoices((prev) => prev.filter((inv) => inv.id !== contractId));
+
+        // Poll until the webhook has updated the status to ACTIVE/PAID (max 10 attempts × 2s)
+        let attempts = 0;
+        const pollInterval = setInterval(async () => {
+          attempts++;
+          const { data } = await supabase
+            .from("reaction_contracts")
+            .select("id, status")
+            .eq("id", contractId)
+            .maybeSingle();
+
+          const isSettled = data?.status === "ACTIVE" || data?.status === "PAID";
+          if (isSettled || attempts >= 10) {
+            clearInterval(pollInterval);
+            // Final refresh of open invoices to ensure clean state
+            if (user) {
+              const { data: freshInvoices } = await supabase
+                .from("reaction_contracts")
+                .select("*")
+                .eq("licensee_id", user.id)
+                .eq("accepted_by_licensor", true)
+                .eq("status", "PENDING")
+                .order("created_at", { ascending: false });
+              setOpenInvoices((freshInvoices as ReactionContract[]) || []);
+            }
+          }
+        }, 2000);
+      }
+
       setSearchParams({}, { replace: true });
     }
 
