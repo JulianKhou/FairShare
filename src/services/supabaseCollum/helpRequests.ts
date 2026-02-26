@@ -67,6 +67,23 @@ export const addAdminReply = async (helpRequestId: string, message: string): Pro
   return data as HelpRequestMessage;
 };
 
+export const addUserReply = async (helpRequestId: string, message: string): Promise<HelpRequestMessage> => {
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData?.user) throw new Error("Not authenticated");
+
+  const { data, error } = await supabase
+    .from("help_request_messages")
+    .insert([{ help_request_id: helpRequestId, sender_role: "user", message }])
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error adding user reply:", error);
+    throw error;
+  }
+  return data as HelpRequestMessage;
+};
+
 // --- Admin Functions ---
 
 export const getAllHelpRequests = async () => {

@@ -17,6 +17,7 @@ import {
   createHelpRequest,
   getUserHelpRequests,
   getThreadMessages,
+  addUserReply,
   HelpRequest,
   HelpRequestMessage,
 } from "@/services/supabaseCollum/helpRequests";
@@ -41,6 +42,8 @@ export function HelpRequestModal({ isOpen, onOpenChange }: HelpRequestModalProps
   const [selectedRequest, setSelectedRequest] = useState<HelpRequest | null>(null);
   const [threadMessages, setThreadMessages] = useState<HelpRequestMessage[]>([]);
   const [threadLoading, setThreadLoading] = useState(false);
+  const [replyText, setReplyText] = useState("");
+  const [isSendingReply, setIsSendingReply] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -111,6 +114,7 @@ export function HelpRequestModal({ isOpen, onOpenChange }: HelpRequestModalProps
   const handleTicketClick = async (req: HelpRequest) => {
     setSelectedRequest(req);
     setThreadMessages([]);
+    setReplyText("");
     setThreadLoading(true);
     try {
       const msgs = await getThreadMessages(req.id);
@@ -125,6 +129,20 @@ export function HelpRequestModal({ isOpen, onOpenChange }: HelpRequestModalProps
   const handleBackToList = () => {
     setSelectedRequest(null);
     setThreadMessages([]);
+    setReplyText("");
+  };
+
+  const handleUserReply = async () => {
+    if (!selectedRequest || !replyText.trim()) return;
+    setIsSendingReply(true);
+    try {
+      await addUserReply(selectedRequest.id, replyText.trim());
+      setReplyText("");
+    } catch (error: any) {
+      toast.error("Fehler beim Senden: " + (error.message || "Unbekannt"));
+    } finally {
+      setIsSendingReply(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -169,6 +187,7 @@ export function HelpRequestModal({ isOpen, onOpenChange }: HelpRequestModalProps
 
   const renderTicketDetail = () => {
     if (!selectedRequest) return null;
+    const canReply = selectedRequest.status === "IN_PROGRESS";
     return (
       <div className="flex flex-col h-full">
         {/* Back button */}
@@ -193,9 +212,10 @@ export function HelpRequestModal({ isOpen, onOpenChange }: HelpRequestModalProps
           {/* Original user message */}
           <div className="flex justify-end">
             <div className="max-w-[85%] space-y-1">
-              <p className="text-xs text-muted-foreground text-right mr-1">
-                Du · {new Date(selectedRequest.created_at).toLocaleString()}
-              </p>
+              <div className="flex items-center justify-end gap-1.5 mr-1">
+                <span className="text-xs text-muted-foreground">{new Date(selectedRequest.created_at).toLocaleString()}</span>
+                <span className="text-[10px] font-semibold bg-primary/15 text-primary rounded-full px-2 py-0.5">Du</span>
+              </div>
               <div className="bg-primary text-primary-foreground rounded-2xl rounded-tr-sm px-4 py-3 text-sm whitespace-pre-wrap">
                 {selectedRequest.message}
               </div>
@@ -208,34 +228,34 @@ export function HelpRequestModal({ isOpen, onOpenChange }: HelpRequestModalProps
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             </div>
           ) : (
-            threadMessages.map((msg) => (
-              <div
-                key={msg.id}
-                className={cn("flex", msg.sender_role === "user" ? "justify-end" : "justify-start")}
-              >
-                <div className="max-w-[85%] space-y-1">
-                  <p
-                    className={cn(
-                      "text-xs text-muted-foreground",
-                      msg.sender_role === "user" ? "text-right mr-1" : "ml-1"
-                    )}
-                  >
-                    {msg.sender_role === "admin" ? "Support-Team" : "Du"} ·{" "}
-                    {new Date(msg.created_at).toLocaleString()}
-                  </p>
-                  <div
-                    className={cn(
-                      "rounded-2xl px-4 py-3 text-sm whitespace-pre-wrap",
-                      msg.sender_role === "user"
-                        ? "bg-primary text-primary-foreground rounded-tr-sm"
-                        : "bg-muted/50 border rounded-tl-sm"
-                    )}
-                  >
-                    {msg.message}
+            threadMessages.map((msg) => {
+              const isUser = msg.sender_role === "user";
+              return (
+                <div key={msg.id} className={cn("flex", isUser ? "justify-end" : "justify-start")}>
+                  <div className="max-w-[85%] space-y-1">
+                    <div className={cn("flex items-center gap-1.5", isUser ? "justify-end mr-1" : "ml-1")}>
+                      {!isUser && (
+                        <span className="text-[10px] font-semibold bg-blue-500/15 text-blue-600 dark:text-blue-400 rounded-full px-2 py-0.5">Support</span>
+                      )}
+                      <span className="text-xs text-muted-foreground">{new Date(msg.created_at).toLocaleString()}</span>
+                      {isUser && (
+                        <span className="text-[10px] font-semibold bg-primary/15 text-primary rounded-full px-2 py-0.5">Du</span>
+                      )}
+                    </div>
+                    <div
+                      className={cn(
+                        "rounded-2xl px-4 py-3 text-sm whitespace-pre-wrap",
+                        isUser
+                          ? "bg-primary text-primary-foreground rounded-tr-sm"
+                          : "bg-muted/50 border rounded-tl-sm"
+                      )}
+                    >
+                      {msg.message}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
 
           {threadMessages.length === 0 && !threadLoading && (
@@ -245,6 +265,40 @@ export function HelpRequestModal({ isOpen, onOpenChange }: HelpRequestModalProps
           )}
           <div ref={messagesEndRef} />
         </div>
+
+        {/* Reply box – only visible when ticket is IN_PROGRESS */}
+        {canReply && (
+          <div className="shrink-0 border-t pt-3 mt-2 flex flex-col gap-2">
+            <Textarea
+              placeholder="Antwort schreiben..."
+              rows={3}
+              value={replyText}
+              onChange={(e) => setReplyText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                  e.preventDefault();
+                  handleUserReply();
+                }
+              }}
+              disabled={isSendingReply}
+            />
+            <div className="flex justify-between items-center">
+              <p className="text-xs text-muted-foreground">⌘+Enter zum Senden</p>
+              <Button
+                size="sm"
+                onClick={handleUserReply}
+                disabled={isSendingReply || !replyText.trim()}
+              >
+                {isSendingReply ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4 mr-2" />
+                )}
+                Antworten
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     );
   };
