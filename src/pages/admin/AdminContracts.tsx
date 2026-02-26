@@ -14,7 +14,8 @@ import {
   adminDeleteReactionContract,
   ReactionContract,
 } from "@/services/supabaseCollum/reactionContract";
-import { Loader2, Trash2 } from "lucide-react";
+import { supabase } from "@/services/supabaseCollum/client";
+import { Loader2, Trash2, RefreshCw } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -32,6 +33,7 @@ export default function AdminContracts() {
     useState<ReactionContract | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   useEffect(() => {
     const fetchContracts = async () => {
@@ -80,6 +82,32 @@ export default function AdminContracts() {
     }
   };
 
+  const handleSync = async () => {
+    setIsSyncing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke(
+        "sync-subscription-status",
+      );
+      if (error) throw error;
+
+      const result = data as any;
+      toast.success(
+        `Sync abgeschlossen: ${result.updated} aktualisiert, ${result.unchanged} unverändert, ${result.errors} Fehler`,
+      );
+
+      // Refresh contracts list if anything changed
+      if (result.updated > 0) {
+        const freshData = await getAllReactionContracts();
+        setContracts(freshData || []);
+      }
+    } catch (err: any) {
+      console.error("Sync failed:", err);
+      toast.error("Sync fehlgeschlagen: " + (err.message || "Unbekannt"));
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
@@ -91,6 +119,18 @@ export default function AdminContracts() {
             Übersicht aller abgeschlossenen, aktiven oder abgelehnten Lizenzen.
           </p>
         </div>
+        <Button
+          variant="outline"
+          onClick={handleSync}
+          disabled={isSyncing}
+        >
+          {isSyncing ? (
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+          ) : (
+            <RefreshCw className="w-4 h-4 mr-2" />
+          )}
+          Stripe Sync
+        </Button>
       </div>
 
       <Card>
