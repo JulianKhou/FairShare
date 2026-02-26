@@ -131,22 +131,41 @@ serve(async (req) => {
         }
 
         // 2. Trigger License Generation
-        console.log("🚀 Triggering generate-license-pdf...");
-        const { data: funcData, error: functionError } = await supabaseClient
-          .functions.invoke("generate-license-pdf", {
-            body: { contractId },
-          });
+        // Guard: Only generate license if payment actually succeeded.
+        // - One-time (mode=payment): must have payment_status=paid
+        // - Subscription (metered): checkout completes with payment_status=no_payment_required (correct)
+        const shouldGenerateLicense =
+          session.mode === "subscription" ||
+          (session.mode === "payment" && session.payment_status === "paid");
 
-        if (functionError) {
-          console.error(
-            "❌ Failed to trigger license PDF generation:",
-            functionError,
-          );
+        if (shouldGenerateLicense) {
+          console.log("🚀 Triggering generate-license-pdf...");
+          const { data: funcData, error: functionError } = await supabaseClient
+            .functions.invoke("generate-license-pdf", {
+              body: { contractId },
+            });
+
+          if (functionError) {
+            console.error(
+              "❌ Failed to trigger license PDF generation:",
+              functionError,
+            );
+          } else {
+            console.log(
+              "✅ generate-license-pdf triggered successfully:",
+              funcData,
+            );
+          }
         } else {
-          console.log(
-            "✅ generate-license-pdf triggered successfully:",
-            funcData,
+          console.warn(
+            `⚠️  License NOT generated — payment not confirmed. mode=${session.mode}, payment_status=${session.payment_status}`,
           );
+          // Also revert contract status since payment didn't go through
+          await supabaseClient
+            .from("reaction_contracts")
+            .update({ status: "PAYMENT_FAILED" })
+            .eq("id", contractId);
+          console.log("Contract reverted to PAYMENT_FAILED");
         }
       } else {
         console.warn("⚠️  No contractId found in session metadata");
@@ -219,16 +238,28 @@ serve(async (req) => {
       console.error(`❌ Payment FAILED for subscription: ${failedSubId}`);
       console.error(`   Attempt: ${failedInvoice.attempt_count}`);
 
-      // Mark contract as payment failed
+      // 1. Fetch contract so we have relevant IDs
+      const { data: failedContractData, error: failedFetchError } = await supabaseClient
+        .from("reaction_contracts")
+        .select("id, status")
+        .eq("stripe_subscription_id", failedSubId)
+        .single();
+
+      if (failedFetchError || !failedContractData) {
+        console.error("❌ Could not find contract for failed subscription:", failedFetchError);
+        break;
+      }
+
+      // 2. Mark contract as PAYMENT_FAILED
       const { error: failedError } = await supabaseClient
         .from("reaction_contracts")
         .update({ status: "PAYMENT_FAILED" })
-        .eq("stripe_subscription_id", failedSubId);
+        .eq("id", failedContractData.id);
 
       if (failedError) {
         console.error("❌ Failed to update contract status to PAYMENT_FAILED:", failedError);
       } else {
-        console.log("⚠️  Contract marked as PAYMENT_FAILED — user needs to update payment method");
+        console.log("⚠️  Contract marked as PAYMENT_FAILED — license is no longer valid");
       }
       break;
     }
