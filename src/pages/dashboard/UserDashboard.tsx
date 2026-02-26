@@ -221,6 +221,15 @@ export default function UserDashboard() {
         });
       }
 
+      console.log("[DEBUG] Dashboard KPI Calculation:", {
+        revenuesLicensor,
+        revenuesLicensee,
+        contractsLicensor: contractsLicensor.status === "fulfilled" ? contractsLicensor.value.data : null,
+        contractsLicensee: contractsLicensee.status === "fulfilled" ? contractsLicensee.value.data : null,
+        calculatedEarnings: earnings,
+        calculatedSpent: spent
+      });
+
       const active =
         activeData.status === "fulfilled" ? activeData.value.count || 0 : 0;
       const pending =
