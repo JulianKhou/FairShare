@@ -242,11 +242,15 @@ serve(async (req) => {
       if (invoicePaidError) {
         console.error("❌ Failed to update contract after invoice.paid:", invoicePaidError);
       } else {
-        console.log("✅ Contract confirmed ACTIVE after successful payment");
+        console.log(`✅ Contract confirmed ACTIVE. Found ${contractData?.length || 0} contracts for sub ${subscriptionId}`);
 
         if (contractData && contractData.length > 0) {
           const contract = contractData[0];
           const amountCents = invoice.amount_paid || 0;
+
+          console.log(`[DEBUG invoice.paid] Contract ID: ${contract.id}, invoice amount_paid: ${amountCents} cents.`);
+
+          // Even if 0, we should log that we saw it!
           if (amountCents > 0) {
             const { error: revenueError } = await supabaseClient.from("revenue_events").insert({
               contract_id: contract.id,
@@ -262,7 +266,11 @@ serve(async (req) => {
             } else {
               console.log(`✅ Revenue event recorded for SUBSCRIPTION payment (${amountCents} cents)`);
             }
+          } else {
+            console.warn(`⚠️ Skipped inserting revenue event because amount_paid is ${amountCents}`);
           }
+        } else {
+          console.warn(`⚠️ No contract found matching stripe_subscription_id: ${subscriptionId} to record revenue against.`);
         }
       }
       break;
