@@ -41,6 +41,7 @@ serve(async (req) => {
 
                 const stripeStatus = subscription.status;
                 let newDbStatus: string | null = null;
+                let debugInfo = `Raw status from Stripe: ${stripeStatus}, current DB status: ${contract.status}`;
 
                 // Map Stripe subscription status to our DB status
                 if (stripeStatus === "active" || stripeStatus === "trialing") {
@@ -67,6 +68,7 @@ serve(async (req) => {
                         from: contract.status,
                         to: newDbStatus,
                         stripeStatus,
+                        debugInfo,
                     });
 
                     console.log(
@@ -78,6 +80,8 @@ serve(async (req) => {
                         action: "unchanged",
                         status: contract.status,
                         stripeStatus,
+                        debugInfo,
+                        reason: newDbStatus ? "DB status already matches Stripe status" : `Stripe status '${stripeStatus}' not mapped to a new DB status`,
                     });
                 }
             } catch (stripeErr: any) {
