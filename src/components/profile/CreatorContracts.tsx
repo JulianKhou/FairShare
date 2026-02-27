@@ -20,7 +20,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { generateLicensePDF } from "@/services/supabaseFunctions";
 
-type FilterStatus = "all" | "pending" | "accepted" | "paid" | "rejected";
+type FilterStatus =
+  | "all"
+  | "pending"
+  | "accepted"
+  | "paid"
+  | "rejected"
+  | "subscription"
+  | "flat"
+  | "inactive";
 
 interface CreatorContractsProps {
   mode?: "requests" | "active";
@@ -39,9 +47,9 @@ export const CreatorContracts = ({
   >({});
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
-  // In 'active' mode, start on 'paid'; in 'requests' mode start on 'pending'
+  // Default filter: in active mode start at 'all'; in requests mode start at 'pending'
   const [filter, setFilter] = useState<FilterStatus>(
-    mode === "active" ? "paid" : "pending",
+    mode === "active" ? "all" : "pending",
   );
 
   const fetchContracts = async () => {
@@ -232,14 +240,39 @@ export const CreatorContracts = ({
     };
   };
 
-  // In 'requests' mode, hide paid/active contracts — those belong to the active licenses tab
+  const INACTIVE_STATUSES = [
+    "REJECTED",
+    "CANCELLED",
+    "PAYMENT_FAILED",
+    "EXPIRED",
+  ];
+
+  // In 'active' mode show PAID/ACTIVE + REJECTED/CANCELLED/EXPIRED (full history)
+  // In 'requests' mode hide PAID/ACTIVE — those go in the active tab
   const displayContracts =
     mode === "active"
-      ? contracts.filter((c) => c.status === "PAID" || c.status === "ACTIVE")
+      ? contracts.filter(
+          (c) =>
+            c.status === "PAID" ||
+            c.status === "ACTIVE" ||
+            INACTIVE_STATUSES.includes(c.status || ""),
+        )
       : contracts.filter((c) => c.status !== "PAID" && c.status !== "ACTIVE");
 
   const filteredContracts = displayContracts.filter((c) => {
     if (filter === "all") return true;
+    if (filter === "subscription")
+      return (
+        (c.status === "PAID" || c.status === "ACTIVE") &&
+        c.pricing_model_type !== 1
+      );
+    if (filter === "flat")
+      return (
+        (c.status === "PAID" || c.status === "ACTIVE") &&
+        c.pricing_model_type === 1
+      );
+    if (filter === "inactive")
+      return INACTIVE_STATUSES.includes(c.status || "");
     return getStatusInfo(c).filterKey === filter;
   });
 
@@ -256,6 +289,19 @@ export const CreatorContracts = ({
       (c) => c.status === "PAID" || c.status === "ACTIVE",
     ).length,
     rejected: displayContracts.filter((c) => c.status === "REJECTED").length,
+    subscription: displayContracts.filter(
+      (c) =>
+        (c.status === "PAID" || c.status === "ACTIVE") &&
+        c.pricing_model_type !== 1,
+    ).length,
+    flat: displayContracts.filter(
+      (c) =>
+        (c.status === "PAID" || c.status === "ACTIVE") &&
+        c.pricing_model_type === 1,
+    ).length,
+    inactive: displayContracts.filter((c) =>
+      INACTIVE_STATUSES.includes(c.status || ""),
+    ).length,
   };
 
   if (loading) {
@@ -288,10 +334,12 @@ export const CreatorContracts = ({
       {/* Filter Bar — simplified for active mode */}
       <div className="flex flex-wrap gap-2">
         {(mode === "active"
-          ? ([{ key: "all", label: "Alle aktiven Lizenzen" }] as {
-              key: FilterStatus;
-              label: string;
-            }[])
+          ? ([
+              { key: "all", label: "Alle" },
+              { key: "subscription", label: "Abos (Views-basiert)" },
+              { key: "flat", label: "Festpreise" },
+              { key: "inactive", label: "Abgelehnt / Abgelaufen" },
+            ] as { key: FilterStatus; label: string }[])
           : ([
               { key: "all", label: "Alle" },
               { key: "pending", label: "Ausstehend" },
@@ -373,6 +421,51 @@ export const CreatorContracts = ({
                         Video ansehen <ExternalLink className="h-3 w-3" />
                       </a>
                     )}
+
+                    {/* Subscription duration — only for active subscriptions */}
+                    {(contract.status === "ACTIVE" ||
+                      contract.status === "PAID") &&
+                      contract.pricing_model_type !== 1 &&
+                      (() => {
+                        const startDate =
+                          contract.licensor_accepted_at || contract.created_at;
+                        const endDate = new Date(startDate);
+                        endDate.setFullYear(endDate.getFullYear() + 1);
+                        const now = new Date();
+                        const daysLeft = Math.max(
+                          0,
+                          Math.ceil(
+                            (endDate.getTime() - now.getTime()) /
+                              (1000 * 60 * 60 * 24),
+                          ),
+                        );
+                        const isExpiringSoon = daysLeft <= 30;
+                        return (
+                          <div
+                            className={`mt-3 flex items-center gap-2 text-xs px-2.5 py-1.5 rounded-md border ${
+                              isExpiringSoon
+                                ? "bg-orange-50 dark:bg-orange-900/20 border-orange-300/50 text-orange-700 dark:text-orange-400"
+                                : "bg-muted/50 border-border/50 text-muted-foreground"
+                            }`}
+                          >
+                            <span className="font-semibold">
+                              {isExpiringSoon ? "⚠️ " : "📅 "}Abo läuft ab:
+                            </span>
+                            <span>
+                              {endDate.toLocaleDateString("de-DE", {
+                                day: "2-digit",
+                                month: "long",
+                                year: "numeric",
+                              })}
+                            </span>
+                            <span
+                              className={`font-semibold ${isExpiringSoon ? "text-orange-700 dark:text-orange-400" : "text-foreground/80"}`}
+                            >
+                              ({daysLeft} Tage)
+                            </span>
+                          </div>
+                        );
+                      })()}
                   </div>
 
                   {/* Price + Actions */}
