@@ -36,6 +36,9 @@ export function useAdminSupportNotifications(isSupportPageActive: boolean) {
 
   useEffect(() => {
     fetchNewTickets();
+    // Fallback polling every 30s in case Realtime isn't working
+    const interval = setInterval(fetchNewTickets, 30_000);
+    return () => clearInterval(interval);
   }, []);
 
   // Mark as seen when admin navigates to the support page
@@ -60,7 +63,7 @@ export function useAdminSupportNotifications(isSupportPageActive: boolean) {
             icon: <MailOpen className="w-4 h-4" />,
           });
           setNewTicketCount((prev) => prev + 1);
-        }
+        },
       )
       .subscribe();
 

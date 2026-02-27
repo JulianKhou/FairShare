@@ -75,7 +75,7 @@ export const NotificationBell = () => {
   };
 
   useEffect(() => {
-    if (!user) return;
+    if (!user?.id) return;
 
     fetchRequests();
     fetchPaymentDue();
@@ -91,30 +91,43 @@ export const NotificationBell = () => {
           table: "reaction_contracts",
           filter: `licensor_id=eq.${user.id}`,
         },
-        () => fetchRequests(),
+        () => {
+          fetchRequests();
+          fetchPaymentDue();
+        },
       )
       .subscribe();
 
-    // Licensee side: payment-due updates (when licensor accepts)
+    // Licensee side: payment-due updates (when licensor accepts or new contracts)
     const licenseeChannel = supabase
       .channel(`notif-licensee-${user.id}`)
       .on(
         "postgres_changes",
         {
-          event: "UPDATE",
+          event: "*",
           schema: "public",
           table: "reaction_contracts",
           filter: `licensee_id=eq.${user.id}`,
         },
-        () => fetchPaymentDue(),
+        () => {
+          fetchPaymentDue();
+          fetchRequests();
+        },
       )
       .subscribe();
+
+    // Fallback polling every 30s in case Realtime connection drops silently
+    const pollInterval = setInterval(() => {
+      fetchRequests();
+      fetchPaymentDue();
+    }, 30_000);
 
     return () => {
       supabase.removeChannel(licensorChannel);
       supabase.removeChannel(licenseeChannel);
+      clearInterval(pollInterval);
     };
-  }, [user]);
+  }, [user?.id]);
 
   // Close dropdown on outside click
   useEffect(() => {
