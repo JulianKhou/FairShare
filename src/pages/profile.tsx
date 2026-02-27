@@ -25,16 +25,18 @@ export default function ProfilePage() {
         <TabsList className="mb-8 flex-wrap h-auto">
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="licenses">Aktive Lizenzen</TabsTrigger>
-          <TabsTrigger value="license-history">Abgelaufene Lizenzen</TabsTrigger>
+          <TabsTrigger value="license-history">
+            Abgelaufene Lizenzen
+          </TabsTrigger>
           <TabsTrigger value="creator-requests">Creator Anfragen</TabsTrigger>
         </TabsList>
 
         <TabsContent value="licenses">
-          <MyLicenses filter="active" />
+          <MyLicenses />
         </TabsContent>
 
         <TabsContent value="license-history">
-          <MyLicenses filter="expired" />
+          <MyLicenses />
         </TabsContent>
 
         <TabsContent value="creator-requests">

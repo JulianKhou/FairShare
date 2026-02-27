@@ -9,7 +9,6 @@ import {
   ArrowUpRight,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { ReactionContract } from "@/services/supabaseCollum/reactionContract";
 import { ReactorsModal } from "./ReactorsModal";
 
@@ -80,6 +79,18 @@ export const Analytics = () => {
 
         if (leError) throw leError;
 
+        // Fetch actual earned revenue from revenue_events (licensor side)
+        const { data: revenueEventsLicensor } = await supabase
+          .from("revenue_events")
+          .select("contract_id, amount_cents")
+          .eq("licensor_id", user.id);
+
+        // Fetch actual spent amounts from revenue_events (licensee side)
+        const { data: revenueEventsLicensee } = await supabase
+          .from("revenue_events")
+          .select("contract_id, amount_cents")
+          .eq("licensee_id", user.id);
+
         // Fetch licensed videos count
         const { count: licensedCount } = await supabase
           .from("videos")
@@ -91,12 +102,9 @@ export const Analytics = () => {
         const purchases = licenseeContracts || [];
 
         // --- As Licensor ---
-        const paidContracts = contracts.filter(
-          (c) => c.status === "PAID" || c.status === "ACTIVE",
-        );
-
-        const totalRevenue = contracts.reduce(
-          (sum, c) => sum + (c.pricing_value || 0),
+        // Sum actual revenue from revenue_events (correct!) instead of pricing_value
+        const totalRevenue = (revenueEventsLicensor || []).reduce(
+          (sum, r) => sum + r.amount_cents / 100,
           0,
         );
 
@@ -182,8 +190,9 @@ export const Analytics = () => {
           (c) => c.status === "PAID" || c.status === "ACTIVE",
         );
 
-        const totalSpent = paidPurchases.reduce(
-          (sum, c) => sum + (c.pricing_value || 0),
+        // Sum actual spent from revenue_events (correct!) instead of pricing_value
+        const totalSpent = (revenueEventsLicensee || []).reduce(
+          (sum, r) => sum + r.amount_cents / 100,
           0,
         );
 

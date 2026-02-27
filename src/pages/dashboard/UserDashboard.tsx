@@ -778,10 +778,10 @@ export default function UserDashboard() {
           <Analytics />
         </TabsContent>
         <TabsContent value="licenses">
-          <MyLicenses filter="active" />
+          <MyLicenses />
         </TabsContent>
         <TabsContent value="license-history">
-          <MyLicenses filter="expired" />
+          <MyLicenses />
         </TabsContent>
         <TabsContent value="creator-requests">
           <CreatorContracts />
