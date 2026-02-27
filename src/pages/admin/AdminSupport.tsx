@@ -301,33 +301,54 @@ export default function AdminSupport() {
       </Card>
 
       <Dialog open={isDialogOpen} onOpenChange={handleDialogClose}>
-        <DialogContent className="max-w-2xl flex flex-col h-[85vh]">
-          <DialogHeader className="shrink-0">
-            <div className="flex items-center gap-2 mb-1">
-              <MessageSquare className="w-5 h-5 text-primary" />
-              <DialogTitle>Ticket Details</DialogTitle>
-            </div>
-            <DialogDescription>
-              Support-Ticket von {selectedRequest?.user_full_name}
-            </DialogDescription>
-          </DialogHeader>
+        <DialogContent className="sm:max-w-4xl flex flex-col h-[85vh] p-0 gap-0 overflow-hidden">
+          {/* Header */}
+          <div className="bg-muted/40 px-6 py-4 border-b flex items-center justify-between shrink-0">
+            <DialogHeader className="text-left">
+              <div className="flex items-center gap-2">
+                <MessageSquare className="w-5 h-5 text-primary" />
+                <DialogTitle className="text-xl font-bold">
+                  Ticket Details
+                </DialogTitle>
+              </div>
+              <DialogDescription className="text-sm">
+                Support-Ticket von{" "}
+                <strong className="text-foreground">
+                  {selectedRequest?.user_full_name}
+                </strong>
+                {selectedRequest?.user_email && (
+                  <span className="text-muted-foreground">
+                    {" "}
+                    · {selectedRequest.user_email}
+                  </span>
+                )}
+              </DialogDescription>
+            </DialogHeader>
+            {selectedRequest && getStatusBadge(selectedRequest.status)}
+          </div>
 
           {selectedRequest && (
-            <div className="flex flex-col flex-1 overflow-hidden gap-4">
+            <div className="flex flex-col flex-1 overflow-hidden">
               {/* Meta row */}
-              <div className="grid grid-cols-2 gap-4 text-sm border-b pb-4 shrink-0">
-                <div>
-                  <p className="text-muted-foreground font-medium mb-1">
-                    Betreff
-                  </p>
-                  <p className="font-semibold">{selectedRequest.subject}</p>
+              <div className="px-6 py-3 border-b bg-muted/20 flex flex-wrap items-center gap-6 text-sm shrink-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground">Betreff:</span>
+                  <span className="font-semibold">
+                    {selectedRequest.subject}
+                  </span>
                 </div>
-                <div>
-                  <p className="text-muted-foreground font-medium mb-1">
-                    Status
-                  </p>
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground">Erstellt:</span>
+                  <span>
+                    {new Date(selectedRequest.created_at).toLocaleString(
+                      "de-DE",
+                    )}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 ml-auto">
+                  <span className="text-muted-foreground text-xs">Status:</span>
                   <select
-                    className="flex h-10 w-[180px] items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="h-8 rounded-md border border-input bg-background px-2 py-1 text-xs ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     value={selectedRequest.status}
                     disabled={isUpdating}
                     onChange={(e: any) => handleStatusChange(e.target.value)}
@@ -340,13 +361,15 @@ export default function AdminSupport() {
               </div>
 
               {/* Chat thread */}
-              <div className="flex-1 overflow-y-auto space-y-3 pr-1">
+              <div className="flex-1 overflow-y-auto space-y-3 px-6 py-4">
                 {/* Original message from user */}
                 <div className="flex justify-start">
-                  <div className="max-w-[80%] space-y-1">
+                  <div className="max-w-[75%] space-y-1">
                     <p className="text-xs text-muted-foreground ml-1">
                       {selectedRequest.user_full_name} ·{" "}
-                      {new Date(selectedRequest.created_at).toLocaleString()}
+                      {new Date(selectedRequest.created_at).toLocaleString(
+                        "de-DE",
+                      )}
                     </p>
                     <div className="bg-muted/40 border rounded-2xl rounded-tl-sm px-4 py-3 text-sm whitespace-pre-wrap">
                       {selectedRequest.message}
@@ -370,7 +393,7 @@ export default function AdminSupport() {
                           : "justify-start",
                       )}
                     >
-                      <div className="max-w-[80%] space-y-1">
+                      <div className="max-w-[75%] space-y-1">
                         <p
                           className={cn(
                             "text-xs text-muted-foreground",
@@ -382,7 +405,7 @@ export default function AdminSupport() {
                           {msg.sender_role === "admin"
                             ? "Du (Admin)"
                             : selectedRequest.user_full_name}{" "}
-                          · {new Date(msg.created_at).toLocaleString()}
+                          · {new Date(msg.created_at).toLocaleString("de-DE")}
                         </p>
                         <div
                           className={cn(
@@ -403,17 +426,17 @@ export default function AdminSupport() {
 
               {/* Reply box */}
               {selectedRequest.status === "CLOSED" ? (
-                <div className="shrink-0 border-t pt-3 text-center">
+                <div className="shrink-0 border-t px-6 py-3 text-center bg-muted/20">
                   <p className="text-sm text-muted-foreground">
                     Dieses Ticket ist geschlossen. Keine weiteren Antworten
                     möglich.
                   </p>
                 </div>
               ) : (
-                <div className="shrink-0 border-t pt-3 flex flex-col gap-2">
+                <div className="shrink-0 border-t px-6 py-3 flex flex-col gap-2 bg-background">
                   <Textarea
                     placeholder="Antwort schreiben..."
-                    rows={3}
+                    rows={2}
                     value={replyText}
                     onChange={(e) => setReplyText(e.target.value)}
                     onKeyDown={(e) => {
@@ -423,10 +446,11 @@ export default function AdminSupport() {
                       }
                     }}
                     disabled={isSending}
+                    className="resize-none"
                   />
                   <div className="flex justify-between items-center">
                     <p className="text-xs text-muted-foreground">
-                      ⌘+Enter zum Senden
+                      Strg+Enter zum Senden
                     </p>
                     <Button
                       onClick={handleSendReply}
