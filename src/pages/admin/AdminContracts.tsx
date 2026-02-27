@@ -264,237 +264,202 @@ export default function AdminContracts() {
           </div>
 
           {selectedContract && (
-            <div className="p-6 grid gap-5 bg-zinc-50/30 dark:bg-zinc-950/30">
-              {/* Timeline Info (Header Replacement) */}
-              <div className="flex flex-wrap items-center gap-8 text-sm text-muted-foreground w-full bg-card border rounded-xl p-5 shadow-sm">
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold text-foreground">
-                    Erstellt:
-                  </span>
-                  <span>
-                    {new Date(selectedContract.created_at).toLocaleString()}
-                  </span>
-                </div>
+            <div className="p-5 space-y-4">
+              {/* Timeline row */}
+              <div className="flex flex-wrap items-center gap-6 text-xs text-muted-foreground bg-muted/30 rounded-lg px-4 py-2.5 border">
+                <span>
+                  <strong className="text-foreground">Erstellt:</strong>{" "}
+                  {new Date(selectedContract.created_at).toLocaleString(
+                    "de-DE",
+                  )}
+                </span>
                 {selectedContract.licensor_accepted_at && (
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-foreground">
-                      Akzeptiert:
-                    </span>
-                    <span>
-                      {new Date(
-                        selectedContract.licensor_accepted_at,
-                      ).toLocaleString()}
-                    </span>
-                  </div>
+                  <span>
+                    <strong className="text-foreground">Akzeptiert:</strong>{" "}
+                    {new Date(
+                      selectedContract.licensor_accepted_at,
+                    ).toLocaleString("de-DE")}
+                  </span>
                 )}
-                <div className="flex items-center gap-2 ml-auto">
-                  <span className="font-semibold text-foreground">
-                    Vertrags-Version:
-                  </span>
-                  <span className="font-mono bg-muted/50 px-2 py-0.5 rounded text-xs">
+                <span className="ml-auto">
+                  <strong className="text-foreground">Version:</strong>{" "}
+                  <code className="bg-muted px-1.5 py-0.5 rounded">
                     {selectedContract.contract_version}
-                  </span>
-                </div>
+                  </code>
+                </span>
               </div>
 
-              <div className="grid md:grid-cols-2 gap-5">
-                {/* Beteiligte Parteien */}
-                <div className="border rounded-xl bg-card shadow-sm overflow-hidden flex flex-col">
-                  <div className="bg-muted/30 px-6 py-4 border-b flex items-center gap-2">
-                    <Users className="w-5 h-5 text-primary" />
-                    <h3 className="font-semibold text-lg">
-                      Beteiligte Parteien
-                    </h3>
-                  </div>
-                  <div className="p-6 grid gap-6 flex-1">
-                    <div className="space-y-2">
-                      <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                        Original-Urheber (Licensor)
-                      </p>
-                      <div className="bg-muted/20 p-4 rounded-lg border border-border/50">
-                        <p className="text-base font-bold">
-                          {selectedContract.licensor_name}
-                        </p>
-                        <p className="text-xs font-mono text-muted-foreground mt-2 break-all">
-                          {selectedContract.licensor_id}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                        Nutzer (Licensee)
-                      </p>
-                      <div className="bg-muted/20 p-4 rounded-lg border border-border/50">
-                        <p className="text-base font-bold">
-                          {selectedContract.licensee_name}
-                        </p>
-                        <p className="text-xs font-mono text-muted-foreground mt-2 break-all">
-                          {selectedContract.licensee_id}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Video Info */}
-                <div className="border rounded-xl bg-card shadow-sm overflow-hidden flex flex-col">
-                  <div className="bg-muted/30 px-6 py-4 border-b flex items-center gap-2">
-                    <Activity className="w-5 h-5 text-primary" />
-                    <h3 className="font-semibold text-lg">
-                      Lizenziertes Video
-                    </h3>
-                  </div>
-                  <div className="p-6 space-y-6 flex-1">
-                    <div className="space-y-2">
-                      <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                        Original Video
-                      </p>
-                      <a
-                        href={selectedContract.original_video_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-lg font-medium text-primary hover:underline line-clamp-2"
-                      >
-                        {selectedContract.original_video_title}
-                      </a>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-6 pt-4 border-t border-border/50">
-                      <div className="space-y-2">
-                        <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                          YouTube ID
-                        </p>
-                        <p className="font-mono text-sm bg-muted/50 w-fit px-2 py-1 rounded border">
-                          {selectedContract.original_video_id}
-                        </p>
-                      </div>
-                      <div className="space-y-2">
-                        <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                          Dauer
-                        </p>
-                        <p className="text-lg">
-                          {selectedContract.original_video_duration}
-                        </p>
-                      </div>
-                    </div>
-
-                    {selectedContract.reaction_video_id && (
-                      <div className="space-y-2 pt-4 border-t border-border/50">
-                        <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                          Verknüpftes Video (Licensee)
-                        </p>
-                        <p className="font-mono text-sm bg-muted/50 w-fit px-2 py-1 rounded border">
-                          {selectedContract.reaction_video_id}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Vergütung & Metadaten (Wide Format) */}
-              <div className="border rounded-xl bg-card shadow-sm overflow-hidden">
-                <div className="bg-muted/30 px-6 py-4 border-b flex items-center gap-2">
-                  <CreditCard className="w-5 h-5 text-primary" />
-                  <h3 className="font-semibold text-lg">
-                    Vergütung & FairShare Daten
+              {/* Two columns: Parteien + Video */}
+              <div className="grid md:grid-cols-2 gap-4">
+                {/* Beteiligte */}
+                <div className="border rounded-lg p-4 space-y-3">
+                  <h3 className="text-sm font-semibold flex items-center gap-2 text-muted-foreground">
+                    <Users className="w-4 h-4" /> Beteiligte Parteien
                   </h3>
+                  <div className="grid gap-2">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <span className="text-xs text-muted-foreground shrink-0">
+                        Licensor:
+                      </span>
+                      <span className="font-medium text-sm text-right truncate">
+                        {selectedContract.licensor_name}
+                      </span>
+                    </div>
+                    <p className="text-[10px] font-mono text-muted-foreground/60 break-all -mt-1">
+                      {selectedContract.licensor_id}
+                    </p>
+                    <div className="flex items-baseline justify-between gap-2 pt-2 border-t">
+                      <span className="text-xs text-muted-foreground shrink-0">
+                        Licensee:
+                      </span>
+                      <span className="font-medium text-sm text-right truncate">
+                        {selectedContract.licensee_name}
+                      </span>
+                    </div>
+                    <p className="text-[10px] font-mono text-muted-foreground/60 break-all -mt-1">
+                      {selectedContract.licensee_id}
+                    </p>
+                  </div>
                 </div>
-                <div className="p-6">
-                  <div className="grid md:grid-cols-3 gap-8 mb-8">
-                    <div className="space-y-2">
-                      <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                        Preismodell
-                      </p>
-                      <p className="text-xl font-medium">
-                        Typ {selectedContract.pricing_model_type}
-                        <span className="block text-sm text-primary/80 mt-1 font-normal">
-                          {selectedContract.pricing_model_type === 1
-                            ? "Einmalzahlung (Fixpreis)"
-                            : selectedContract.pricing_model_type === 2
-                              ? "Abo: Pay per View"
-                              : "Abo: CPM Modell"}
-                        </span>
-                      </p>
+
+                {/* Video */}
+                <div className="border rounded-lg p-4 space-y-3">
+                  <h3 className="text-sm font-semibold flex items-center gap-2 text-muted-foreground">
+                    <Activity className="w-4 h-4" /> Lizenziertes Video
+                  </h3>
+                  <a
+                    href={selectedContract.original_video_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-sm font-medium text-primary hover:underline line-clamp-2 block"
+                  >
+                    {selectedContract.original_video_title}
+                  </a>
+                  <div className="grid grid-cols-2 gap-3 pt-2 border-t text-sm">
+                    <div>
+                      <span className="text-xs text-muted-foreground block mb-0.5">
+                        YouTube ID
+                      </span>
+                      <code className="text-xs bg-muted px-1.5 py-0.5 rounded">
+                        {selectedContract.original_video_id}
+                      </code>
                     </div>
-                    <div className="space-y-2">
-                      <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                        Vertragswert
-                      </p>
-                      <p className="text-2xl font-bold font-mono">
-                        {selectedContract.pricing_currency}{" "}
-                        {selectedContract.pricing_value.toFixed(2)}
-                      </p>
-                    </div>
-                    <div className="space-y-2">
-                      <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                        Gesamt FairShare
-                      </p>
-                      <div className="flex flex-col gap-2">
-                        <span className="text-3xl font-bold font-mono text-emerald-600 dark:text-emerald-400">
-                          {selectedContract.fairshare_score}
-                          <span className="text-lg text-emerald-600/60">
-                            /100
-                          </span>
-                        </span>
-                        <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]"
-                            style={{
-                              width: `${Math.min(100, (selectedContract.fairshare_score / 100) * 100)}%`,
-                            }}
-                          />
-                        </div>
-                      </div>
+                    <div>
+                      <span className="text-xs text-muted-foreground block mb-0.5">
+                        Dauer
+                      </span>
+                      <span className="font-medium">
+                        {selectedContract.original_video_duration}
+                      </span>
                     </div>
                   </div>
-
-                  {selectedContract.fairshare_metadata && (
-                    <div className="pt-6 border-t border-border/50 grid grid-cols-2 md:grid-cols-4 gap-6">
-                      <div className="space-y-1">
-                        <p className="text-xs uppercase tracking-wider text-muted-foreground">
-                          Marktmacht
-                        </p>
-                        <p className="text-lg font-medium">
-                          {selectedContract.fairshare_metadata.marktmacht_score}
-                        </p>
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-xs uppercase tracking-wider text-muted-foreground">
-                          Schöpfung
-                        </p>
-                        <p className="text-lg font-medium">
-                          {
-                            selectedContract.fairshare_metadata
-                              .schoepferische_leistung
-                          }
-                        </p>
-                      </div>
-                      {(selectedContract.stripe_subscription_id ||
-                        selectedContract.stripe_session_id) && (
-                        <div className="space-y-1 col-span-2">
-                          <p className="text-xs uppercase tracking-wider text-muted-foreground">
-                            Stripe Info
-                          </p>
-                          <p
-                            className="text-sm font-mono text-muted-foreground truncate"
-                            title={
-                              selectedContract.stripe_subscription_id ||
-                              selectedContract.stripe_session_id
-                            }
-                          >
-                            {selectedContract.stripe_subscription_id
-                              ? `Sub: ${selectedContract.stripe_subscription_id}`
-                              : `Session: ${selectedContract.stripe_session_id}`}
-                          </p>
-                        </div>
-                      )}
+                  {selectedContract.reaction_video_id && (
+                    <div className="pt-2 border-t">
+                      <span className="text-xs text-muted-foreground block mb-0.5">
+                        Verknüpftes Video
+                      </span>
+                      <code className="text-xs bg-muted px-1.5 py-0.5 rounded">
+                        {selectedContract.reaction_video_id}
+                      </code>
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* Subscription end date — only for active Abo contracts */}
+              {/* Vergütung — compact 3-col row */}
+              <div className="border rounded-lg p-4 space-y-3">
+                <h3 className="text-sm font-semibold flex items-center gap-2 text-muted-foreground">
+                  <CreditCard className="w-4 h-4" /> Vergütung & FairShare
+                </h3>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <span className="text-xs text-muted-foreground block mb-1">
+                      Preismodell
+                    </span>
+                    <p className="font-semibold text-sm">
+                      {selectedContract.pricing_model_type === 1
+                        ? "Einmalzahlung"
+                        : selectedContract.pricing_model_type === 2
+                          ? "Abo (Views)"
+                          : "Abo (CPM)"}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-xs text-muted-foreground block mb-1">
+                      Vertragswert
+                    </span>
+                    <p className="text-xl font-bold font-mono">
+                      {selectedContract.pricing_value.toFixed(2)}{" "}
+                      {selectedContract.pricing_currency}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-xs text-muted-foreground block mb-1">
+                      FairShare Score
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl font-bold font-mono text-emerald-600 dark:text-emerald-400">
+                        {selectedContract.fairshare_score}
+                        <span className="text-sm text-emerald-600/50">
+                          /100
+                        </span>
+                      </span>
+                    </div>
+                    <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden mt-1">
+                      <div
+                        className="h-full bg-emerald-500"
+                        style={{
+                          width: `${Math.min(100, selectedContract.fairshare_score)}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+                {selectedContract.fairshare_metadata && (
+                  <div className="pt-3 border-t flex flex-wrap gap-6 text-sm">
+                    <div>
+                      <span className="text-xs text-muted-foreground">
+                        Marktmacht:
+                      </span>{" "}
+                      <span className="font-medium">
+                        {selectedContract.fairshare_metadata.marktmacht_score}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-xs text-muted-foreground">
+                        Schöpfung:
+                      </span>{" "}
+                      <span className="font-medium">
+                        {
+                          selectedContract.fairshare_metadata
+                            .schoepferische_leistung
+                        }
+                      </span>
+                    </div>
+                    {(selectedContract.stripe_subscription_id ||
+                      selectedContract.stripe_session_id) && (
+                      <div className="ml-auto">
+                        <span className="text-xs text-muted-foreground">
+                          Stripe:
+                        </span>{" "}
+                        <code
+                          className="text-xs text-muted-foreground"
+                          title={
+                            selectedContract.stripe_subscription_id ||
+                            selectedContract.stripe_session_id
+                          }
+                        >
+                          {selectedContract.stripe_subscription_id
+                            ? `Sub: ${selectedContract.stripe_subscription_id.slice(0, 20)}…`
+                            : `Ses: ${selectedContract.stripe_session_id?.slice(0, 20)}…`}
+                        </code>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Abo-Laufzeit — only for active subscriptions */}
               {(selectedContract.status === "ACTIVE" ||
                 selectedContract.status === "PAID") &&
                 selectedContract.pricing_model_type !== 1 &&
@@ -504,58 +469,48 @@ export default function AdminContracts() {
                     selectedContract.created_at;
                   const endDate = new Date(startDate);
                   endDate.setFullYear(endDate.getFullYear() + 1);
-                  const now = new Date();
                   const daysLeft = Math.max(
                     0,
                     Math.ceil(
-                      (endDate.getTime() - now.getTime()) /
-                        (1000 * 60 * 60 * 24),
+                      (endDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24),
                     ),
                   );
-                  const totalDays = 365;
-                  const elapsed = totalDays - daysLeft;
                   const pct = Math.min(
                     100,
-                    Math.round((elapsed / totalDays) * 100),
+                    Math.round(((365 - daysLeft) / 365) * 100),
                   );
-                  const isExpiringSoon = daysLeft <= 30;
+                  const warn = daysLeft <= 30;
                   return (
                     <div
-                      className={`p-4 rounded-xl border ${
-                        isExpiringSoon
-                          ? "bg-orange-50 dark:bg-orange-900/20 border-orange-300/50"
-                          : "bg-blue-50 dark:bg-blue-900/10 border-blue-300/30"
-                      }`}
+                      className={`rounded-lg border p-3 ${warn ? "bg-orange-50 dark:bg-orange-900/20 border-orange-300/50" : "bg-blue-50 dark:bg-blue-900/10 border-blue-300/30"}`}
                     >
-                      <div className="flex items-center justify-between mb-2">
+                      <div className="flex justify-between text-xs font-semibold mb-1.5">
                         <span
-                          className={`text-sm font-semibold ${
-                            isExpiringSoon
+                          className={
+                            warn
                               ? "text-orange-700 dark:text-orange-400"
                               : "text-blue-700 dark:text-blue-400"
-                          }`}
+                          }
                         >
-                          {isExpiringSoon ? "⚠️" : "📅"} Abo-Laufzeit
+                          {warn ? "⚠️" : "📅"} Abo-Laufzeit
                         </span>
                         <span
-                          className={`text-sm font-bold ${
-                            isExpiringSoon
+                          className={
+                            warn
                               ? "text-orange-700 dark:text-orange-400"
                               : "text-blue-700 dark:text-blue-400"
-                          }`}
+                          }
                         >
                           {daysLeft} Tage verbleibend
                         </span>
                       </div>
-                      <div className="h-2 w-full bg-white/50 dark:bg-white/10 rounded-full overflow-hidden mb-2">
+                      <div className="h-1.5 w-full bg-white/50 dark:bg-white/10 rounded-full overflow-hidden mb-1.5">
                         <div
-                          className={`h-full rounded-full transition-all ${
-                            isExpiringSoon ? "bg-orange-500" : "bg-blue-500"
-                          }`}
+                          className={`h-full rounded-full ${warn ? "bg-orange-500" : "bg-blue-500"}`}
                           style={{ width: `${pct}%` }}
                         />
                       </div>
-                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <div className="flex justify-between text-[10px] text-muted-foreground">
                         <span>
                           Start:{" "}
                           {new Date(startDate).toLocaleDateString("de-DE", {
