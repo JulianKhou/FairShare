@@ -82,13 +82,13 @@ export const Analytics = () => {
         // Fetch actual earned revenue from revenue_events (licensor side)
         const { data: revenueEventsLicensor } = await supabase
           .from("revenue_events")
-          .select("contract_id, amount_cents")
+          .select("contract_id, amount_cents, created_at, payment_type")
           .eq("licensor_id", user.id);
 
         // Fetch actual spent amounts from revenue_events (licensee side)
         const { data: revenueEventsLicensee } = await supabase
           .from("revenue_events")
-          .select("contract_id, amount_cents")
+          .select("contract_id, amount_cents, created_at")
           .eq("licensee_id", user.id);
 
         // Fetch licensed videos count
@@ -115,16 +115,19 @@ export const Analytics = () => {
         // Unique reactors
         const uniqueReactors = new Set(contracts.map((c) => c.licensee_id));
 
-        // Revenue by pricing model
+        // Revenue by pricing model — map contract pricing type from revenue events
+        // Build a lookup: contract_id -> pricing_model_type
+        const contractModelMap = new Map<string, number>();
+        for (const c of contracts)
+          contractModelMap.set(c.id, c.pricing_model_type);
+
         const modelMap = new Map<number, { amount: number; count: number }>();
-        for (const c of contracts) {
-          const existing = modelMap.get(c.pricing_model_type) || {
-            amount: 0,
-            count: 0,
-          };
-          existing.amount += c.pricing_value || 0;
+        for (const ev of revenueEventsLicensor || []) {
+          const modelType = contractModelMap.get(ev.contract_id) ?? 1;
+          const existing = modelMap.get(modelType) || { amount: 0, count: 0 };
+          existing.amount += ev.amount_cents / 100;
           existing.count += 1;
-          modelMap.set(c.pricing_model_type, existing);
+          modelMap.set(modelType, existing);
         }
 
         const revenueByModel = Array.from(modelMap.entries()).map(
@@ -135,7 +138,7 @@ export const Analytics = () => {
           }),
         );
 
-        // Revenue by Month (for Chart)
+        // Revenue by Month — use actual payment dates from revenue_events
         const monthMap = new Map<string, { amount: number; count: number }>();
         // Initialize last 6 months with 0
         for (let i = 5; i >= 0; i--) {
@@ -145,13 +148,13 @@ export const Analytics = () => {
           monthMap.set(key, { amount: 0, count: 0 });
         }
 
-        for (const c of contracts) {
-          const key = c.created_at.slice(0, 7);
+        // Aggregate revenue_events by payment month (created_at)
+        for (const ev of revenueEventsLicensor || []) {
+          const key = (ev.created_at as string).slice(0, 7); // YYYY-MM
           const existing = monthMap.get(key) || { amount: 0, count: 0 };
-          existing.amount += c.pricing_value || 0;
+          existing.amount += ev.amount_cents / 100;
           existing.count += 1;
-          if (!monthMap.has(key)) monthMap.set(key, existing);
-          else monthMap.set(key, existing);
+          monthMap.set(key, existing);
         }
 
         // Convert to array and format month label

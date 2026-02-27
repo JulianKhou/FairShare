@@ -110,6 +110,34 @@ export const MyLicenses = () => {
     }
   }, [user]);
 
+  // Realtime: auto-refresh when a contract is updated by webhook (PENDING -> PAID/ACTIVE)
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel(`my-licenses-${user.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "reaction_contracts",
+          filter: `licensee_id=eq.${user.id}`,
+        },
+        (payload) => {
+          const newStatus = (payload.new as any)?.status;
+          if (["PAID", "ACTIVE", "REJECTED", "CANCELLED"].includes(newStatus)) {
+            getPurchasedContracts(user.id).then((data) => {
+              setLicenses(data || []);
+            });
+          }
+        },
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+
   const handleDownload = async (license: ReactionContract) => {
     try {
       const fileName = `License-${license.id.slice(0, 8)}.pdf`;
