@@ -174,6 +174,24 @@ export default function AdminSupport() {
         prev.some((m) => m.id === newMsg.id) ? prev : [...prev, newMsg],
       );
       setReplyText("");
+
+      // Auto-switch status from OPEN to IN_PROGRESS on first admin reply
+      if (selectedRequest.status === "OPEN") {
+        try {
+          await updateHelpRequestStatus(selectedRequest.id, "IN_PROGRESS");
+          setSelectedRequest((prev) =>
+            prev ? { ...prev, status: "IN_PROGRESS" } : null,
+          );
+          setRequests((prev) =>
+            prev.map((r) =>
+              r.id === selectedRequest.id ? { ...r, status: "IN_PROGRESS" } : r,
+            ),
+          );
+        } catch {
+          // Non-critical – reply was sent, status update is best-effort
+        }
+      }
+
       toast.success("Antwort gesendet!");
     } catch (e: any) {
       toast.error("Fehler beim Senden: " + e.message);
@@ -384,38 +402,47 @@ export default function AdminSupport() {
               </div>
 
               {/* Reply box */}
-              <div className="shrink-0 border-t pt-3 flex flex-col gap-2">
-                <Textarea
-                  placeholder="Antwort schreiben..."
-                  rows={3}
-                  value={replyText}
-                  onChange={(e) => setReplyText(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-                      e.preventDefault();
-                      handleSendReply();
-                    }
-                  }}
-                  disabled={isSending}
-                />
-                <div className="flex justify-between items-center">
-                  <p className="text-xs text-muted-foreground">
-                    ⌘+Enter zum Senden
+              {selectedRequest.status === "CLOSED" ? (
+                <div className="shrink-0 border-t pt-3 text-center">
+                  <p className="text-sm text-muted-foreground">
+                    Dieses Ticket ist geschlossen. Keine weiteren Antworten
+                    möglich.
                   </p>
-                  <Button
-                    onClick={handleSendReply}
-                    disabled={isSending || !replyText.trim()}
-                    size="sm"
-                  >
-                    {isSending ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : (
-                      <Send className="w-4 h-4 mr-2" />
-                    )}
-                    Antwort senden
-                  </Button>
                 </div>
-              </div>
+              ) : (
+                <div className="shrink-0 border-t pt-3 flex flex-col gap-2">
+                  <Textarea
+                    placeholder="Antwort schreiben..."
+                    rows={3}
+                    value={replyText}
+                    onChange={(e) => setReplyText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                        e.preventDefault();
+                        handleSendReply();
+                      }
+                    }}
+                    disabled={isSending}
+                  />
+                  <div className="flex justify-between items-center">
+                    <p className="text-xs text-muted-foreground">
+                      ⌘+Enter zum Senden
+                    </p>
+                    <Button
+                      onClick={handleSendReply}
+                      disabled={isSending || !replyText.trim()}
+                      size="sm"
+                    >
+                      {isSending ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <Send className="w-4 h-4 mr-2" />
+                      )}
+                      Antwort senden
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </DialogContent>

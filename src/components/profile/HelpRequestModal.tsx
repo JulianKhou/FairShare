@@ -217,7 +217,7 @@ export function HelpRequestModal({
 
   const renderTicketDetail = () => {
     if (!selectedRequest) return null;
-    const canReply = selectedRequest.status === "IN_PROGRESS";
+    const canReply = selectedRequest.status !== "CLOSED";
     return (
       <div className="flex flex-col h-full">
         {/* Back button */}
