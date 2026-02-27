@@ -79,14 +79,21 @@ serve(async (req) => {
               // Get current date, add exactly 1 year, and convert to unix timestamp (seconds).
               const oneYearFromNow = new Date();
               oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
-              const cancelAtUnixTimestamp = Math.floor(oneYearFromNow.getTime() / 1000);
+              const cancelAtUnixTimestamp = Math.floor(
+                oneYearFromNow.getTime() / 1000,
+              );
 
               await stripe.subscriptions.update(session.subscription, {
                 cancel_at: cancelAtUnixTimestamp,
               });
-              console.log(`⏱️ Scheduled subscription ${session.subscription} to auto-cancel on ${oneYearFromNow.toISOString()}`);
+              console.log(
+                `⏱️ Scheduled subscription ${session.subscription} to auto-cancel on ${oneYearFromNow.toISOString()}`,
+              );
             } catch (err: any) {
-              console.error("❌ Failed to set cancel_at for subscription:", err);
+              console.error(
+                "❌ Failed to set cancel_at for subscription:",
+                err,
+              );
             }
           }
           if (typeof session.customer === "string") {
@@ -95,24 +102,32 @@ serve(async (req) => {
             // FIX: Set the payment method from Checkout as the customer's default
             // for future invoices. Without this, Stripe can't auto-charge metered invoices.
             try {
-              const checkoutSession = await stripe.checkout.sessions.retrieve(session.id, {
-                expand: ["setup_intent"],
-              });
+              const checkoutSession = await stripe.checkout.sessions.retrieve(
+                session.id,
+                {
+                  expand: ["setup_intent"],
+                },
+              );
 
               // For subscription mode, the payment method is on the subscription's default_payment_method
               // or we can get it from the customer's payment methods list
-              const sub = await stripe.subscriptions.retrieve(session.subscription as string);
+              const sub = await stripe.subscriptions.retrieve(
+                session.subscription as string,
+              );
               const subPaymentMethod = sub.default_payment_method;
 
               if (subPaymentMethod) {
                 await stripe.customers.update(session.customer, {
                   invoice_settings: {
-                    default_payment_method: typeof subPaymentMethod === "string"
-                      ? subPaymentMethod
-                      : subPaymentMethod.id,
+                    default_payment_method:
+                      typeof subPaymentMethod === "string"
+                        ? subPaymentMethod
+                        : subPaymentMethod.id,
                   },
                 });
-                console.log(`✅ Set default payment method for customer ${session.customer}`);
+                console.log(
+                  `✅ Set default payment method for customer ${session.customer}`,
+                );
               } else {
                 // Fallback: get the most recent payment method from the customer
                 const paymentMethods = await stripe.paymentMethods.list({
@@ -126,13 +141,20 @@ serve(async (req) => {
                       default_payment_method: paymentMethods.data[0].id,
                     },
                   });
-                  console.log(`✅ Set default payment method (fallback) for customer ${session.customer}`);
+                  console.log(
+                    `✅ Set default payment method (fallback) for customer ${session.customer}`,
+                  );
                 } else {
-                  console.warn("⚠️  No payment method found for customer — future invoices may fail!");
+                  console.warn(
+                    "⚠️  No payment method found for customer — future invoices may fail!",
+                  );
                 }
               }
             } catch (pmError: any) {
-              console.error("❌ Failed to set default payment method:", pmError.message);
+              console.error(
+                "❌ Failed to set default payment method:",
+                pmError.message,
+              );
             }
           }
         }
@@ -152,23 +174,32 @@ serve(async (req) => {
         console.log("✅ DB Update successful:", updateData);
 
         // Record Revenue for One-Time Payments
-        if (updateData && updateData.length > 0 && session.mode === "payment" && session.payment_status === "paid") {
+        if (
+          updateData &&
+          updateData.length > 0 &&
+          session.mode === "payment" &&
+          session.payment_status === "paid"
+        ) {
           const contract = updateData[0];
           const amountCents = session.amount_total || 0;
           if (amountCents > 0) {
-            const { error: revenueError } = await supabaseClient.from("revenue_events").insert({
-              contract_id: contract.id,
-              licensor_id: contract.licensor_id,
-              licensee_id: contract.licensee_id,
-              amount_cents: amountCents,
-              currency: session.currency || "eur",
-              stripe_session_id: session.id,
-              payment_type: "ONE_TIME"
-            });
+            const { error: revenueError } = await supabaseClient
+              .from("revenue_events")
+              .insert({
+                contract_id: contract.id,
+                licensor_id: contract.licensor_id,
+                licensee_id: contract.licensee_id,
+                amount_cents: amountCents,
+                currency: session.currency || "eur",
+                stripe_session_id: session.id,
+                payment_type: "ONE_TIME",
+              });
             if (revenueError) {
               console.error("❌ Failed to insert revenue event:", revenueError);
             } else {
-              console.log(`✅ Revenue event recorded for ONE_TIME payment (${amountCents} cents)`);
+              console.log(
+                `✅ Revenue event recorded for ONE_TIME payment (${amountCents} cents)`,
+              );
             }
           }
         }
@@ -183,8 +214,8 @@ serve(async (req) => {
 
         if (shouldGenerateLicense) {
           console.log("🚀 Triggering generate-license-pdf...");
-          const { data: funcData, error: functionError } = await supabaseClient
-            .functions.invoke("generate-license-pdf", {
+          const { data: funcData, error: functionError } =
+            await supabaseClient.functions.invoke("generate-license-pdf", {
               body: { contractId },
             });
 
@@ -222,55 +253,77 @@ serve(async (req) => {
       const subscriptionId = invoice.subscription;
 
       if (!subscriptionId) {
-        console.log("ℹ️  invoice.paid without subscription — likely one-time, skipping.");
+        console.log(
+          "ℹ️  invoice.paid without subscription — likely one-time, skipping.",
+        );
         break;
       }
 
       console.log(`💰 Invoice paid for subscription: ${subscriptionId}`);
-      console.log(`   Amount: ${invoice.amount_paid / 100} ${invoice.currency?.toUpperCase()}`);
-      console.log(`   Period: ${new Date((invoice.period_start || 0) * 1000).toISOString()} - ${new Date((invoice.period_end || 0) * 1000).toISOString()}`);
+      console.log(
+        `   Amount: ${invoice.amount_paid / 100} ${invoice.currency?.toUpperCase()}`,
+      );
+      console.log(
+        `   Period: ${new Date((invoice.period_start || 0) * 1000).toISOString()} - ${new Date((invoice.period_end || 0) * 1000).toISOString()}`,
+      );
 
       // Ensure contract status stays ACTIVE after successful payment
-      const { data: contractData, error: invoicePaidError } = await supabaseClient
-        .from("reaction_contracts")
-        .update({
-          status: "ACTIVE",
-        })
-        .eq("stripe_subscription_id", subscriptionId)
-        .select();
+      const { data: contractData, error: invoicePaidError } =
+        await supabaseClient
+          .from("reaction_contracts")
+          .update({
+            status: "ACTIVE",
+          })
+          .eq("stripe_subscription_id", subscriptionId)
+          .select();
 
       if (invoicePaidError) {
-        console.error("❌ Failed to update contract after invoice.paid:", invoicePaidError);
+        console.error(
+          "❌ Failed to update contract after invoice.paid:",
+          invoicePaidError,
+        );
       } else {
-        console.log(`✅ Contract confirmed ACTIVE. Found ${contractData?.length || 0} contracts for sub ${subscriptionId}`);
+        console.log(
+          `✅ Contract confirmed ACTIVE. Found ${contractData?.length || 0} contracts for sub ${subscriptionId}`,
+        );
 
         if (contractData && contractData.length > 0) {
           const contract = contractData[0];
           const amountCents = invoice.amount_paid || 0;
 
-          console.log(`[DEBUG invoice.paid] Contract ID: ${contract.id}, invoice amount_paid: ${amountCents} cents.`);
+          console.log(
+            `[DEBUG invoice.paid] Contract ID: ${contract.id}, invoice amount_paid: ${amountCents} cents.`,
+          );
 
-          // Even if 0, we should log that we saw it!
+          // Even if 0, we might want to log it, but only insert revenue if > 0
           if (amountCents > 0) {
-            const { error: revenueError } = await supabaseClient.from("revenue_events").insert({
-              contract_id: contract.id,
-              licensor_id: contract.licensor_id,
-              licensee_id: contract.licensee_id,
-              amount_cents: amountCents,
-              currency: invoice.currency || "eur",
-              stripe_invoice_id: invoice.id,
-              payment_type: "SUBSCRIPTION"
-            });
+            const { error: revenueError } = await supabaseClient
+              .from("revenue_events")
+              .insert({
+                contract_id: contract.id,
+                licensor_id: contract.licensor_id,
+                licensee_id: contract.licensee_id,
+                amount_cents: amountCents,
+                currency: invoice.currency || "eur",
+                stripe_invoice_id: invoice.id,
+                payment_type: "SUBSCRIPTION",
+              });
             if (revenueError) {
               console.error("❌ Failed to insert revenue event:", revenueError);
             } else {
-              console.log(`✅ Revenue event recorded for SUBSCRIPTION payment (${amountCents} cents)`);
+              console.log(
+                `✅ Revenue event recorded for SUBSCRIPTION payment (${amountCents} cents)`,
+              );
             }
           } else {
-            console.warn(`⚠️ Skipped inserting revenue event because amount_paid is ${amountCents}`);
+            console.warn(
+              `⚠️ Skipped inserting revenue event because amount_paid is ${amountCents}`,
+            );
           }
         } else {
-          console.warn(`⚠️ No contract found matching stripe_subscription_id: ${subscriptionId} to record revenue against.`);
+          console.warn(
+            `⚠️ No contract found matching stripe_subscription_id: ${subscriptionId} to record revenue against.`,
+          );
         }
       }
       break;
@@ -282,7 +335,9 @@ serve(async (req) => {
       const failedSubId = failedInvoice.subscription;
 
       if (!failedSubId) {
-        console.log("ℹ️  invoice.payment_failed without subscription — skipping.");
+        console.log(
+          "ℹ️  invoice.payment_failed without subscription — skipping.",
+        );
         break;
       }
 
@@ -290,14 +345,18 @@ serve(async (req) => {
       console.error(`   Attempt: ${failedInvoice.attempt_count}`);
 
       // 1. Fetch contract so we have relevant IDs
-      const { data: failedContractData, error: failedFetchError } = await supabaseClient
-        .from("reaction_contracts")
-        .select("id, status")
-        .eq("stripe_subscription_id", failedSubId)
-        .single();
+      const { data: failedContractData, error: failedFetchError } =
+        await supabaseClient
+          .from("reaction_contracts")
+          .select("id, status")
+          .eq("stripe_subscription_id", failedSubId)
+          .single();
 
       if (failedFetchError || !failedContractData) {
-        console.error("❌ Could not find contract for failed subscription:", failedFetchError);
+        console.error(
+          "❌ Could not find contract for failed subscription:",
+          failedFetchError,
+        );
         break;
       }
 
@@ -308,9 +367,14 @@ serve(async (req) => {
         .eq("id", failedContractData.id);
 
       if (failedError) {
-        console.error("❌ Failed to update contract status to PAYMENT_FAILED:", failedError);
+        console.error(
+          "❌ Failed to update contract status to PAYMENT_FAILED:",
+          failedError,
+        );
       } else {
-        console.log("⚠️  Contract marked as PAYMENT_FAILED — license is no longer valid");
+        console.log(
+          "⚠️  Contract marked as PAYMENT_FAILED — license is no longer valid",
+        );
       }
       break;
     }
@@ -328,7 +392,10 @@ serve(async (req) => {
         .eq("stripe_subscription_id", deletedSubId);
 
       if (cancelError) {
-        console.error("❌ Failed to update contract status to CANCELLED:", cancelError);
+        console.error(
+          "❌ Failed to update contract status to CANCELLED:",
+          cancelError,
+        );
       } else {
         console.log("✅ Contract marked as CANCELLED");
       }

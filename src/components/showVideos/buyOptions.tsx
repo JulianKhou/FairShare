@@ -20,7 +20,7 @@ import { getProfile } from "@/services/supabaseCollum/profiles";
 import { useState, useEffect } from "react";
 import { generateUUID } from "@/lib/utils";
 import { useVideos } from "@/hooks/youtube/useVideos";
-import { AlertCircle, CheckCircle2, XCircle } from "lucide-react";
+import { AlertCircle, CheckCircle2, XCircle, HelpCircle } from "lucide-react";
 import { createStripeCheckoutSession } from "@/services/stripeFunctions";
 
 interface BuyOptionsProps {
@@ -300,8 +300,19 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
             </Field>
             <Field orientation="horizontal">
               <RadioGroupItem value="views" id="plan-views" />
-              <FieldLabel htmlFor="plan-views" className="font-normal">
-                Pro 1.000 Views {prices.payPerViews.toFixed(2)} € / Quartal
+              <FieldLabel
+                htmlFor="plan-views"
+                className="font-normal flex items-center gap-1"
+              >
+                CPM {prices.payPerViews.toFixed(2)} €
+                <div className="group relative">
+                  <HelpCircle className="w-3.5 h-3.5 text-muted-foreground cursor-help" />
+                  <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-48 p-2 bg-popover text-popover-foreground text-xs rounded shadow-lg border border-border opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                    CPM steht für Cost-per-Mille und bedeutet "Kosten pro 1.000
+                    Aufrufe". Dieser Betrag wird vierteljährlich basierend auf
+                    den Views deines Reaction-Videos abgerechnet.
+                  </div>
+                </div>
               </FieldLabel>
             </Field>
           </RadioGroup>
@@ -356,7 +367,9 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
                 onClick={async () => {
                   setLoading(true);
                   try {
-                    const { url } = await createStripeCheckoutSession(existingContract.id);
+                    const { url } = await createStripeCheckoutSession(
+                      existingContract.id,
+                    );
                     if (url) window.location.href = url;
                   } catch (e) {
                     console.error(e);

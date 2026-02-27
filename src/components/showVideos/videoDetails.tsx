@@ -463,8 +463,14 @@ export const VideoDetails = ({
                         <div className="p-4 rounded-xl bg-muted/20 border border-border/50">
                           <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
                             <Link2 className="h-4 w-4 text-primary" />
-                            Video verknüpfen
+                            Reaction-Video suchen
                           </h3>
+                          <p className="text-xs text-muted-foreground mb-4">
+                            Sammle ausstehende Lizenzen ein, indem du manuell
+                            nach Reaction-Videos von anderen Creatorn suchst,
+                            die dein Video verwendet haben.
+                          </p>
+
                           <InputGroup className="max-w-full">
                             <InputGroupInput
                               placeholder="YouTube URL einfügen..."
@@ -507,15 +513,16 @@ export const VideoDetails = ({
                                   setMockViews={setFoundMockViews}
                                 />
                               )}
-                            </div>
-                          )}
 
-                          {foundVideo && (
-                            <div className="mt-4">
-                              <BuyOptions
-                                videoCreator={activeFoundVideo}
-                                videoReactor={activeMainVideo}
-                              />
+                              <div className="mt-4 p-3 bg-primary/5 rounded-lg border border-primary/20">
+                                <p className="text-sm font-medium mb-2">
+                                  Aktion für dieses Video:
+                                </p>
+                                <BuyOptions
+                                  videoCreator={activeFoundVideo}
+                                  videoReactor={activeMainVideo}
+                                />
+                              </div>
                             </div>
                           )}
                         </div>
