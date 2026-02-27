@@ -22,7 +22,13 @@ import { generateLicensePDF } from "@/services/supabaseFunctions";
 
 type FilterStatus = "all" | "pending" | "accepted" | "paid" | "rejected";
 
-export const CreatorContracts = () => {
+interface CreatorContractsProps {
+  mode?: "requests" | "active";
+}
+
+export const CreatorContracts = ({
+  mode = "requests",
+}: CreatorContractsProps) => {
   const { user } = useAuth();
   const [contracts, setContracts] = useState<ReactionContract[]>([]);
   const [licenseeNames, setLicenseeNames] = useState<Record<string, string>>(
@@ -33,7 +39,10 @@ export const CreatorContracts = () => {
   >({});
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [filter, setFilter] = useState<FilterStatus>("pending");
+  // In 'active' mode, start on 'paid'; in 'requests' mode start on 'pending'
+  const [filter, setFilter] = useState<FilterStatus>(
+    mode === "active" ? "paid" : "pending",
+  );
 
   const fetchContracts = async () => {
     if (!user) return;
@@ -223,23 +232,30 @@ export const CreatorContracts = () => {
     };
   };
 
-  const filteredContracts = contracts.filter((c) => {
+  // In 'requests' mode, hide paid/active contracts — those belong to the active licenses tab
+  const displayContracts =
+    mode === "active"
+      ? contracts.filter((c) => c.status === "PAID" || c.status === "ACTIVE")
+      : contracts.filter((c) => c.status !== "PAID" && c.status !== "ACTIVE");
+
+  const filteredContracts = displayContracts.filter((c) => {
     if (filter === "all") return true;
     return getStatusInfo(c).filterKey === filter;
   });
 
-  // Count per filter
+  // Count per filter based on displayContracts
   const counts = {
-    all: contracts.length,
-    pending: contracts.filter(
+    all: displayContracts.length,
+    pending: displayContracts.filter(
       (c) => c.status === "PENDING" && !c.accepted_by_licensor,
     ).length,
-    accepted: contracts.filter(
+    accepted: displayContracts.filter(
       (c) => c.status === "PENDING" && c.accepted_by_licensor,
     ).length,
-    paid: contracts.filter((c) => c.status === "PAID" || c.status === "ACTIVE")
-      .length,
-    rejected: contracts.filter((c) => c.status === "REJECTED").length,
+    paid: displayContracts.filter(
+      (c) => c.status === "PAID" || c.status === "ACTIVE",
+    ).length,
+    rejected: displayContracts.filter((c) => c.status === "REJECTED").length,
   };
 
   if (loading) {
@@ -254,10 +270,13 @@ export const CreatorContracts = () => {
     return (
       <Card className="text-center p-12 border-dashed bg-muted/30">
         <CardContent>
-          <h3 className="text-lg font-semibold mb-2">Keine Anfragen</h3>
+          <h3 className="text-lg font-semibold mb-2">
+            {mode === "active" ? "Keine aktiven Lizenzen" : "Keine Anfragen"}
+          </h3>
           <p className="text-muted-foreground max-w-sm mx-auto">
-            Du hast noch keine Lizenzanfragen erhalten. Sobald jemand eine
-            Lizenz für dein Video beantragt, erscheint sie hier.
+            {mode === "active"
+              ? "Noch keine bezahlten Lizenzen für deine Videos."
+              : "Du hast noch keine Lizenzanfragen erhalten. Sobald jemand eine Lizenz für dein Video beantragt, erscheint sie hier."}
           </p>
         </CardContent>
       </Card>
@@ -266,16 +285,19 @@ export const CreatorContracts = () => {
 
   return (
     <div className="space-y-6">
-      {/* Filter Bar */}
+      {/* Filter Bar — simplified for active mode */}
       <div className="flex flex-wrap gap-2">
-        {(
-          [
-            { key: "all", label: "Alle" },
-            { key: "pending", label: "Ausstehend" },
-            { key: "accepted", label: "Akzeptiert" },
-            { key: "paid", label: "Bezahlt" },
-            { key: "rejected", label: "Abgelehnt" },
-          ] as { key: FilterStatus; label: string }[]
+        {(mode === "active"
+          ? ([{ key: "all", label: "Alle aktiven Lizenzen" }] as {
+              key: FilterStatus;
+              label: string;
+            }[])
+          : ([
+              { key: "all", label: "Alle" },
+              { key: "pending", label: "Ausstehend" },
+              { key: "accepted", label: "Akzeptiert" },
+              { key: "rejected", label: "Abgelehnt" },
+            ] as { key: FilterStatus; label: string }[])
         ).map(({ key, label }) => (
           <Button
             key={key}
@@ -334,7 +356,7 @@ export const CreatorContracts = () => {
                     </h4>
 
                     <p className="text-sm text-muted-foreground mt-1">
-                      Anfrage von{" "}
+                      {mode === "active" ? "Lizenziert an" : "Anfrage von"}{" "}
                       <span className="font-medium text-foreground">
                         {licenseeNames[contract.licensee_id] ||
                           contract.licensee_name}

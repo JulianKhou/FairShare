@@ -739,7 +739,6 @@ export default function UserDashboard() {
         )}
       </div>
 
-      {/* Main Content Tabs - Dynamically rendered based on selected role */}
       <Tabs
         defaultValue={viewRole === "creator" ? "analytics" : "licenses"}
         className="w-full"
@@ -760,15 +759,12 @@ export default function UserDashboard() {
                   </span>
                 )}
               </TabsTrigger>
-              <TabsTrigger value="licenses">Lizenzen (von anderen)</TabsTrigger>
+              <TabsTrigger value="creator-active">Aktive Lizenzen</TabsTrigger>
             </>
           ) : (
             <>
               <TabsTrigger value="licenses">
                 Meine gekauften Lizenzen
-              </TabsTrigger>
-              <TabsTrigger value="license-history">
-                Abgelaufene Lizenzen
               </TabsTrigger>
             </>
           )}
@@ -780,11 +776,11 @@ export default function UserDashboard() {
         <TabsContent value="licenses">
           <MyLicenses />
         </TabsContent>
-        <TabsContent value="license-history">
-          <MyLicenses />
-        </TabsContent>
         <TabsContent value="creator-requests">
-          <CreatorContracts />
+          <CreatorContracts mode="requests" />
+        </TabsContent>
+        <TabsContent value="creator-active">
+          <CreatorContracts mode="active" />
         </TabsContent>
       </Tabs>
     </div>
