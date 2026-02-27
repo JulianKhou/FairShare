@@ -11,7 +11,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Send, HelpCircle, MessageSquare, ArrowLeft } from "lucide-react";
+import {
+  Loader2,
+  Send,
+  HelpCircle,
+  MessageSquare,
+  ArrowLeft,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
   createHelpRequest,
@@ -29,7 +35,10 @@ interface HelpRequestModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function HelpRequestModal({ isOpen, onOpenChange }: HelpRequestModalProps) {
+export function HelpRequestModal({
+  isOpen,
+  onOpenChange,
+}: HelpRequestModalProps) {
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -39,8 +48,12 @@ export function HelpRequestModal({ isOpen, onOpenChange }: HelpRequestModalProps
   const [loadingRequests, setLoadingRequests] = useState(false);
 
   // Thread detail state
-  const [selectedRequest, setSelectedRequest] = useState<HelpRequest | null>(null);
-  const [threadMessages, setThreadMessages] = useState<HelpRequestMessage[]>([]);
+  const [selectedRequest, setSelectedRequest] = useState<HelpRequest | null>(
+    null,
+  );
+  const [threadMessages, setThreadMessages] = useState<HelpRequestMessage[]>(
+    [],
+  );
   const [threadLoading, setThreadLoading] = useState(false);
   const [replyText, setReplyText] = useState("");
   const [isSendingReply, setIsSendingReply] = useState(false);
@@ -58,9 +71,13 @@ export function HelpRequestModal({ isOpen, onOpenChange }: HelpRequestModalProps
 
     const channel = supabase
       .channel("user-support-channel")
-      .on("postgres_changes", { event: "*", schema: "public", table: "help_requests" }, () => {
-        if (activeTab === "mine") fetchMyRequests();
-      })
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "help_requests" },
+        () => {
+          if (activeTab === "mine") fetchMyRequests();
+        },
+      )
       .subscribe();
 
     return () => {
@@ -83,8 +100,11 @@ export function HelpRequestModal({ isOpen, onOpenChange }: HelpRequestModalProps
           filter: `help_request_id=eq.${selectedRequest.id}`,
         },
         (payload) => {
-          setThreadMessages((prev) => [...prev, payload.new as HelpRequestMessage]);
-        }
+          const incoming = payload.new as HelpRequestMessage;
+          setThreadMessages((prev) =>
+            prev.some((m) => m.id === incoming.id) ? prev : [...prev, incoming],
+          );
+        },
       )
       .subscribe();
 
@@ -136,7 +156,11 @@ export function HelpRequestModal({ isOpen, onOpenChange }: HelpRequestModalProps
     if (!selectedRequest || !replyText.trim()) return;
     setIsSendingReply(true);
     try {
-      await addUserReply(selectedRequest.id, replyText.trim());
+      const newMsg = await addUserReply(selectedRequest.id, replyText.trim());
+      // Optimistically add the message so it shows immediately
+      setThreadMessages((prev) =>
+        prev.some((m) => m.id === newMsg.id) ? prev : [...prev, newMsg],
+      );
       setReplyText("");
     } catch (error: any) {
       toast.error("Fehler beim Senden: " + (error.message || "Unbekannt"));
@@ -170,13 +194,19 @@ export function HelpRequestModal({ isOpen, onOpenChange }: HelpRequestModalProps
         return <Badge variant="destructive">OFFEN</Badge>;
       case "IN_PROGRESS":
         return (
-          <Badge variant="outline" className="text-yellow-600 border-yellow-600">
+          <Badge
+            variant="outline"
+            className="text-yellow-600 border-yellow-600"
+          >
             BEARBEITUNG
           </Badge>
         );
       case "CLOSED":
         return (
-          <Badge variant="default" className="bg-emerald-500 hover:bg-emerald-600">
+          <Badge
+            variant="default"
+            className="bg-emerald-500 hover:bg-emerald-600"
+          >
             GESCHLOSSEN
           </Badge>
         );
@@ -213,8 +243,12 @@ export function HelpRequestModal({ isOpen, onOpenChange }: HelpRequestModalProps
           <div className="flex justify-end">
             <div className="max-w-[85%] space-y-1">
               <div className="flex items-center justify-end gap-1.5 mr-1">
-                <span className="text-xs text-muted-foreground">{new Date(selectedRequest.created_at).toLocaleString()}</span>
-                <span className="text-[10px] font-semibold bg-primary/15 text-primary rounded-full px-2 py-0.5">Du</span>
+                <span className="text-xs text-muted-foreground">
+                  {new Date(selectedRequest.created_at).toLocaleString()}
+                </span>
+                <span className="text-[10px] font-semibold bg-primary/15 text-primary rounded-full px-2 py-0.5">
+                  Du
+                </span>
               </div>
               <div className="bg-primary text-primary-foreground rounded-2xl rounded-tr-sm px-4 py-3 text-sm whitespace-pre-wrap">
                 {selectedRequest.message}
@@ -231,15 +265,32 @@ export function HelpRequestModal({ isOpen, onOpenChange }: HelpRequestModalProps
             threadMessages.map((msg) => {
               const isUser = msg.sender_role === "user";
               return (
-                <div key={msg.id} className={cn("flex", isUser ? "justify-end" : "justify-start")}>
+                <div
+                  key={msg.id}
+                  className={cn(
+                    "flex",
+                    isUser ? "justify-end" : "justify-start",
+                  )}
+                >
                   <div className="max-w-[85%] space-y-1">
-                    <div className={cn("flex items-center gap-1.5", isUser ? "justify-end mr-1" : "ml-1")}>
-                      {!isUser && (
-                        <span className="text-[10px] font-semibold bg-blue-500/15 text-blue-600 dark:text-blue-400 rounded-full px-2 py-0.5">Support</span>
+                    <div
+                      className={cn(
+                        "flex items-center gap-1.5",
+                        isUser ? "justify-end mr-1" : "ml-1",
                       )}
-                      <span className="text-xs text-muted-foreground">{new Date(msg.created_at).toLocaleString()}</span>
+                    >
+                      {!isUser && (
+                        <span className="text-[10px] font-semibold bg-blue-500/15 text-blue-600 dark:text-blue-400 rounded-full px-2 py-0.5">
+                          Support
+                        </span>
+                      )}
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(msg.created_at).toLocaleString()}
+                      </span>
                       {isUser && (
-                        <span className="text-[10px] font-semibold bg-primary/15 text-primary rounded-full px-2 py-0.5">Du</span>
+                        <span className="text-[10px] font-semibold bg-primary/15 text-primary rounded-full px-2 py-0.5">
+                          Du
+                        </span>
                       )}
                     </div>
                     <div
@@ -247,7 +298,7 @@ export function HelpRequestModal({ isOpen, onOpenChange }: HelpRequestModalProps
                         "rounded-2xl px-4 py-3 text-sm whitespace-pre-wrap",
                         isUser
                           ? "bg-primary text-primary-foreground rounded-tr-sm"
-                          : "bg-muted/50 border rounded-tl-sm"
+                          : "bg-muted/50 border rounded-tl-sm",
                       )}
                     >
                       {msg.message}
@@ -283,7 +334,9 @@ export function HelpRequestModal({ isOpen, onOpenChange }: HelpRequestModalProps
               disabled={isSendingReply}
             />
             <div className="flex justify-between items-center">
-              <p className="text-xs text-muted-foreground">⌘+Enter zum Senden</p>
+              <p className="text-xs text-muted-foreground">
+                ⌘+Enter zum Senden
+              </p>
               <Button
                 size="sm"
                 onClick={handleUserReply}
@@ -340,7 +393,9 @@ export function HelpRequestModal({ isOpen, onOpenChange }: HelpRequestModalProps
             <p className="text-xs text-muted-foreground">
               {new Date(req.created_at).toLocaleString()}
             </p>
-            <p className="text-sm mt-2 text-muted-foreground line-clamp-2">{req.message}</p>
+            <p className="text-sm mt-2 text-muted-foreground line-clamp-2">
+              {req.message}
+            </p>
           </button>
         ))}
       </div>
@@ -354,14 +409,24 @@ export function HelpRequestModal({ isOpen, onOpenChange }: HelpRequestModalProps
           <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-2">
             <HelpCircle className="w-6 h-6 text-primary" />
           </div>
-          <DialogTitle className="text-center text-2xl">Hilfe & Support</DialogTitle>
+          <DialogTitle className="text-center text-2xl">
+            Hilfe & Support
+          </DialogTitle>
           <DialogDescription className="text-center pt-1">
-            Reiche eine neue Anfrage ein oder verfolge den Status deiner bisherigen Tickets.
+            Reiche eine neue Anfrage ein oder verfolge den Status deiner
+            bisherigen Tickets.
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex-1 overflow-hidden flex flex-col mt-4">
-          <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); setSelectedRequest(null); }} className="flex flex-col h-full">
+          <Tabs
+            value={activeTab}
+            onValueChange={(v) => {
+              setActiveTab(v);
+              setSelectedRequest(null);
+            }}
+            className="flex flex-col h-full"
+          >
             <TabsList className="grid w-full grid-cols-2 shrink-0">
               <TabsTrigger value="new">Neue Anfrage</TabsTrigger>
               <TabsTrigger value="mine">Meine Anfragen</TabsTrigger>
@@ -371,7 +436,9 @@ export function HelpRequestModal({ isOpen, onOpenChange }: HelpRequestModalProps
               <TabsContent value="new" className="mt-0 h-full">
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">Betreff / Thema</label>
+                    <label className="text-sm font-medium">
+                      Betreff / Thema
+                    </label>
                     <Input
                       placeholder="Zusammenfassung deines Anliegens"
                       value={subject}
@@ -402,11 +469,14 @@ export function HelpRequestModal({ isOpen, onOpenChange }: HelpRequestModalProps
                     </Button>
                     <Button
                       type="submit"
-                      disabled={submitting || !subject.trim() || !message.trim()}
+                      disabled={
+                        submitting || !subject.trim() || !message.trim()
+                      }
                     >
                       {submitting ? (
                         <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Senden...
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />{" "}
+                          Senden...
                         </>
                       ) : (
                         <>
@@ -450,10 +520,18 @@ export function HelpRequestModal({ isOpen, onOpenChange }: HelpRequestModalProps
                       </TabsTrigger>
                     </TabsList>
 
-                    <TabsContent value="all" className="mt-0">{renderRequestList(null)}</TabsContent>
-                    <TabsContent value="open" className="mt-0">{renderRequestList(["OPEN"])}</TabsContent>
-                    <TabsContent value="progress" className="mt-0">{renderRequestList(["IN_PROGRESS"])}</TabsContent>
-                    <TabsContent value="closed" className="mt-0">{renderRequestList(["CLOSED"])}</TabsContent>
+                    <TabsContent value="all" className="mt-0">
+                      {renderRequestList(null)}
+                    </TabsContent>
+                    <TabsContent value="open" className="mt-0">
+                      {renderRequestList(["OPEN"])}
+                    </TabsContent>
+                    <TabsContent value="progress" className="mt-0">
+                      {renderRequestList(["IN_PROGRESS"])}
+                    </TabsContent>
+                    <TabsContent value="closed" className="mt-0">
+                      {renderRequestList(["CLOSED"])}
+                    </TabsContent>
                   </Tabs>
                 )}
               </TabsContent>

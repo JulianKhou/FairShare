@@ -40,7 +40,7 @@ export const UserMenu = ({
               <img
                 src={
                   user?.user_metadata?.avatar_url ||
-                  "../../assets/profile-circle-svgrepo-com.svg"
+                  "../../assets/profileCircle.svg"
                 }
                 referrerPolicy="no-referrer"
                 className="w-10 h-10 rounded-full border-2 border-gray-500"

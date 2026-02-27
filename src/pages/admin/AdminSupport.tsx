@@ -34,12 +34,16 @@ import { cn } from "@/lib/utils";
 export default function AdminSupport() {
   const [requests, setRequests] = useState<HelpRequest[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedRequest, setSelectedRequest] = useState<HelpRequest | null>(null);
+  const [selectedRequest, setSelectedRequest] = useState<HelpRequest | null>(
+    null,
+  );
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
 
   // Thread state
-  const [threadMessages, setThreadMessages] = useState<HelpRequestMessage[]>([]);
+  const [threadMessages, setThreadMessages] = useState<HelpRequestMessage[]>(
+    [],
+  );
   const [threadLoading, setThreadLoading] = useState(false);
   const [replyText, setReplyText] = useState("");
   const [isSending, setIsSending] = useState(false);
@@ -73,9 +77,13 @@ export default function AdminSupport() {
 
     const channel = supabase
       .channel("admin-support-channel")
-      .on("postgres_changes", { event: "*", schema: "public", table: "help_requests" }, () => {
-        fetchRequests();
-      })
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "help_requests" },
+        () => {
+          fetchRequests();
+        },
+      )
       .subscribe();
 
     return () => {
@@ -98,8 +106,11 @@ export default function AdminSupport() {
           filter: `help_request_id=eq.${selectedRequest.id}`,
         },
         (payload) => {
-          setThreadMessages((prev) => [...prev, payload.new as HelpRequestMessage]);
-        }
+          const incoming = payload.new as HelpRequestMessage;
+          setThreadMessages((prev) =>
+            prev.some((m) => m.id === incoming.id) ? prev : [...prev, incoming],
+          );
+        },
       )
       .subscribe();
 
@@ -130,15 +141,21 @@ export default function AdminSupport() {
     }
   };
 
-  const handleStatusChange = async (newStatus: "OPEN" | "IN_PROGRESS" | "CLOSED") => {
+  const handleStatusChange = async (
+    newStatus: "OPEN" | "IN_PROGRESS" | "CLOSED",
+  ) => {
     if (!selectedRequest) return;
     setIsUpdating(true);
     try {
       await updateHelpRequestStatus(selectedRequest.id, newStatus);
       toast.success("Status aktualisiert!");
-      setSelectedRequest((prev) => (prev ? { ...prev, status: newStatus } : null));
+      setSelectedRequest((prev) =>
+        prev ? { ...prev, status: newStatus } : null,
+      );
       setRequests((prev) =>
-        prev.map((r) => (r.id === selectedRequest.id ? { ...r, status: newStatus } : r))
+        prev.map((r) =>
+          r.id === selectedRequest.id ? { ...r, status: newStatus } : r,
+        ),
       );
     } catch (e: any) {
       toast.error("Fehler beim Update: " + e.message);
@@ -151,7 +168,11 @@ export default function AdminSupport() {
     if (!selectedRequest || !replyText.trim()) return;
     setIsSending(true);
     try {
-      await addAdminReply(selectedRequest.id, replyText.trim());
+      const newMsg = await addAdminReply(selectedRequest.id, replyText.trim());
+      // Optimistically add the message so it shows immediately
+      setThreadMessages((prev) =>
+        prev.some((m) => m.id === newMsg.id) ? prev : [...prev, newMsg],
+      );
       setReplyText("");
       toast.success("Antwort gesendet!");
     } catch (e: any) {
@@ -167,13 +188,19 @@ export default function AdminSupport() {
         return <Badge variant="destructive">OFFEN</Badge>;
       case "IN_PROGRESS":
         return (
-          <Badge variant="outline" className="text-yellow-600 border-yellow-600">
+          <Badge
+            variant="outline"
+            className="text-yellow-600 border-yellow-600"
+          >
             IN BEARBEITUNG
           </Badge>
         );
       case "CLOSED":
         return (
-          <Badge variant="default" className="bg-emerald-500 hover:bg-emerald-600">
+          <Badge
+            variant="default"
+            className="bg-emerald-500 hover:bg-emerald-600"
+          >
             GESCHLOSSEN
           </Badge>
         );
@@ -231,14 +258,20 @@ export default function AdminSupport() {
                         </span>
                       </div>
                     </TableCell>
-                    <TableCell className="truncate max-w-[300px]" title={req.subject}>
+                    <TableCell
+                      className="truncate max-w-[300px]"
+                      title={req.subject}
+                    >
                       {req.subject}
                     </TableCell>
                   </TableRow>
                 ))}
                 {requests.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                    <TableCell
+                      colSpan={4}
+                      className="text-center text-muted-foreground py-8"
+                    >
                       Keine Support-Tickets gefunden. Super! 🎉
                     </TableCell>
                   </TableRow>
@@ -266,11 +299,15 @@ export default function AdminSupport() {
               {/* Meta row */}
               <div className="grid grid-cols-2 gap-4 text-sm border-b pb-4 shrink-0">
                 <div>
-                  <p className="text-muted-foreground font-medium mb-1">Betreff</p>
+                  <p className="text-muted-foreground font-medium mb-1">
+                    Betreff
+                  </p>
                   <p className="font-semibold">{selectedRequest.subject}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground font-medium mb-1">Status</p>
+                  <p className="text-muted-foreground font-medium mb-1">
+                    Status
+                  </p>
                   <select
                     className="flex h-10 w-[180px] items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     value={selectedRequest.status}
@@ -290,7 +327,8 @@ export default function AdminSupport() {
                 <div className="flex justify-start">
                   <div className="max-w-[80%] space-y-1">
                     <p className="text-xs text-muted-foreground ml-1">
-                      {selectedRequest.user_full_name} · {new Date(selectedRequest.created_at).toLocaleString()}
+                      {selectedRequest.user_full_name} ·{" "}
+                      {new Date(selectedRequest.created_at).toLocaleString()}
                     </p>
                     <div className="bg-muted/40 border rounded-2xl rounded-tl-sm px-4 py-3 text-sm whitespace-pre-wrap">
                       {selectedRequest.message}
@@ -307,18 +345,33 @@ export default function AdminSupport() {
                   threadMessages.map((msg) => (
                     <div
                       key={msg.id}
-                      className={cn("flex", msg.sender_role === "admin" ? "justify-end" : "justify-start")}
+                      className={cn(
+                        "flex",
+                        msg.sender_role === "admin"
+                          ? "justify-end"
+                          : "justify-start",
+                      )}
                     >
                       <div className="max-w-[80%] space-y-1">
-                        <p className={cn("text-xs text-muted-foreground", msg.sender_role === "admin" ? "text-right mr-1" : "ml-1")}>
-                          {msg.sender_role === "admin" ? "Du (Admin)" : selectedRequest.user_full_name} · {new Date(msg.created_at).toLocaleString()}
+                        <p
+                          className={cn(
+                            "text-xs text-muted-foreground",
+                            msg.sender_role === "admin"
+                              ? "text-right mr-1"
+                              : "ml-1",
+                          )}
+                        >
+                          {msg.sender_role === "admin"
+                            ? "Du (Admin)"
+                            : selectedRequest.user_full_name}{" "}
+                          · {new Date(msg.created_at).toLocaleString()}
                         </p>
                         <div
                           className={cn(
                             "rounded-2xl px-4 py-3 text-sm whitespace-pre-wrap",
                             msg.sender_role === "admin"
                               ? "bg-primary text-primary-foreground rounded-tr-sm"
-                              : "bg-muted/40 border rounded-tl-sm"
+                              : "bg-muted/40 border rounded-tl-sm",
                           )}
                         >
                           {msg.message}
@@ -346,7 +399,9 @@ export default function AdminSupport() {
                   disabled={isSending}
                 />
                 <div className="flex justify-between items-center">
-                  <p className="text-xs text-muted-foreground">⌘+Enter zum Senden</p>
+                  <p className="text-xs text-muted-foreground">
+                    ⌘+Enter zum Senden
+                  </p>
                   <Button
                     onClick={handleSendReply}
                     disabled={isSending || !replyText.trim()}
