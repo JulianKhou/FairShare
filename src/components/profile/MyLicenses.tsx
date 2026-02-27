@@ -452,6 +452,50 @@ export const MyLicenses = () => {
                         </span>
                       </div>
                     )}
+
+                    {/* Subscription end date — only for active subscriptions */}
+                    {(license.status === "ACTIVE" ||
+                      license.status === "PAID") &&
+                      license.pricing_model_type !== 1 &&
+                      (() => {
+                        const startDate =
+                          license.licensor_accepted_at || license.created_at;
+                        const endDate = new Date(startDate);
+                        endDate.setFullYear(endDate.getFullYear() + 1);
+                        const daysLeft = Math.max(
+                          0,
+                          Math.ceil(
+                            (endDate.getTime() - Date.now()) /
+                              (1000 * 60 * 60 * 24),
+                          ),
+                        );
+                        const isExpiringSoon = daysLeft <= 30;
+                        return (
+                          <div
+                            className={`mt-2 flex items-center gap-2 text-xs px-2.5 py-1.5 rounded-md border ${
+                              isExpiringSoon
+                                ? "bg-orange-50 dark:bg-orange-900/20 border-orange-300/50 text-orange-700 dark:text-orange-400"
+                                : "bg-muted/50 border-border/50 text-muted-foreground"
+                            }`}
+                          >
+                            <span className="font-semibold">
+                              {isExpiringSoon ? "⚠️ " : "📅 "}Abo läuft ab:
+                            </span>
+                            <span>
+                              {endDate.toLocaleDateString("de-DE", {
+                                day: "2-digit",
+                                month: "long",
+                                year: "numeric",
+                              })}
+                            </span>
+                            <span
+                              className={`font-semibold ${isExpiringSoon ? "text-orange-700 dark:text-orange-400" : "text-foreground/80"}`}
+                            >
+                              ({daysLeft} Tage)
+                            </span>
+                          </div>
+                        );
+                      })()}
                   </div>
 
                   <div className="flex gap-3 w-full sm:w-auto">

@@ -227,212 +227,271 @@ export default function AdminContracts() {
       </Card>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 gap-0 overflow-hidden">
-          <div className="bg-muted/30 p-6 border-b">
-            <DialogHeader>
-              <DialogTitle className="text-2xl flex items-center gap-2">
-                <FileText className="w-5 h-5 text-primary" />
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto p-0 gap-0 overflow-hidden bg-background">
+          <div className="bg-muted/40 p-6 border-b flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <DialogHeader className="text-left">
+              <DialogTitle className="text-3xl font-bold flex items-center gap-3">
+                <FileText className="w-6 h-6 text-primary" />
                 Vertragsdetails
               </DialogTitle>
-              <DialogDescription>
+              <DialogDescription className="text-base mt-1">
                 Detailansicht für Vertrag{" "}
-                <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
+                <span className="font-mono text-sm bg-muted/60 px-2 py-1 rounded-md text-foreground">
                   {selectedContract?.id}
                 </span>
               </DialogDescription>
             </DialogHeader>
+            {selectedContract && (
+              <Badge
+                className="px-4 py-1.5 text-sm shadow-sm w-fit"
+                variant={
+                  selectedContract.status === "PAID" ||
+                  selectedContract.status === "ACTIVE"
+                    ? "default"
+                    : selectedContract.status === "PENDING"
+                      ? "outline"
+                      : selectedContract.status === "REJECTED"
+                        ? "destructive"
+                        : "secondary"
+                }
+              >
+                {selectedContract.status === "PAID" ||
+                selectedContract.status === "ACTIVE"
+                  ? "Aktiv / Bezahlt"
+                  : selectedContract.status}
+              </Badge>
+            )}
           </div>
 
           {selectedContract && (
-            <div className="p-6 grid gap-6">
-              {/* Header Meta Status */}
-              <div className="flex flex-wrap items-center justify-between gap-4 bg-card border rounded-xl p-4 shadow-sm">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground mb-1">
-                    Erstellt am
-                  </p>
-                  <p className="font-semibold">
+            <div className="p-8 grid gap-8 bg-zinc-50/30 dark:bg-zinc-950/30">
+              {/* Timeline Info (Header Replacement) */}
+              <div className="flex flex-wrap items-center gap-8 text-sm text-muted-foreground w-full bg-card border rounded-xl p-5 shadow-sm">
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-foreground">
+                    Erstellt:
+                  </span>
+                  <span>
                     {new Date(selectedContract.created_at).toLocaleString()}
-                  </p>
+                  </span>
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground mb-1 text-right">
-                    Status
-                  </p>
-                  <Badge
-                    className="px-3 py-1 shadow-sm"
-                    variant={
-                      selectedContract.status === "PAID" ||
-                      selectedContract.status === "ACTIVE"
-                        ? "default"
-                        : selectedContract.status === "PENDING"
-                          ? "outline"
-                          : selectedContract.status === "REJECTED"
-                            ? "destructive"
-                            : "secondary"
-                    }
-                  >
-                    {selectedContract.status === "PAID" ||
-                    selectedContract.status === "ACTIVE"
-                      ? "Aktiv / Bezahlt"
-                      : selectedContract.status}
-                  </Badge>
+                {selectedContract.licensor_accepted_at && (
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-foreground">
+                      Akzeptiert:
+                    </span>
+                    <span>
+                      {new Date(
+                        selectedContract.licensor_accepted_at,
+                      ).toLocaleString()}
+                    </span>
+                  </div>
+                )}
+                <div className="flex items-center gap-2 ml-auto">
+                  <span className="font-semibold text-foreground">
+                    Vertrags-Version:
+                  </span>
+                  <span className="font-mono bg-muted/50 px-2 py-0.5 rounded text-xs">
+                    {selectedContract.contract_version}
+                  </span>
                 </div>
               </div>
 
-              <div className="grid md:grid-cols-2 gap-6">
-                {/* Beteiligte */}
-                <div className="border rounded-xl p-5 bg-card shadow-sm space-y-4">
-                  <div className="flex items-center gap-2 border-b pb-3">
-                    <Users className="w-4 h-4 text-muted-foreground" />
-                    <h3 className="font-semibold tracking-tight">
+              <div className="grid md:grid-cols-2 gap-8">
+                {/* Beteiligte Parteien */}
+                <div className="border rounded-xl bg-card shadow-sm overflow-hidden flex flex-col">
+                  <div className="bg-muted/30 px-6 py-4 border-b flex items-center gap-2">
+                    <Users className="w-5 h-5 text-primary" />
+                    <h3 className="font-semibold text-lg">
                       Beteiligte Parteien
                     </h3>
                   </div>
-                  <div className="grid gap-4">
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium text-muted-foreground">
-                        Licensor (Creator)
+                  <div className="p-6 grid gap-6 flex-1">
+                    <div className="space-y-2">
+                      <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                        Original-Urheber (Licensor)
                       </p>
-                      <p className="font-medium">
-                        {selectedContract.licensor_name}
-                      </p>
-                      <p className="text-xs font-mono text-muted-foreground break-all">
-                        {selectedContract.licensor_id}
-                      </p>
+                      <div className="bg-muted/20 p-4 rounded-lg border border-border/50">
+                        <p className="text-xl font-bold">
+                          {selectedContract.licensor_name}
+                        </p>
+                        <p className="text-xs font-mono text-muted-foreground mt-2 break-all">
+                          {selectedContract.licensor_id}
+                        </p>
+                      </div>
                     </div>
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium text-muted-foreground">
-                        Licensee (Reactor)
+                    <div className="space-y-2">
+                      <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                        Nutzer (Licensee)
                       </p>
-                      <p className="font-medium">
-                        {selectedContract.licensee_name}
-                      </p>
-                      <p className="text-xs font-mono text-muted-foreground break-all">
-                        {selectedContract.licensee_id}
-                      </p>
+                      <div className="bg-muted/20 p-4 rounded-lg border border-border/50">
+                        <p className="text-xl font-bold">
+                          {selectedContract.licensee_name}
+                        </p>
+                        <p className="text-xs font-mono text-muted-foreground mt-2 break-all">
+                          {selectedContract.licensee_id}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 {/* Video Info */}
-                <div className="border rounded-xl p-5 bg-card shadow-sm space-y-4">
-                  <div className="flex items-center gap-2 border-b pb-3">
-                    <Activity className="w-4 h-4 text-muted-foreground" />
-                    <h3 className="font-semibold tracking-tight">
-                      Video Optionen
+                <div className="border rounded-xl bg-card shadow-sm overflow-hidden flex flex-col">
+                  <div className="bg-muted/30 px-6 py-4 border-b flex items-center gap-2">
+                    <Activity className="w-5 h-5 text-primary" />
+                    <h3 className="font-semibold text-lg">
+                      Lizenziertes Video
                     </h3>
                   </div>
-                  <div className="space-y-4">
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium text-muted-foreground">
+                  <div className="p-6 space-y-6 flex-1">
+                    <div className="space-y-2">
+                      <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
                         Original Video
                       </p>
                       <a
                         href={selectedContract.original_video_url}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-primary hover:underline font-medium line-clamp-2"
+                        className="text-lg font-medium text-primary hover:underline line-clamp-2"
                       >
                         {selectedContract.original_video_title}
                       </a>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-1">
-                        <p className="text-sm font-medium text-muted-foreground">
-                          Video ID
+
+                    <div className="grid grid-cols-2 gap-6 pt-4 border-t border-border/50">
+                      <div className="space-y-2">
+                        <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                          YouTube ID
                         </p>
-                        <p className="font-mono text-xs bg-muted w-fit px-1.5 py-0.5 rounded">
+                        <p className="font-mono text-sm bg-muted/50 w-fit px-2 py-1 rounded border">
                           {selectedContract.original_video_id}
                         </p>
                       </div>
-                      <div className="space-y-1">
-                        <p className="text-sm font-medium text-muted-foreground">
+                      <div className="space-y-2">
+                        <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
                           Dauer
                         </p>
-                        <p className="font-medium">
-                          {selectedContract.original_video_duration} Sek
+                        <p className="text-lg">
+                          {selectedContract.original_video_duration}
                         </p>
                       </div>
                     </div>
+
+                    {selectedContract.reaction_video_id && (
+                      <div className="space-y-2 pt-4 border-t border-border/50">
+                        <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                          Verknüpftes Video (Licensee)
+                        </p>
+                        <p className="font-mono text-sm bg-muted/50 w-fit px-2 py-1 rounded border">
+                          {selectedContract.reaction_video_id}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
 
-              {/* Vergütung */}
-              <div className="border rounded-xl p-5 bg-card shadow-sm space-y-4">
-                <div className="flex items-center gap-2 border-b pb-3">
-                  <CreditCard className="w-4 h-4 text-muted-foreground" />
-                  <h3 className="font-semibold tracking-tight">
-                    Vergütung & Metadaten
+              {/* Vergütung & Metadaten (Wide Format) */}
+              <div className="border rounded-xl bg-card shadow-sm overflow-hidden">
+                <div className="bg-muted/30 px-6 py-4 border-b flex items-center gap-2">
+                  <CreditCard className="w-5 h-5 text-primary" />
+                  <h3 className="font-semibold text-lg">
+                    Vergütung & FairShare Daten
                   </h3>
                 </div>
-                <div className="grid md:grid-cols-3 gap-6">
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium text-muted-foreground">
-                      Preismodell
-                    </p>
-                    <p className="font-medium">
-                      Typ {selectedContract.pricing_model_type}
-                      {selectedContract.pricing_model_type === 1
-                        ? " (Einmalzahlung)"
-                        : selectedContract.pricing_model_type === 2
-                          ? " (Pay per View)"
-                          : ""}
-                    </p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium text-muted-foreground">
-                      Wert
-                    </p>
-                    <p className="font-medium text-lg">
-                      {selectedContract.pricing_currency}{" "}
-                      {selectedContract.pricing_value.toFixed(2)}
-                    </p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium text-muted-foreground">
-                      FairShare Score
-                    </p>
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-lg">
-                        {selectedContract.fairshare_score}
-                      </span>
-                      <div className="h-2 w-16 bg-muted rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-primary"
-                          style={{
-                            width: `${Math.min(100, (selectedContract.fairshare_score / 100) * 100)}%`,
-                          }}
-                        />
+                <div className="p-6">
+                  <div className="grid md:grid-cols-3 gap-8 mb-8">
+                    <div className="space-y-2">
+                      <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                        Preismodell
+                      </p>
+                      <p className="text-xl font-medium">
+                        Typ {selectedContract.pricing_model_type}
+                        <span className="block text-sm text-primary/80 mt-1 font-normal">
+                          {selectedContract.pricing_model_type === 1
+                            ? "Einmalzahlung (Fixpreis)"
+                            : selectedContract.pricing_model_type === 2
+                              ? "Abo: Pay per View"
+                              : "Abo: CPM Modell"}
+                        </span>
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                        Vertragswert
+                      </p>
+                      <p className="text-3xl font-bold font-mono">
+                        {selectedContract.pricing_currency}{" "}
+                        {selectedContract.pricing_value.toFixed(2)}
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                        Gesamt FairShare
+                      </p>
+                      <div className="flex flex-col gap-2">
+                        <span className="text-3xl font-bold font-mono text-emerald-600 dark:text-emerald-400">
+                          {selectedContract.fairshare_score}
+                          <span className="text-lg text-emerald-600/60">
+                            /100
+                          </span>
+                        </span>
+                        <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]"
+                            style={{
+                              width: `${Math.min(100, (selectedContract.fairshare_score / 100) * 100)}%`,
+                            }}
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                {selectedContract.fairshare_metadata && (
-                  <div className="mt-2 pt-4 border-t grid grid-cols-2 gap-6">
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium text-muted-foreground">
-                        Marktmacht Score
-                      </p>
-                      <p className="font-medium">
-                        {selectedContract.fairshare_metadata.marktmacht_score}
-                      </p>
+                  {selectedContract.fairshare_metadata && (
+                    <div className="pt-6 border-t border-border/50 grid grid-cols-2 md:grid-cols-4 gap-6">
+                      <div className="space-y-1">
+                        <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                          Marktmacht
+                        </p>
+                        <p className="text-lg font-medium">
+                          {selectedContract.fairshare_metadata.marktmacht_score}
+                        </p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                          Schöpfung
+                        </p>
+                        <p className="text-lg font-medium">
+                          {
+                            selectedContract.fairshare_metadata
+                              .schoepferische_leistung
+                          }
+                        </p>
+                      </div>
+                      {(selectedContract.stripe_subscription_id ||
+                        selectedContract.stripe_session_id) && (
+                        <div className="space-y-1 col-span-2">
+                          <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                            Stripe Info
+                          </p>
+                          <p
+                            className="text-sm font-mono text-muted-foreground truncate"
+                            title={
+                              selectedContract.stripe_subscription_id ||
+                              selectedContract.stripe_session_id
+                            }
+                          >
+                            {selectedContract.stripe_subscription_id
+                              ? `Sub: ${selectedContract.stripe_subscription_id}`
+                              : `Session: ${selectedContract.stripe_session_id}`}
+                          </p>
+                        </div>
+                      )}
                     </div>
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium text-muted-foreground">
-                        Schöpferische Leistung
-                      </p>
-                      <p className="font-medium">
-                        {
-                          selectedContract.fairshare_metadata
-                            .schoepferische_leistung
-                        }
-                      </p>
-                    </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
 
               {/* Admin Actions */}
