@@ -227,7 +227,7 @@ export default function AdminContracts() {
       </Card>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto p-0 gap-0 overflow-hidden bg-background">
+        <DialogContent className="sm:max-w-5xl max-h-[90vh] overflow-y-auto p-0 gap-0 overflow-hidden bg-background">
           <div className="bg-muted/40 p-6 border-b flex flex-col md:flex-row md:items-center justify-between gap-4">
             <DialogHeader className="text-left">
               <DialogTitle className="text-3xl font-bold flex items-center gap-3">
