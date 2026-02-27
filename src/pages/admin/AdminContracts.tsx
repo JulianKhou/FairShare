@@ -15,7 +15,15 @@ import {
   ReactionContract,
 } from "@/services/supabaseCollum/reactionContract";
 import { supabase } from "@/services/supabaseCollum/client";
-import { Loader2, Trash2, RefreshCw } from "lucide-react";
+import {
+  Loader2,
+  Trash2,
+  RefreshCw,
+  FileText,
+  Users,
+  Activity,
+  CreditCard,
+} from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -119,11 +127,7 @@ export default function AdminContracts() {
             Übersicht aller abgeschlossenen, aktiven oder abgelehnten Lizenzen.
           </p>
         </div>
-        <Button
-          variant="outline"
-          onClick={handleSync}
-          disabled={isSyncing}
-        >
+        <Button variant="outline" onClick={handleSync} disabled={isSyncing}>
           {isSyncing ? (
             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
           ) : (
@@ -223,31 +227,40 @@ export default function AdminContracts() {
       </Card>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Vertragsdetails</DialogTitle>
-            <DialogDescription>
-              Detailansicht für Vertrag {selectedContract?.id}
-            </DialogDescription>
-          </DialogHeader>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 gap-0 overflow-hidden">
+          <div className="bg-muted/30 p-6 border-b">
+            <DialogHeader>
+              <DialogTitle className="text-2xl flex items-center gap-2">
+                <FileText className="w-5 h-5 text-primary" />
+                Vertragsdetails
+              </DialogTitle>
+              <DialogDescription>
+                Detailansicht für Vertrag{" "}
+                <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
+                  {selectedContract?.id}
+                </span>
+              </DialogDescription>
+            </DialogHeader>
+          </div>
 
           {selectedContract && (
-            <div className="grid gap-6 py-4">
-              {/* IDs and Meta */}
-              <div className="grid md:grid-cols-2 gap-4 text-sm">
+            <div className="p-6 grid gap-6">
+              {/* Header Meta Status */}
+              <div className="flex flex-wrap items-center justify-between gap-4 bg-card border rounded-xl p-4 shadow-sm">
                 <div>
-                  <p className="font-semibold text-muted-foreground mb-1">
+                  <p className="text-sm font-medium text-muted-foreground mb-1">
                     Erstellt am
                   </p>
-                  <p>
+                  <p className="font-semibold">
                     {new Date(selectedContract.created_at).toLocaleString()}
                   </p>
                 </div>
                 <div>
-                  <p className="font-semibold text-muted-foreground mb-1">
+                  <p className="text-sm font-medium text-muted-foreground mb-1 text-right">
                     Status
                   </p>
                   <Badge
+                    className="px-3 py-1 shadow-sm"
                     variant={
                       selectedContract.status === "PAID" ||
                       selectedContract.status === "ACTIVE"
@@ -259,113 +272,159 @@ export default function AdminContracts() {
                             : "secondary"
                     }
                   >
-                    {selectedContract.status || "UNKNOWN"}
+                    {selectedContract.status === "PAID" ||
+                    selectedContract.status === "ACTIVE"
+                      ? "Aktiv / Bezahlt"
+                      : selectedContract.status}
                   </Badge>
                 </div>
               </div>
 
-              {/* Beteiligte */}
-              <div className="border rounded-lg p-4 bg-muted/20">
-                <h3 className="font-semibold mb-3">Beteiligte Parteien</h3>
-                <div className="grid md:grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <p className="font-semibold text-muted-foreground mb-1">
-                      Licensor (Creator)
-                    </p>
-                    <p>{selectedContract.licensor_name}</p>
-                    <p className="text-xs font-mono text-muted-foreground mt-1">
-                      ID: {selectedContract.licensor_id}
-                    </p>
+              <div className="grid md:grid-cols-2 gap-6">
+                {/* Beteiligte */}
+                <div className="border rounded-xl p-5 bg-card shadow-sm space-y-4">
+                  <div className="flex items-center gap-2 border-b pb-3">
+                    <Users className="w-4 h-4 text-muted-foreground" />
+                    <h3 className="font-semibold tracking-tight">
+                      Beteiligte Parteien
+                    </h3>
                   </div>
-                  <div>
-                    <p className="font-semibold text-muted-foreground mb-1">
-                      Licensee (Reactor)
-                    </p>
-                    <p>{selectedContract.licensee_name}</p>
-                    <p className="text-xs font-mono text-muted-foreground mt-1">
-                      ID: {selectedContract.licensee_id}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Video Info */}
-              <div className="border rounded-lg p-4 bg-muted/20">
-                <h3 className="font-semibold mb-3">Video Informationen</h3>
-                <div className="grid gap-4 text-sm">
-                  <div>
-                    <p className="font-semibold text-muted-foreground mb-1">
-                      Original Video Titel
-                    </p>
-                    <a
-                      href={selectedContract.original_video_url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-primary hover:underline"
-                    >
-                      {selectedContract.original_video_title}
-                    </a>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="font-semibold text-muted-foreground mb-1">
-                        Video ID
+                  <div className="grid gap-4">
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium text-muted-foreground">
+                        Licensor (Creator)
                       </p>
-                      <p className="font-mono text-xs">
-                        {selectedContract.original_video_id}
+                      <p className="font-medium">
+                        {selectedContract.licensor_name}
+                      </p>
+                      <p className="text-xs font-mono text-muted-foreground break-all">
+                        {selectedContract.licensor_id}
                       </p>
                     </div>
-                    <div>
-                      <p className="font-semibold text-muted-foreground mb-1">
-                        Dauer
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium text-muted-foreground">
+                        Licensee (Reactor)
                       </p>
-                      <p>{selectedContract.original_video_duration} Sek</p>
+                      <p className="font-medium">
+                        {selectedContract.licensee_name}
+                      </p>
+                      <p className="text-xs font-mono text-muted-foreground break-all">
+                        {selectedContract.licensee_id}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Video Info */}
+                <div className="border rounded-xl p-5 bg-card shadow-sm space-y-4">
+                  <div className="flex items-center gap-2 border-b pb-3">
+                    <Activity className="w-4 h-4 text-muted-foreground" />
+                    <h3 className="font-semibold tracking-tight">
+                      Video Optionen
+                    </h3>
+                  </div>
+                  <div className="space-y-4">
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium text-muted-foreground">
+                        Original Video
+                      </p>
+                      <a
+                        href={selectedContract.original_video_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-primary hover:underline font-medium line-clamp-2"
+                      >
+                        {selectedContract.original_video_title}
+                      </a>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium text-muted-foreground">
+                          Video ID
+                        </p>
+                        <p className="font-mono text-xs bg-muted w-fit px-1.5 py-0.5 rounded">
+                          {selectedContract.original_video_id}
+                        </p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium text-muted-foreground">
+                          Dauer
+                        </p>
+                        <p className="font-medium">
+                          {selectedContract.original_video_duration} Sek
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
 
               {/* Vergütung */}
-              <div className="border rounded-lg p-4 bg-muted/20">
-                <h3 className="font-semibold mb-3">Vergütung & Metadaten</h3>
-                <div className="grid md:grid-cols-3 gap-4 text-sm">
-                  <div>
-                    <p className="font-semibold text-muted-foreground mb-1">
+              <div className="border rounded-xl p-5 bg-card shadow-sm space-y-4">
+                <div className="flex items-center gap-2 border-b pb-3">
+                  <CreditCard className="w-4 h-4 text-muted-foreground" />
+                  <h3 className="font-semibold tracking-tight">
+                    Vergütung & Metadaten
+                  </h3>
+                </div>
+                <div className="grid md:grid-cols-3 gap-6">
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-muted-foreground">
                       Preismodell
                     </p>
-                    <p>Typ {selectedContract.pricing_model_type}</p>
+                    <p className="font-medium">
+                      Typ {selectedContract.pricing_model_type}
+                      {selectedContract.pricing_model_type === 1
+                        ? " (Einmalzahlung)"
+                        : selectedContract.pricing_model_type === 2
+                          ? " (Pay per View)"
+                          : ""}
+                    </p>
                   </div>
-                  <div>
-                    <p className="font-semibold text-muted-foreground mb-1">
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-muted-foreground">
                       Wert
                     </p>
-                    <p>
+                    <p className="font-medium text-lg">
                       {selectedContract.pricing_currency}{" "}
                       {selectedContract.pricing_value.toFixed(2)}
                     </p>
                   </div>
-                  <div>
-                    <p className="font-semibold text-muted-foreground mb-1">
-                      SimpleShare Score
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-muted-foreground">
+                      FairShare Score
                     </p>
-                    <p>{selectedContract.fairshare_score}</p>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-lg">
+                        {selectedContract.fairshare_score}
+                      </span>
+                      <div className="h-2 w-16 bg-muted rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-primary"
+                          style={{
+                            width: `${Math.min(100, (selectedContract.fairshare_score / 100) * 100)}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
+
                 {selectedContract.fairshare_metadata && (
-                  <div className="mt-4 pt-4 border-t grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className="text-muted-foreground text-xs mb-1">
+                  <div className="mt-2 pt-4 border-t grid grid-cols-2 gap-6">
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium text-muted-foreground">
                         Marktmacht Score
                       </p>
-                      <p>
+                      <p className="font-medium">
                         {selectedContract.fairshare_metadata.marktmacht_score}
                       </p>
                     </div>
-                    <div>
-                      <p className="text-muted-foreground text-xs mb-1">
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium text-muted-foreground">
                         Schöpferische Leistung
                       </p>
-                      <p>
+                      <p className="font-medium">
                         {
                           selectedContract.fairshare_metadata
                             .schoepferische_leistung
@@ -377,48 +436,53 @@ export default function AdminContracts() {
               </div>
 
               {/* Admin Actions */}
-              <div className="mt-4 flex flex-wrap gap-4 justify-end pt-4 border-t border-muted/20">
-                {selectedContract.status === "ACTIVE" &&
-                  selectedContract.pricing_model_type === 2 && (
-                    <Button
-                      variant="outline"
-                      className="border-yellow-500 text-yellow-600 hover:bg-yellow-500/10"
-                      onClick={async () => {
-                        const mockViews =
-                          (selectedContract.last_reported_view_count || 0) +
-                          5000;
-                        toast.promise(
-                          import(
-                            "@/services/supabaseCollum/reactionContract"
-                          ).then((m) =>
-                            m.adminReportUsage(selectedContract.id, mockViews),
-                          ),
-                          {
-                            loading: "Sende Test-Views...",
-                            success: (res: any) => {
-                              console.log("Mock report result:", res);
-                              return `Erfolgreich gemeldet! (Delta: ${res.processed[0]?.viewsDelta || "Unbekannt"})`;
+              <div className="mt-2 flex items-center justify-between pt-4 border-t border-muted/20">
+                <div className="text-xs text-muted-foreground">
+                  Aktion kann nicht rückgängig gemacht werden
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  {selectedContract.status === "ACTIVE" &&
+                    selectedContract.pricing_model_type === 2 && (
+                      <Button
+                        variant="outline"
+                        className="border-yellow-500 text-yellow-600 hover:bg-yellow-500/10"
+                        onClick={async () => {
+                          const mockViews =
+                            (selectedContract.last_reported_view_count || 0) +
+                            5000;
+                          toast.promise(
+                            import("@/services/supabaseCollum/reactionContract").then(
+                              (m) =>
+                                m.adminReportUsage(
+                                  selectedContract.id,
+                                  mockViews,
+                                ),
+                            ),
+                            {
+                              loading: "Sende Test-Views...",
+                              success: (res: any) =>
+                                `Erfolgreich gemeldet! (Delta: ${res.processed[0]?.viewsDelta || "Unbekannt"})`,
+                              error: "Fehler beim Melden der Test-Views",
                             },
-                            error: "Fehler beim Melden der Test-Views",
-                          },
-                        );
-                      }}
-                    >
-                      Test: +5000 Views melden
-                    </Button>
-                  )}
-                <Button
-                  variant="destructive"
-                  onClick={handleDeleteContract}
-                  disabled={isDeleting}
-                >
-                  {isDeleting ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  ) : (
-                    <Trash2 className="w-4 h-4 mr-2" />
-                  )}
-                  Vertrag Löschen
-                </Button>
+                          );
+                        }}
+                      >
+                        Test: +5000 Views melden
+                      </Button>
+                    )}
+                  <Button
+                    variant="destructive"
+                    onClick={handleDeleteContract}
+                    disabled={isDeleting}
+                  >
+                    {isDeleting ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Trash2 className="w-4 h-4 mr-2" />
+                    )}
+                    Vertrag Löschen
+                  </Button>
+                </div>
               </div>
             </div>
           )}
