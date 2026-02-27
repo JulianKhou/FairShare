@@ -264,7 +264,7 @@ export default function AdminContracts() {
           </div>
 
           {selectedContract && (
-            <div className="p-8 grid gap-8 bg-zinc-50/30 dark:bg-zinc-950/30">
+            <div className="p-6 grid gap-5 bg-zinc-50/30 dark:bg-zinc-950/30">
               {/* Timeline Info (Header Replacement) */}
               <div className="flex flex-wrap items-center gap-8 text-sm text-muted-foreground w-full bg-card border rounded-xl p-5 shadow-sm">
                 <div className="flex items-center gap-2">
@@ -297,7 +297,7 @@ export default function AdminContracts() {
                 </div>
               </div>
 
-              <div className="grid md:grid-cols-2 gap-8">
+              <div className="grid md:grid-cols-2 gap-5">
                 {/* Beteiligte Parteien */}
                 <div className="border rounded-xl bg-card shadow-sm overflow-hidden flex flex-col">
                   <div className="bg-muted/30 px-6 py-4 border-b flex items-center gap-2">
@@ -312,7 +312,7 @@ export default function AdminContracts() {
                         Original-Urheber (Licensor)
                       </p>
                       <div className="bg-muted/20 p-4 rounded-lg border border-border/50">
-                        <p className="text-xl font-bold">
+                        <p className="text-base font-bold">
                           {selectedContract.licensor_name}
                         </p>
                         <p className="text-xs font-mono text-muted-foreground mt-2 break-all">
@@ -325,7 +325,7 @@ export default function AdminContracts() {
                         Nutzer (Licensee)
                       </p>
                       <div className="bg-muted/20 p-4 rounded-lg border border-border/50">
-                        <p className="text-xl font-bold">
+                        <p className="text-base font-bold">
                           {selectedContract.licensee_name}
                         </p>
                         <p className="text-xs font-mono text-muted-foreground mt-2 break-all">
@@ -421,7 +421,7 @@ export default function AdminContracts() {
                       <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
                         Vertragswert
                       </p>
-                      <p className="text-3xl font-bold font-mono">
+                      <p className="text-2xl font-bold font-mono">
                         {selectedContract.pricing_currency}{" "}
                         {selectedContract.pricing_value.toFixed(2)}
                       </p>
@@ -493,6 +493,89 @@ export default function AdminContracts() {
                   )}
                 </div>
               </div>
+
+              {/* Subscription end date — only for active Abo contracts */}
+              {(selectedContract.status === "ACTIVE" ||
+                selectedContract.status === "PAID") &&
+                selectedContract.pricing_model_type !== 1 &&
+                (() => {
+                  const startDate =
+                    selectedContract.licensor_accepted_at ||
+                    selectedContract.created_at;
+                  const endDate = new Date(startDate);
+                  endDate.setFullYear(endDate.getFullYear() + 1);
+                  const now = new Date();
+                  const daysLeft = Math.max(
+                    0,
+                    Math.ceil(
+                      (endDate.getTime() - now.getTime()) /
+                        (1000 * 60 * 60 * 24),
+                    ),
+                  );
+                  const totalDays = 365;
+                  const elapsed = totalDays - daysLeft;
+                  const pct = Math.min(
+                    100,
+                    Math.round((elapsed / totalDays) * 100),
+                  );
+                  const isExpiringSoon = daysLeft <= 30;
+                  return (
+                    <div
+                      className={`p-4 rounded-xl border ${
+                        isExpiringSoon
+                          ? "bg-orange-50 dark:bg-orange-900/20 border-orange-300/50"
+                          : "bg-blue-50 dark:bg-blue-900/10 border-blue-300/30"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <span
+                          className={`text-sm font-semibold ${
+                            isExpiringSoon
+                              ? "text-orange-700 dark:text-orange-400"
+                              : "text-blue-700 dark:text-blue-400"
+                          }`}
+                        >
+                          {isExpiringSoon ? "⚠️" : "📅"} Abo-Laufzeit
+                        </span>
+                        <span
+                          className={`text-sm font-bold ${
+                            isExpiringSoon
+                              ? "text-orange-700 dark:text-orange-400"
+                              : "text-blue-700 dark:text-blue-400"
+                          }`}
+                        >
+                          {daysLeft} Tage verbleibend
+                        </span>
+                      </div>
+                      <div className="h-2 w-full bg-white/50 dark:bg-white/10 rounded-full overflow-hidden mb-2">
+                        <div
+                          className={`h-full rounded-full transition-all ${
+                            isExpiringSoon ? "bg-orange-500" : "bg-blue-500"
+                          }`}
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>
+                          Start:{" "}
+                          {new Date(startDate).toLocaleDateString("de-DE", {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                          })}
+                        </span>
+                        <span>
+                          Ende:{" "}
+                          {endDate.toLocaleDateString("de-DE", {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                          })}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })()}
 
               {/* Admin Actions */}
               <div className="mt-2 flex items-center justify-between pt-4 border-t border-muted/20">
