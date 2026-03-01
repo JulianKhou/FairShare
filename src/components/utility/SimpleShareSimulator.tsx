@@ -255,8 +255,18 @@ export default function SimpleShareSimulator() {
                 </div>
               </div>
               <div className="p-3 rounded-xl bg-white/5 border border-white/5">
-                <div className="text-[10px] text-muted-foreground uppercase font-bold mb-1">
+                <div className="text-[10px] text-muted-foreground uppercase font-bold mb-1 flex items-center gap-1">
                   Stripe Gebühren
+                  <div className="group/stripe relative">
+                    <IconInfoCircle
+                      size={12}
+                      className="text-muted-foreground cursor-help"
+                    />
+                    <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover/stripe:block w-48 p-2 bg-popover text-popover-foreground text-[10px] rounded shadow-lg font-normal normal-case">
+                      Stripe ist unser sicherer Zahlungsdienstleister. Die
+                      Gebühren decken die Transaktionskosten ab.
+                    </div>
+                  </div>
                 </div>
                 <div className="text-lg font-bold text-muted-foreground">
                   {stripeFee.toLocaleString("de-DE", {
@@ -267,7 +277,7 @@ export default function SimpleShareSimulator() {
               </div>
               <div className="p-3 rounded-xl bg-white/5 border border-white/5">
                 <div className="text-[10px] text-muted-foreground uppercase font-bold mb-1">
-                  SimpleShare (10%)
+                  SimpleShare
                 </div>
                 <div className="text-lg font-bold text-simple-purple">
                   {platformFee.toLocaleString("de-DE", {
