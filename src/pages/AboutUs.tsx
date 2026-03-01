@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { Link } from "react-router-dom";
 import {
   IconRocket,
   IconTarget,
@@ -86,11 +87,11 @@ export default function AboutUs() {
                 <IconUsers size={40} />
               </div>
               <h3 className="text-2xl font-bold mb-4 text-simple-teal">
-                Community Fokus
+                Fairness im Fokus
               </h3>
               <p className="text-muted-foreground leading-relaxed">
-                Entwickelt von Creatoren für Creatoren. Wir verstehen eure
-                Bedürfnisse.
+                Plattformübergreifend und fair. Wir verbinden Original-Creatoren
+                und Reaction-Kanäle auf Augenhöhe.
               </p>
             </div>
             <div className="text-center p-10 rounded-[32px] border border-orange-500/10 bg-orange-500/5 hover:border-orange-500/40 hover:bg-orange-500/10 transition-all group shadow-sm">
@@ -108,6 +109,23 @@ export default function AboutUs() {
         </div>
       </section>
 
+      {/* Story Section */}
+      <section className="px-4 py-16 max-w-4xl mx-auto text-center">
+        <h2 className="text-4xl font-bold mb-8 tracking-tight">
+          Die Geschichte hinter SimpleShare
+        </h2>
+        <div className="bg-card/30 backdrop-blur-sm p-10 rounded-[40px] border border-border/50 relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-32 h-32 bg-simple-purple/10 blur-3xl rounded-full"></div>
+          <p className="text-xl text-muted-foreground leading-relaxed italic relative z-10">
+            "Die Idee hinter SimpleShare war es, eine wirklich einfache Lösung
+            für Creator und Reactor zu finden. Es ging uns darum, den
+            Original-Creatoren endlich einen fairen Anteil an der Reichweite zu
+            bieten, während Reaction-Kanäle rechtlich abgesichert wachsen
+            können."
+          </p>
+        </div>
+      </section>
+
       {/* Team CTA */}
       <section className="px-4 py-24 text-center">
         <div className="max-w-2xl mx-auto p-12 rounded-[40px] bg-linear-to-br from-simple-purple/20 to-simple-teal/20 border border-white/10 relative overflow-hidden">
@@ -119,9 +137,12 @@ export default function AboutUs() {
             Werde Teil der SimpleShare-Bewegung und revolutioniere deinen
             Content.
           </p>
-          <button className="bg-foreground text-background px-8 py-3 rounded-full font-bold hover:opacity-90 transition-opacity relative z-10">
+          <Link
+            to="/overview"
+            className="inline-block bg-foreground text-background px-10 py-4 rounded-full font-bold hover:opacity-90 transition-all hover:scale-105 active:scale-95 relative z-10 shadow-xl shadow-foreground/10"
+          >
             Jetzt starten
-          </button>
+          </Link>
         </div>
       </section>
     </div>
