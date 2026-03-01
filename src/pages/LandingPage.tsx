@@ -5,6 +5,11 @@ import {
   IconCurrencyDollar,
   IconShieldCheck,
   IconBolt,
+  IconRocket,
+  IconPuzzle,
+  IconConfetti,
+  IconBrandYoutube,
+  IconWorld,
 } from "@tabler/icons-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/auth/useAuth";
@@ -108,6 +113,80 @@ function LandingPage() {
               Käufer und Verkäufer.
             </p>
           </Card>
+        </div>
+      </section>
+
+      {/* Roadmap Section */}
+      <section className="px-4 py-16 md:py-24 bg-linear-to-b from-background to-simple-purple/5">
+        <div className="max-w-5xl mx-auto w-full text-center">
+          <h2 className="text-3xl md:text-4xl font-bold mb-16">
+            Unsere Roadmap
+          </h2>
+
+          <div className="relative">
+            {/* The Line - Desktop only */}
+            <div className="hidden md:block absolute top-[24px] left-0 right-0 h-0.5 bg-simple-purple/20" />
+
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
+              {/* Milestone 1: Beta */}
+              <div className="relative flex flex-col items-center group">
+                <div className="w-12 h-12 rounded-full bg-simple-purple/20 text-simple-purple flex items-center justify-center mb-4 z-10 border-2 border-simple-purple shadow-lg shadow-simple-purple/20">
+                  <IconRocket size={24} />
+                  <div className="absolute -top-1 right-0 w-4 h-4 rounded-full bg-green-500 border-2 border-background flex items-center justify-center">
+                    <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                  </div>
+                </div>
+                <h4 className="font-bold text-foreground">Beta Release</h4>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Bereits Live
+                </p>
+              </div>
+
+              {/* Milestone 2: Chrome Extension */}
+              <div className="relative flex flex-col items-center group">
+                <div className="w-12 h-12 rounded-full bg-simple-teal/20 text-simple-teal flex items-center justify-center mb-4 z-10 border-2 border-simple-teal animate-pulse">
+                  <IconPuzzle size={24} />
+                </div>
+                <h4 className="font-bold text-foreground">Chrome Extension</h4>
+                <p className="text-xs text-simple-teal font-medium mt-2">
+                  In Arbeit
+                </p>
+              </div>
+
+              {/* Milestone 3: Official Release */}
+              <div className="relative flex flex-col items-center opacity-50 grayscale hover:grayscale-0 hover:opacity-100 transition-all group">
+                <div className="w-12 h-12 rounded-full bg-muted text-muted-foreground flex items-center justify-center mb-4 z-10 border-2 border-muted border-dashed">
+                  <IconConfetti size={24} />
+                </div>
+                <h4 className="font-bold text-foreground">Full Release</h4>
+                <p className="text-xs text-muted-foreground mt-2 text-center">
+                  Public Launch Q2
+                </p>
+              </div>
+
+              {/* Milestone 4: YT Claim System */}
+              <div className="relative flex flex-col items-center opacity-50 grayscale hover:grayscale-0 hover:opacity-100 transition-all group">
+                <div className="w-12 h-12 rounded-full bg-muted text-muted-foreground flex items-center justify-center mb-4 z-10 border-2 border-muted border-dashed">
+                  <IconBrandYoutube size={24} />
+                </div>
+                <h4 className="font-bold text-foreground">YT Claim System</h4>
+                <p className="text-xs text-muted-foreground mt-2 text-center">
+                  Automatisches Whitelisting
+                </p>
+              </div>
+
+              {/* Milestone 5: Expansion */}
+              <div className="relative flex flex-col items-center opacity-50 grayscale hover:grayscale-0 hover:opacity-100 transition-all group">
+                <div className="w-12 h-12 rounded-full bg-muted text-muted-foreground flex items-center justify-center mb-4 z-10 border-2 border-muted border-dashed">
+                  <IconWorld size={24} />
+                </div>
+                <h4 className="font-bold text-foreground">Global Scaling</h4>
+                <p className="text-xs text-muted-foreground mt-2 text-center">
+                  Weitere Länder & Plattformen
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
