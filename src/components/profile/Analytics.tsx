@@ -236,6 +236,16 @@ export const Analytics = () => {
   );
 };
 
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+
 // ─── Sub-Components ───────────────────────────────────────────
 
 function StatCard({
@@ -283,33 +293,61 @@ function SimpleBarChart({
 }: {
   data: { month: string; amount: number }[];
 }) {
-  const maxVal = Math.max(...data.map((d) => d.amount), 1);
-
   return (
-    <div className="w-full h-full flex items-end justify-between gap-2">
-      {data.map((item, i) => {
-        const heightPercent = (item.amount / maxVal) * 100;
-        return (
-          <div
-            key={i}
-            className="flex-1 h-full flex flex-col items-center gap-2 group"
-          >
-            <div className="relative w-full bg-muted/30 rounded-t-sm hover:bg-muted/50 transition-colors flex items-end justify-center group-hover:bg-primary/10 h-full">
-              <div
-                className="w-2/3 bg-primary rounded-t-sm transition-all duration-500 relative group-hover:bg-primary/80"
-                style={{ height: `${Math.max(heightPercent, 2)}%` }}
-              >
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-popover text-popover-foreground text-xs px-2 py-1 rounded shadow-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10 border">
-                  {item.amount.toFixed(2)}€
-                </div>
-              </div>
-            </div>
-            <span className="text-xs text-muted-foreground font-medium">
-              {item.month}
-            </span>
-          </div>
-        );
-      })}
-    </div>
+    <ResponsiveContainer width="100%" height="100%">
+      <BarChart
+        data={data}
+        margin={{
+          top: 10,
+          right: 10,
+          left: -20,
+          bottom: 0,
+        }}
+      >
+        <CartesianGrid
+          strokeDasharray="3 3"
+          vertical={false}
+          stroke="hsl(var(--border))"
+          opacity={0.5}
+        />
+        <XAxis
+          dataKey="month"
+          axisLine={false}
+          tickLine={false}
+          tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+          dy={10}
+        />
+        <YAxis
+          axisLine={false}
+          tickLine={false}
+          tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+          tickFormatter={(value) => `€${value}`}
+        />
+        <Tooltip
+          cursor={{ fill: "hsl(var(--muted)/0.5)" }}
+          contentStyle={{
+            backgroundColor: "hsl(var(--popover))",
+            borderRadius: "8px",
+            border: "1px solid hsl(var(--border))",
+            boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+          }}
+          itemStyle={{ color: "hsl(var(--foreground))", fontWeight: "bold" }}
+          labelStyle={{
+            color: "hsl(var(--muted-foreground))",
+            marginBottom: "4px",
+          }}
+          formatter={(value: any) => [
+            `€${Number(value).toFixed(2)}`,
+            "Einnahmen",
+          ]}
+        />
+        <Bar
+          dataKey="amount"
+          fill="hsl(var(--primary))"
+          radius={[4, 4, 0, 0]}
+          maxBarSize={50}
+        />
+      </BarChart>
+    </ResponsiveContainer>
   );
 }

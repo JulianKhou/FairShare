@@ -85,22 +85,46 @@ export const useAnalytics = (userId: string | undefined) => {
           });
         });
 
-      // Revenue by Month (last 6 months)
-      const monthMap = new Map<string, { amount: number; count: number }>();
+      // Revenue by Month (Chronological order: Last 6 months including current)
+      const now = new Date();
+      const revenueByMonth: {
+        month: string;
+        fullYear: number;
+        monthNum: number;
+        amount: number;
+        count: number;
+      }[] = [];
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        revenueByMonth.push({
+          month: d.toLocaleString("de-DE", { month: "short" }),
+          fullYear: d.getFullYear(),
+          monthNum: d.getMonth(),
+          amount: 0,
+          count: 0,
+        });
+      }
+
       allLicensor
         .filter((c) => c.status === "PAID" || c.status === "ACTIVE")
         .forEach((c) => {
           const d = new Date(c.created_at);
-          const key = d.toLocaleString("default", {
-            month: "short",
-            year: "2-digit",
-          });
-          const current = monthMap.get(key) || { amount: 0, count: 0 };
-          monthMap.set(key, {
-            amount: current.amount + (c.pricing_value || 0),
-            count: current.count + 1,
-          });
+          const cYear = d.getFullYear();
+          const cMonth = d.getMonth();
+
+          const monthNode = revenueByMonth.find(
+            (m) => m.fullYear === cYear && m.monthNum === cMonth,
+          );
+          if (monthNode) {
+            monthNode.amount += c.pricing_value || 0;
+            monthNode.count += 1;
+          }
         });
+
+      // Clean up helper props before returning
+      const finalRevenueByMonth = revenueByMonth.map(
+        ({ month, amount, count }) => ({ month, amount, count }),
+      );
 
       // Calc stats for Licensee (Spent)
       const totalSpent = allLicensee
@@ -141,10 +165,7 @@ export const useAnalytics = (userId: string | undefined) => {
           model,
           ...data,
         })),
-        revenueByMonth: Array.from(monthMap.entries()).map(([month, data]) => ({
-          month,
-          ...data,
-        })),
+        revenueByMonth: finalRevenueByMonth,
         recentContracts,
         allLicensorContracts: allLicensor,
         totalSpent,
