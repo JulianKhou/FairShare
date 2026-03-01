@@ -130,7 +130,7 @@ function LandingPage() {
             <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
               {/* Milestone 1: Beta */}
               <div className="relative flex flex-col items-center group cursor-help">
-                <div className="w-12 h-12 rounded-full bg-simple-purple/20 text-simple-purple flex items-center justify-center mb-4 z-10 border-2 border-simple-purple shadow-lg shadow-simple-purple/20 transition-transform group-hover:scale-110">
+                <div className="relative w-12 h-12 rounded-full bg-simple-purple/20 text-simple-purple flex items-center justify-center mb-4 z-10 border-2 border-simple-purple shadow-lg shadow-simple-purple/20 transition-transform group-hover:scale-110">
                   <IconRocket size={24} />
                   <div className="absolute -top-1 right-0 w-4 h-4 rounded-full bg-green-500 border-2 border-background flex items-center justify-center">
                     <div className="w-1.5 h-1.5 rounded-full bg-white" />
