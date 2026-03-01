@@ -69,13 +69,13 @@ function LandingPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Feature 1: Fair Prices */}
-          <Card className="p-6 transition-all hover:shadow-xl hover:border-simple-purple/50 bg-card/50 backdrop-blur-sm group">
-            <div className="flex justify-center mb-6 px-0">
-              <div className="p-4 bg-simple-purple/10 rounded-2xl group-hover:scale-110 transition-transform">
-                <IconCurrencyDollar size={36} className="text-simple-purple" />
+          <Card className="p-8 transition-all hover:shadow-2xl hover:border-simple-purple/50 bg-simple-purple/5 border-simple-purple/10 backdrop-blur-sm group rounded-3xl">
+            <div className="flex justify-center mb-6">
+              <div className="p-5 bg-simple-purple/15 text-simple-purple rounded-2xl group-hover:scale-110 transition-transform">
+                <IconCurrencyDollar size={40} />
               </div>
             </div>
-            <h3 className="text-xl font-bold text-center mb-3 text-simple-purple">
+            <h3 className="text-2xl font-bold text-center mb-3 text-simple-purple">
               Faire Preise
             </h3>
             <p className="text-muted-foreground text-center text-sm leading-relaxed">
@@ -85,13 +85,13 @@ function LandingPage() {
           </Card>
 
           {/* Feature 2: Easy Processing */}
-          <Card className="p-6 transition-all hover:shadow-xl hover:border-simple-teal/50 bg-card/50 backdrop-blur-sm group">
-            <div className="flex justify-center mb-6 px-0">
-              <div className="p-4 bg-simple-teal/10 rounded-2xl group-hover:scale-110 transition-transform">
-                <IconBolt size={36} className="text-simple-teal" />
+          <Card className="p-8 transition-all hover:shadow-2xl hover:border-simple-teal/50 bg-simple-teal/5 border-simple-teal/10 backdrop-blur-sm group rounded-3xl">
+            <div className="flex justify-center mb-6">
+              <div className="p-5 bg-simple-teal/15 text-simple-teal rounded-2xl group-hover:scale-110 transition-transform">
+                <IconBolt size={40} />
               </div>
             </div>
-            <h3 className="text-xl font-bold text-center mb-3 text-simple-teal">
+            <h3 className="text-2xl font-bold text-center mb-3 text-simple-teal">
               Einfache Abwicklung
             </h3>
             <p className="text-muted-foreground text-center text-sm leading-relaxed">
@@ -101,13 +101,13 @@ function LandingPage() {
           </Card>
 
           {/* Feature 3: Legal Security */}
-          <Card className="p-6 transition-all hover:shadow-xl hover:border-green-500/50 bg-card/50 backdrop-blur-sm group">
-            <div className="flex justify-center mb-6 px-0">
-              <div className="p-4 bg-green-500/10 rounded-2xl group-hover:scale-110 transition-transform">
-                <IconShieldCheck size={36} className="text-green-500" />
+          <Card className="p-8 transition-all hover:shadow-2xl hover:border-green-500/50 bg-green-500/5 border-green-500/10 backdrop-blur-sm group rounded-3xl">
+            <div className="flex justify-center mb-6">
+              <div className="p-5 bg-green-500/15 text-green-500 rounded-2xl group-hover:scale-110 transition-transform">
+                <IconShieldCheck size={40} />
               </div>
             </div>
-            <h3 className="text-xl font-bold text-center mb-3 text-green-500">
+            <h3 className="text-2xl font-bold text-center mb-3 text-green-500">
               Rechtssicherheit
             </h3>
             <p className="text-muted-foreground text-center text-sm leading-relaxed">

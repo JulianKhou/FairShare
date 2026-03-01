@@ -70,37 +70,37 @@ export default function AboutUs() {
             Wofür wir stehen
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center p-8 rounded-2xl border border-transparent hover:border-simple-purple/30 hover:bg-simple-purple/5 transition-all group">
-              <div className="w-16 h-16 bg-simple-purple/10 text-simple-purple rounded-2xl flex items-center justify-center mb-6 mx-auto group-hover:scale-110 transition-transform">
-                <IconShieldCheck size={32} />
+            <div className="text-center p-10 rounded-[32px] border border-simple-purple/10 bg-simple-purple/5 hover:border-simple-purple/40 hover:bg-simple-purple/10 transition-all group shadow-sm">
+              <div className="w-20 h-20 bg-simple-purple/15 text-simple-purple rounded-3xl flex items-center justify-center mb-8 mx-auto group-hover:scale-110 transition-transform shadow-lg shadow-simple-purple/5">
+                <IconShieldCheck size={40} />
               </div>
-              <h3 className="text-xl font-bold mb-2 text-simple-purple">
+              <h3 className="text-2xl font-bold mb-4 text-simple-purple">
                 Rechtssicherheit
               </h3>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-muted-foreground leading-relaxed">
                 Offiziell geprüfte Lizenzen, die vor Copyright-Claims schützen.
               </p>
             </div>
-            <div className="text-center p-8 rounded-2xl border border-transparent hover:border-simple-teal/30 hover:bg-simple-teal/5 transition-all group">
-              <div className="w-16 h-16 bg-simple-teal/10 text-simple-teal rounded-2xl flex items-center justify-center mb-6 mx-auto group-hover:scale-110 transition-transform">
-                <IconUsers size={32} />
+            <div className="text-center p-10 rounded-[32px] border border-simple-teal/10 bg-simple-teal/5 hover:border-simple-teal/40 hover:bg-simple-teal/10 transition-all group shadow-sm">
+              <div className="w-20 h-20 bg-simple-teal/15 text-simple-teal rounded-3xl flex items-center justify-center mb-8 mx-auto group-hover:scale-110 transition-transform shadow-lg shadow-simple-teal/5">
+                <IconUsers size={40} />
               </div>
-              <h3 className="text-xl font-bold mb-2 text-simple-teal">
+              <h3 className="text-2xl font-bold mb-4 text-simple-teal">
                 Community Fokus
               </h3>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-muted-foreground leading-relaxed">
                 Entwickelt von Creatoren für Creatoren. Wir verstehen eure
                 Bedürfnisse.
               </p>
             </div>
-            <div className="text-center p-8 rounded-2xl border border-transparent hover:border-orange-500/30 hover:bg-orange-500/5 transition-all group">
-              <div className="w-16 h-16 bg-orange-500/10 text-orange-500 rounded-2xl flex items-center justify-center mb-6 mx-auto group-hover:scale-110 transition-transform">
-                <IconShieldCheck size={32} />
+            <div className="text-center p-10 rounded-[32px] border border-orange-500/10 bg-orange-500/5 hover:border-orange-500/40 hover:bg-orange-500/10 transition-all group shadow-sm">
+              <div className="w-20 h-20 bg-orange-500/15 text-orange-500 rounded-3xl flex items-center justify-center mb-8 mx-auto group-hover:scale-110 transition-transform shadow-lg shadow-orange-500/5">
+                <IconShieldCheck size={40} />
               </div>
-              <h3 className="text-xl font-bold mb-2 text-orange-500">
+              <h3 className="text-2xl font-bold mb-4 text-orange-500">
                 Transparenz
               </h3>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-muted-foreground leading-relaxed">
                 Keine versteckten Kosten. Klare Aufschlüsselung jedes Euros.
               </p>
             </div>

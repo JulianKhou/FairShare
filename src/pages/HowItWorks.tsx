@@ -39,11 +39,11 @@ export default function HowItWorks() {
 
       {/* Features/Explanation Section */}
       <section className="px-4 py-10 max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
-        <div className="bg-card p-6 rounded-2xl border border-border flex flex-col items-start gap-4 hover:border-simple-purple/50 transition-colors">
-          <div className="p-3 bg-simple-purple/10 text-simple-purple rounded-xl">
-            <IconScale size={28} />
+        <div className="bg-simple-purple/5 p-8 rounded-3xl border border-simple-purple/10 flex flex-col items-start gap-4 hover:bg-simple-purple/10 hover:border-simple-purple/40 transition-all group">
+          <div className="p-4 bg-simple-purple/10 text-simple-purple rounded-2xl group-hover:scale-110 transition-transform">
+            <IconScale size={32} />
           </div>
-          <h3 className="text-xl font-bold text-simple-purple">
+          <h3 className="text-2xl font-bold text-simple-purple">
             Faire Bewertung
           </h3>
           <p className="text-muted-foreground text-sm leading-relaxed">
@@ -54,11 +54,11 @@ export default function HowItWorks() {
           </p>
         </div>
 
-        <div className="bg-card p-6 rounded-2xl border border-border flex flex-col items-start gap-4 hover:border-simple-teal/50 transition-colors">
-          <div className="p-3 bg-simple-teal/10 text-simple-teal rounded-xl">
-            <IconChartLine size={28} />
+        <div className="bg-simple-teal/5 p-8 rounded-3xl border border-simple-teal/10 flex flex-col items-start gap-4 hover:bg-simple-teal/10 hover:border-simple-teal/40 transition-all group">
+          <div className="p-4 bg-simple-teal/10 text-simple-teal rounded-2xl group-hover:scale-110 transition-transform">
+            <IconChartLine size={32} />
           </div>
-          <h3 className="text-xl font-bold text-simple-teal">
+          <h3 className="text-2xl font-bold text-simple-teal">
             Performance & RPM
           </h3>
           <p className="text-muted-foreground text-sm leading-relaxed">
@@ -68,11 +68,11 @@ export default function HowItWorks() {
           </p>
         </div>
 
-        <div className="bg-card p-6 rounded-2xl border border-border flex flex-col items-start gap-4 hover:border-orange-500/50 transition-colors">
-          <div className="p-3 bg-orange-500/10 text-orange-500 rounded-xl">
-            <IconHeartHandshake size={28} />
+        <div className="bg-orange-500/5 p-8 rounded-3xl border border-orange-500/10 flex flex-col items-start gap-4 hover:bg-orange-500/10 hover:border-orange-500/40 transition-all group">
+          <div className="p-4 bg-orange-500/10 text-orange-500 rounded-2xl group-hover:scale-110 transition-transform">
+            <IconHeartHandshake size={32} />
           </div>
-          <h3 className="text-xl font-bold text-orange-500">
+          <h3 className="text-2xl font-bold text-orange-500">
             Volle Transparenz
           </h3>
           <p className="text-muted-foreground text-sm leading-relaxed">
