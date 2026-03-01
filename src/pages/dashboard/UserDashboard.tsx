@@ -8,30 +8,24 @@ import { Badge } from "@/components/ui/badge";
 import { MyLicenses } from "@/components/profile/MyLicenses";
 import { CreatorContracts } from "@/components/profile/CreatorContracts";
 import { Analytics } from "@/components/profile/Analytics";
-import { getProfile } from "@/services/supabaseCollum/profiles";
 import { supabase } from "@/services/supabaseCollum/client";
 import { createStripeCheckoutSession } from "@/services/stripeFunctions";
 import { deleteReactionContract } from "@/services/supabaseCollum/reactionContract";
 import { toast } from "sonner";
+import { useDashboardStats } from "@/hooks/queries/useDashboardStats";
+import { useOpenInvoices } from "@/hooks/queries/useOpenInvoices";
 import type { ReactionContract } from "@/services/supabaseCollum/reactionContract";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   TrendingUp,
   TrendingDown,
   FileCheck,
   Search,
-  Upload,
   CreditCard,
   Loader2,
   Receipt,
   ExternalLink,
 } from "lucide-react";
-
-interface DashboardStats {
-  totalEarnings: number;
-  totalSpent: number;
-  activeContracts: number;
-  pendingRequests: number;
-}
 
 export default function UserDashboard() {
   const { user } = useAuth();
@@ -39,17 +33,25 @@ export default function UserDashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
   const alertShown = useRef(false);
 
+  const queryClient = useQueryClient();
   const [viewRole, setViewRole] = useState<"creator" | "reactor">("creator");
-  const [profile, setProfile] = useState<any>(null);
-  const [stats, setStats] = useState<DashboardStats>({
+
+  const { data: statsData, isLoading: loadingStats } = useDashboardStats(
+    user?.id,
+  );
+
+  const { data: invoicesData, isLoading: loadingInvoices } = useOpenInvoices(
+    user?.id,
+  );
+
+  const profile = statsData?.profile;
+  const stats = statsData?.stats || {
     totalEarnings: 0,
     totalSpent: 0,
     activeContracts: 0,
     pendingRequests: 0,
-  });
-  const [loadingStats, setLoadingStats] = useState(true);
-  const [openInvoices, setOpenInvoices] = useState<ReactionContract[]>([]);
-  const [loadingInvoices, setLoadingInvoices] = useState(true);
+  };
+  const openInvoices = invoicesData || [];
   const [payingId, setPayingId] = useState<string | null>(null);
   const [pollingContractId, setPollingContractId] = useState<string | null>(
     null,
@@ -69,9 +71,16 @@ export default function UserDashboard() {
         description: "Deine Zahlung wird verarbeitet.",
       });
 
-      // Immediately remove the paid contract from open invoices (webhook may be delayed)
+      // Invalidate queries to refresh data and remove the paid contract from list
       if (contractId) {
-        setOpenInvoices((prev) => prev.filter((inv) => inv.id !== contractId));
+        if (user) {
+          queryClient.invalidateQueries({
+            queryKey: ["openInvoices", user.id],
+          });
+          queryClient.invalidateQueries({
+            queryKey: ["dashboardStats", user.id],
+          });
+        }
         setPollingContractId(contractId);
 
         // Poll until the webhook has updated the status to ACTIVE/PAID (max 10 attempts × 2s)
@@ -97,16 +106,14 @@ export default function UserDashboard() {
               });
             }
 
-            // Final refresh of open invoices to ensure clean state
             if (user) {
-              const { data: freshInvoices } = await supabase
-                .from("reaction_contracts")
-                .select("*")
-                .eq("licensee_id", user.id)
-                .eq("accepted_by_licensor", true)
-                .eq("status", "PENDING")
-                .order("created_at", { ascending: false });
-              setOpenInvoices((freshInvoices as ReactionContract[]) || []);
+              // Invalidate queries to refresh data
+              queryClient.invalidateQueries({
+                queryKey: ["openInvoices", user.id],
+              });
+              queryClient.invalidateQueries({
+                queryKey: ["dashboardStats", user.id],
+              });
             }
           }
         }, 2000);
@@ -137,145 +144,6 @@ export default function UserDashboard() {
       setSearchParams({}, { replace: true });
     }
   }, [searchParams, setSearchParams]);
-
-  useEffect(() => {
-    if (!user) return;
-
-    const fetchData = async () => {
-      setLoadingStats(true);
-      setLoadingInvoices(true);
-
-      const [
-        profileData,
-        contractsLicensor,
-        contractsLicensee,
-        revLicensorData,
-        revLicenseeData,
-        activeData,
-        pendingData,
-        invoicesData,
-      ] = await Promise.allSettled([
-        getProfile(user.id),
-        supabase
-          .from("reaction_contracts")
-          .select("id, pricing_value, pricing_model_type")
-          .eq("licensor_id", user.id)
-          .in("status", ["PAID", "ACTIVE"]),
-        supabase
-          .from("reaction_contracts")
-          .select("id, pricing_value, pricing_model_type")
-          .eq("licensee_id", user.id)
-          .in("status", ["PAID", "ACTIVE"]),
-        supabase
-          .from("revenue_events")
-          .select("contract_id, amount_cents")
-          .eq("licensor_id", user.id),
-        supabase
-          .from("revenue_events")
-          .select("contract_id, amount_cents")
-          .eq("licensee_id", user.id),
-        supabase
-          .from("reaction_contracts")
-          .select("id", { count: "exact", head: true })
-          .or(`licensor_id.eq.${user.id},licensee_id.eq.${user.id}`)
-          .in("status", ["PAID", "ACTIVE"]),
-        supabase
-          .from("reaction_contracts")
-          .select("id", { count: "exact", head: true })
-          .eq("licensor_id", user.id)
-          .eq("accepted_by_licensor", false)
-          .neq("status", "REJECTED"),
-        supabase
-          .from("reaction_contracts")
-          .select("*")
-          .eq("licensee_id", user.id)
-          .eq("accepted_by_licensor", true)
-          .eq("status", "PENDING")
-          .is("stripe_subscription_id", null)
-          .order("created_at", { ascending: false }),
-      ]);
-
-      if (profileData.status === "fulfilled") setProfile(profileData.value);
-
-      const revenuesLicensor: Record<string, number> = {};
-      if (
-        revLicensorData.status === "fulfilled" &&
-        revLicensorData.value.data
-      ) {
-        revLicensorData.value.data.forEach((r: any) => {
-          if (!revenuesLicensor[r.contract_id])
-            revenuesLicensor[r.contract_id] = 0;
-          revenuesLicensor[r.contract_id] += r.amount_cents / 100;
-        });
-      }
-
-      const revenuesLicensee: Record<string, number> = {};
-      if (
-        revLicenseeData.status === "fulfilled" &&
-        revLicenseeData.value.data
-      ) {
-        revLicenseeData.value.data.forEach((r: any) => {
-          if (!revenuesLicensee[r.contract_id])
-            revenuesLicensee[r.contract_id] = 0;
-          revenuesLicensee[r.contract_id] += r.amount_cents / 100;
-        });
-      }
-
-      let earnings = 0;
-      if (
-        contractsLicensor.status === "fulfilled" &&
-        contractsLicensor.value.data
-      ) {
-        contractsLicensor.value.data.forEach((c: any) => {
-          if (
-            revenuesLicensor[c.id] !== undefined &&
-            revenuesLicensor[c.id] > 0
-          ) {
-            earnings += revenuesLicensor[c.id];
-          } else if (c.pricing_model_type === 1) {
-            earnings += c.pricing_value || 0;
-          }
-        });
-      }
-
-      let spent = 0;
-      if (
-        contractsLicensee.status === "fulfilled" &&
-        contractsLicensee.value.data
-      ) {
-        contractsLicensee.value.data.forEach((c: any) => {
-          if (
-            revenuesLicensee[c.id] !== undefined &&
-            revenuesLicensee[c.id] > 0
-          ) {
-            spent += revenuesLicensee[c.id];
-          } else if (c.pricing_model_type === 1) {
-            spent += c.pricing_value || 0;
-          }
-        });
-      }
-
-      const active =
-        activeData.status === "fulfilled" ? activeData.value.count || 0 : 0;
-      const pending =
-        pendingData.status === "fulfilled" ? pendingData.value.count || 0 : 0;
-
-      setStats({
-        totalEarnings: earnings,
-        totalSpent: spent,
-        activeContracts: active,
-        pendingRequests: pending,
-      });
-      setLoadingStats(false);
-
-      if (invoicesData.status === "fulfilled" && invoicesData.value.data) {
-        setOpenInvoices(invoicesData.value.data as ReactionContract[]);
-      }
-      setLoadingInvoices(false);
-    };
-
-    fetchData();
-  }, [user]);
 
   const handlePay = async (contractId: string) => {
     setPayingId(contractId);
@@ -498,10 +366,10 @@ export default function UserDashboard() {
         (loadingInvoices || openInvoices.length > 0) &&
         (() => {
           const oneTimeInvoices = openInvoices.filter(
-            (i) => i.pricing_model_type === 1,
+            (i: ReactionContract) => i.pricing_model_type === 1,
           );
           const subscriptionInvoices = openInvoices.filter(
-            (i) => i.pricing_model_type !== 1,
+            (i: ReactionContract) => i.pricing_model_type !== 1,
           );
           return (
             <Card className="mb-8 border-rose-500/40 shadow-sm overflow-hidden">
@@ -563,7 +431,7 @@ export default function UserDashboard() {
                         </p>
                       ) : (
                         <div className="divide-y space-y-2">
-                          {oneTimeInvoices.map((invoice) => (
+                          {oneTimeInvoices.map((invoice: ReactionContract) => (
                             <div
                               key={invoice.id}
                               className="flex flex-col sm:flex-row items-start sm:items-center justify-between py-3 gap-4 group"
@@ -635,76 +503,78 @@ export default function UserDashboard() {
                         </p>
                       ) : (
                         <div className="divide-y space-y-2">
-                          {subscriptionInvoices.map((invoice) => (
-                            <div
-                              key={invoice.id}
-                              className="flex flex-col sm:flex-row items-start sm:items-center justify-between py-3 gap-4 group"
-                            >
-                              <div className="flex-1 min-w-0">
-                                <p className="font-semibold text-sm truncate">
-                                  {invoice.original_video_title}
-                                </p>
-                                <div className="flex flex-wrap items-center gap-2 mt-1.5">
-                                  <Badge
-                                    variant="outline"
-                                    className="text-[10px] font-medium text-blue-600 border-blue-200 bg-blue-50/50 px-2 py-0"
-                                  >
-                                    Views-basiert
-                                  </Badge>
-                                  <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                    von{" "}
-                                    <span className="font-medium text-foreground">
-                                      {invoice.licensor_name}
+                          {subscriptionInvoices.map(
+                            (invoice: ReactionContract) => (
+                              <div
+                                key={invoice.id}
+                                className="flex flex-col sm:flex-row items-start sm:items-center justify-between py-3 gap-4 group"
+                              >
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-semibold text-sm truncate">
+                                    {invoice.original_video_title}
+                                  </p>
+                                  <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                                    <Badge
+                                      variant="outline"
+                                      className="text-[10px] font-medium text-blue-600 border-blue-200 bg-blue-50/50 px-2 py-0"
+                                    >
+                                      Views-basiert
+                                    </Badge>
+                                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                      von{" "}
+                                      <span className="font-medium text-foreground">
+                                        {invoice.licensor_name}
+                                      </span>
                                     </span>
-                                  </span>
-                                  <span className="text-xs text-muted-foreground">
-                                    ·{" "}
-                                    {new Date(
-                                      invoice.created_at,
-                                    ).toLocaleDateString("de-DE")}
-                                  </span>
+                                    <span className="text-xs text-muted-foreground">
+                                      ·{" "}
+                                      {new Date(
+                                        invoice.created_at,
+                                      ).toLocaleDateString("de-DE")}
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-4 shrink-0 sm:w-auto w-full justify-between">
+                                  <div className="text-right">
+                                    <span className="text-base font-bold text-foreground block">
+                                      {invoice.pricing_value.toFixed(2)}{" "}
+                                      {invoice.pricing_currency?.toUpperCase() ||
+                                        "EUR"}
+                                    </span>
+                                    <span className="text-[10px] uppercase font-semibold text-muted-foreground block mt-0.5">
+                                      pro 1.000 Aufrufe
+                                    </span>
+                                  </div>
+                                  <Button
+                                    size="sm"
+                                    onClick={() => handlePay(invoice.id)}
+                                    disabled={
+                                      payingId === invoice.id ||
+                                      pollingContractId === invoice.id
+                                    }
+                                    className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-all group-hover:shadow-md"
+                                  >
+                                    {payingId === invoice.id ||
+                                    pollingContractId === invoice.id ? (
+                                      <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
+                                    ) : (
+                                      <CreditCard className="w-3.5 h-3.5 mr-1.5" />
+                                    )}
+                                    <span className="hidden sm:inline">
+                                      {pollingContractId === invoice.id
+                                        ? "Verarbeitet..."
+                                        : "Abo abschließen"}
+                                    </span>
+                                    <span className="sm:hidden">
+                                      {pollingContractId === invoice.id
+                                        ? "Warten..."
+                                        : "Abschließen"}
+                                    </span>
+                                  </Button>
                                 </div>
                               </div>
-                              <div className="flex items-center gap-4 shrink-0 sm:w-auto w-full justify-between">
-                                <div className="text-right">
-                                  <span className="text-base font-bold text-foreground block">
-                                    {invoice.pricing_value.toFixed(2)}{" "}
-                                    {invoice.pricing_currency?.toUpperCase() ||
-                                      "EUR"}
-                                  </span>
-                                  <span className="text-[10px] uppercase font-semibold text-muted-foreground block mt-0.5">
-                                    pro 1.000 Aufrufe
-                                  </span>
-                                </div>
-                                <Button
-                                  size="sm"
-                                  onClick={() => handlePay(invoice.id)}
-                                  disabled={
-                                    payingId === invoice.id ||
-                                    pollingContractId === invoice.id
-                                  }
-                                  className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-all group-hover:shadow-md"
-                                >
-                                  {payingId === invoice.id ||
-                                  pollingContractId === invoice.id ? (
-                                    <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
-                                  ) : (
-                                    <CreditCard className="w-3.5 h-3.5 mr-1.5" />
-                                  )}
-                                  <span className="hidden sm:inline">
-                                    {pollingContractId === invoice.id
-                                      ? "Verarbeitet..."
-                                      : "Abo abschließen"}
-                                  </span>
-                                  <span className="sm:hidden">
-                                    {pollingContractId === invoice.id
-                                      ? "Warten..."
-                                      : "Abschließen"}
-                                  </span>
-                                </Button>
-                              </div>
-                            </div>
-                          ))}
+                            ),
+                          )}
                         </div>
                       )}
                     </TabsContent>
@@ -721,10 +591,12 @@ export default function UserDashboard() {
           <Search className="w-4 h-4 mr-2" />
           Videos erkunden
         </Button>
+        {/* 
         <Button onClick={() => navigate("/upload")} variant="outline">
           <Upload className="w-4 h-4 mr-2" />
           Videos importieren
         </Button>
+        */}
         {profile?.stripe_connect_id && (
           <Button asChild variant="outline">
             <a
