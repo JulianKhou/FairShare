@@ -23,6 +23,15 @@ export default function SimpleShareSimulator() {
   const creatorRevenue = (viewsCreator * customRpm) / 1000;
   const reactorRevenue = (viewsReactor * customRpm) / 1000;
 
+  // Fee Constants
+  const STRIPE_PERCENT = 0.029;
+  const STRIPE_FIXED = 0.25;
+  const PLATFORM_PERCENT = 0.1;
+
+  const stripeFee = price * STRIPE_PERCENT + STRIPE_FIXED;
+  const platformFee = price * PLATFORM_PERCENT;
+  const creatorNet = Math.max(price - stripeFee - platformFee, 0);
+
   useEffect(() => {
     // 2. SimpleShare calculation
     const params: SimpleShareParams = {
@@ -186,43 +195,87 @@ export default function SimpleShareSimulator() {
         </div>
 
         {/* Results */}
-        <div className="mt-6 p-6 rounded-2xl bg-linear-to-br from-white/5 to-white/10 border border-white/5 flex flex-col md:flex-row gap-6 items-center justify-between relative overflow-hidden">
+        <div className="mt-6 p-6 rounded-2xl bg-linear-to-br from-white/5 to-white/10 border border-white/5 flex flex-col gap-6 relative overflow-hidden">
           <div className="absolute inset-0 bg-linear-to-r from-simple-purple/10 to-simple-teal/10 blur-xl z-0"></div>
 
-          <div className="relative z-10 flex flex-col gap-1 w-full md:w-1/2">
-            <span className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">
-              Geschätzter Preis
-            </span>
-            <span className="text-4xl font-bold bg-clip-text text-transparent bg-linear-to-r from-simple-purple to-simple-teal">
-              {price.toLocaleString("de-DE", {
-                style: "currency",
-                currency: "EUR",
-              })}
-            </span>
-            <span className="text-xs text-muted-foreground mt-1">
-              Für eine unbefristete Nutzungslizenz (Buyout).
-            </span>
+          <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="flex flex-col gap-1 w-full md:w-1/2">
+              <span className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">
+                Geschätzter Preis (Brutto)
+              </span>
+              <span className="text-4xl font-bold bg-clip-text text-transparent bg-linear-to-r from-simple-purple to-simple-teal">
+                {price.toLocaleString("de-DE", {
+                  style: "currency",
+                  currency: "EUR",
+                })}
+              </span>
+              <span className="text-xs text-muted-foreground mt-1">
+                Für eine unbefristete Nutzungslizenz (Buyout).
+              </span>
+            </div>
+
+            <div className="w-full md:w-1/2 flex flex-col gap-2">
+              <div className="flex justify-between text-xs font-semibold">
+                <span className="text-simple-teal">Creator Share</span>
+                <span className="text-muted-foreground">Basis Abzug</span>
+              </div>
+              {/* Progress Bar */}
+              <div className="w-full h-3 bg-gray-800 rounded-full overflow-hidden flex">
+                <div
+                  className="h-full bg-simple-teal transition-all duration-500 ease-out"
+                  style={{ width: `${sharePercent * 100}%` }}
+                ></div>
+                <div
+                  className="h-full bg-gray-600 transition-all duration-500 ease-out"
+                  style={{ width: `${(1 - sharePercent) * 100}%` }}
+                ></div>
+              </div>
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>{(sharePercent * 100).toFixed(1)}% berechnet</span>
+                <span>Für Fremd-Nutzung</span>
+              </div>
+            </div>
           </div>
 
-          <div className="relative z-10 w-full md:w-1/2 flex flex-col gap-2">
-            <div className="flex justify-between text-xs font-semibold">
-              <span className="text-simple-teal">Creator Share</span>
-              <span className="text-muted-foreground">Basis Abzug</span>
-            </div>
-            {/* Progress Bar */}
-            <div className="w-full h-3 bg-gray-800 rounded-full overflow-hidden flex">
-              <div
-                className="h-full bg-simple-teal transition-all duration-500 ease-out"
-                style={{ width: `${sharePercent * 100}%` }}
-              ></div>
-              <div
-                className="h-full bg-gray-600 transition-all duration-500 ease-out"
-                style={{ width: `${(1 - sharePercent) * 100}%` }}
-              ></div>
-            </div>
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>{(sharePercent * 100).toFixed(1)}% berechnet</span>
-              <span>Für Fremd-Nutzung</span>
+          {/* Fee Breakdown */}
+          <div className="relative z-10 pt-6 border-t border-white/10 space-y-3">
+            <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+              Transparente Gebühren-Aufteilung
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="p-3 rounded-xl bg-white/5 border border-white/5">
+                <div className="text-[10px] text-muted-foreground uppercase font-bold mb-1">
+                  Creator (Netto)
+                </div>
+                <div className="text-lg font-bold text-simple-teal">
+                  {creatorNet.toLocaleString("de-DE", {
+                    style: "currency",
+                    currency: "EUR",
+                  })}
+                </div>
+              </div>
+              <div className="p-3 rounded-xl bg-white/5 border border-white/5">
+                <div className="text-[10px] text-muted-foreground uppercase font-bold mb-1">
+                  Stripe Gebühren
+                </div>
+                <div className="text-lg font-bold text-muted-foreground">
+                  {stripeFee.toLocaleString("de-DE", {
+                    style: "currency",
+                    currency: "EUR",
+                  })}
+                </div>
+              </div>
+              <div className="p-3 rounded-xl bg-white/5 border border-white/5">
+                <div className="text-[10px] text-muted-foreground uppercase font-bold mb-1">
+                  SimpleShare (10%)
+                </div>
+                <div className="text-lg font-bold text-simple-purple">
+                  {platformFee.toLocaleString("de-DE", {
+                    style: "currency",
+                    currency: "EUR",
+                  })}
+                </div>
+              </div>
             </div>
           </div>
         </div>
