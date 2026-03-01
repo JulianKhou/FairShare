@@ -129,8 +129,8 @@ function LandingPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
               {/* Milestone 1: Beta */}
-              <div className="relative flex flex-col items-center group">
-                <div className="w-12 h-12 rounded-full bg-simple-purple/20 text-simple-purple flex items-center justify-center mb-4 z-10 border-2 border-simple-purple shadow-lg shadow-simple-purple/20">
+              <div className="relative flex flex-col items-center group cursor-help">
+                <div className="w-12 h-12 rounded-full bg-simple-purple/20 text-simple-purple flex items-center justify-center mb-4 z-10 border-2 border-simple-purple shadow-lg shadow-simple-purple/20 transition-transform group-hover:scale-110">
                   <IconRocket size={24} />
                   <div className="absolute -top-1 right-0 w-4 h-4 rounded-full bg-green-500 border-2 border-background flex items-center justify-center">
                     <div className="w-1.5 h-1.5 rounded-full bg-white" />
@@ -140,50 +140,91 @@ function LandingPage() {
                 <p className="text-xs text-muted-foreground mt-2">
                   Bereits Live
                 </p>
+
+                {/* Tooltip */}
+                <div className="absolute top-full mt-4 w-48 p-4 rounded-2xl bg-card/90 backdrop-blur-md border border-border shadow-2xl opacity-0 translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 transition-all z-20 text-left">
+                  <p className="text-xs leading-relaxed text-muted-foreground">
+                    Erster öffentlicher Testlauf mit Kernfunktionen wie
+                    Video-Listing und manuellem Lizenzkauf.
+                  </p>
+                </div>
               </div>
 
               {/* Milestone 2: Chrome Extension */}
-              <div className="relative flex flex-col items-center group">
-                <div className="w-12 h-12 rounded-full bg-simple-teal/20 text-simple-teal flex items-center justify-center mb-4 z-10 border-2 border-simple-teal animate-pulse">
+              <div className="relative flex flex-col items-center group cursor-help">
+                <div className="w-12 h-12 rounded-full bg-simple-teal/20 text-simple-teal flex items-center justify-center mb-4 z-10 border-2 border-simple-teal animate-pulse transition-transform group-hover:scale-110">
                   <IconPuzzle size={24} />
                 </div>
                 <h4 className="font-bold text-foreground">Chrome Extension</h4>
                 <p className="text-xs text-simple-teal font-medium mt-2">
                   In Arbeit
                 </p>
+
+                {/* Tooltip */}
+                <div className="absolute top-full mt-4 w-64 p-4 rounded-2xl bg-card/90 backdrop-blur-md border border-border shadow-2xl opacity-0 translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 transition-all z-20 text-left">
+                  <p className="text-xs leading-relaxed text-muted-foreground">
+                    Automatische Erkennung beim Schauen von Original-Videos und
+                    Datenbank-Abgleich sowie Support beim Hochladen von
+                    Reactions.
+                  </p>
+                </div>
               </div>
 
               {/* Milestone 3: Official Release */}
-              <div className="relative flex flex-col items-center opacity-50 grayscale hover:grayscale-0 hover:opacity-100 transition-all group">
-                <div className="w-12 h-12 rounded-full bg-muted text-muted-foreground flex items-center justify-center mb-4 z-10 border-2 border-muted border-dashed">
+              <div className="relative flex flex-col items-center group cursor-help">
+                <div className="w-12 h-12 rounded-full bg-muted text-muted-foreground flex items-center justify-center mb-4 z-10 border-2 border-muted border-dashed transition-transform group-hover:scale-110">
                   <IconConfetti size={24} />
                 </div>
                 <h4 className="font-bold text-foreground">Full Release</h4>
                 <p className="text-xs text-muted-foreground mt-2 text-center">
                   Public Launch Q2
                 </p>
+
+                {/* Tooltip */}
+                <div className="absolute top-full mt-4 w-48 p-4 rounded-2xl bg-card/90 backdrop-blur-md border border-border shadow-2xl opacity-0 translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 transition-all z-20 text-left">
+                  <p className="text-xs leading-relaxed text-muted-foreground">
+                    Offizieller Start mit allen Premium-Features, erweitertem
+                    Dashboard und vollem Support für Creator.
+                  </p>
+                </div>
               </div>
 
               {/* Milestone 4: YT Claim System */}
-              <div className="relative flex flex-col items-center opacity-50 grayscale hover:grayscale-0 hover:opacity-100 transition-all group">
-                <div className="w-12 h-12 rounded-full bg-muted text-muted-foreground flex items-center justify-center mb-4 z-10 border-2 border-muted border-dashed">
+              <div className="relative flex flex-col items-center group cursor-help">
+                <div className="w-12 h-12 rounded-full bg-muted text-muted-foreground flex items-center justify-center mb-4 z-10 border-2 border-muted border-dashed transition-transform group-hover:scale-110">
                   <IconBrandYoutube size={24} />
                 </div>
                 <h4 className="font-bold text-foreground">YT Claim System</h4>
                 <p className="text-xs text-muted-foreground mt-2 text-center">
-                  Automatisches Whitelisting
+                  Automatisches System
                 </p>
+
+                {/* Tooltip */}
+                <div className="absolute top-full mt-4 w-64 p-4 rounded-2xl bg-card/90 backdrop-blur-md border border-border shadow-2xl opacity-0 translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 transition-all z-20 text-left">
+                  <p className="text-xs leading-relaxed text-muted-foreground">
+                    Vollautomatisches Whitelisting; Videos ohne gültige Lizenz
+                    werden automatisch erkannt und Maßnahmen eingeleitet.
+                  </p>
+                </div>
               </div>
 
               {/* Milestone 5: Expansion */}
-              <div className="relative flex flex-col items-center opacity-50 grayscale hover:grayscale-0 hover:opacity-100 transition-all group">
-                <div className="w-12 h-12 rounded-full bg-muted text-muted-foreground flex items-center justify-center mb-4 z-10 border-2 border-muted border-dashed">
+              <div className="relative flex flex-col items-center group cursor-help">
+                <div className="w-12 h-12 rounded-full bg-muted text-muted-foreground flex items-center justify-center mb-4 z-10 border-2 border-muted border-dashed transition-transform group-hover:scale-110">
                   <IconWorld size={24} />
                 </div>
                 <h4 className="font-bold text-foreground">Global Scaling</h4>
                 <p className="text-xs text-muted-foreground mt-2 text-center">
-                  Weitere Länder & Plattformen
+                  Weltweite Expansion
                 </p>
+
+                {/* Tooltip */}
+                <div className="absolute top-full mt-4 w-48 p-4 rounded-2xl bg-card/90 backdrop-blur-md border border-border shadow-2xl opacity-0 translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 transition-all z-20 md:-translate-x-12 text-left">
+                  <p className="text-xs leading-relaxed text-muted-foreground">
+                    Unterstützung für weitere Währungen, Sprachen und
+                    Markteintritt in den USA und Asien.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
