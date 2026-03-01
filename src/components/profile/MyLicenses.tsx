@@ -18,6 +18,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useQueryClient } from "@tanstack/react-query";
 import { useMyLicenses } from "@/hooks/queries/useMyLicenses";
+import { toast } from "sonner";
 
 type LicenseFilter = "all" | "one_time" | "subscription" | "rejected";
 
@@ -89,7 +90,7 @@ export const MyLicenses = () => {
       const fileName = `License-${license.id.slice(0, 8)}.pdf`;
       await downloadLicensePDF(license.id, fileName, license.pdf_storage_path);
     } catch (e: any) {
-      alert(`Download fehlgeschlagen: ${e.message}`);
+      toast.error(`Download fehlgeschlagen: ${e.message}`);
     }
   };
 
@@ -462,7 +463,11 @@ export const MyLicenses = () => {
                               if (url) window.location.href = url;
                             } catch (e) {
                               console.error(e);
-                              alert("Fehler beim Starten der Zahlung.");
+                              toast.error(
+                                e instanceof Error
+                                  ? e.message
+                                  : "Fehler beim Starten der Zahlung.",
+                              );
                             } finally {
                               setPayingId(null);
                             }

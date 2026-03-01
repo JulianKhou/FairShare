@@ -24,6 +24,7 @@ import { useExistingLicense } from "@/hooks/queries/useExistingLicense";
 import { useAnyExistingLicense } from "@/hooks/queries/useAnyExistingLicense";
 import { useCreatorMinPrice } from "@/hooks/queries/useCreatorMinPrice";
 import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 interface BuyOptionsProps {
   videoCreator: any;
@@ -70,12 +71,12 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
 
   const handleBuy = async () => {
     if (!user) {
-      alert("Please log in to purchase a license.");
+      toast.error("Bitte logge dich ein, um eine Lizenz zu erwerben.");
       return;
     }
 
     if (!selectedReactionVideoId) {
-      alert("Please select a video to license.");
+      toast.error("Bitte wähle ein Video für die Lizenz aus.");
       return;
     }
 
@@ -150,11 +151,15 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
       if (url) {
         window.location.href = url;
       } else {
-        alert("Fehler beim Erstellen der Checkout-Session.");
+        toast.error("Fehler beim Erstellen der Checkout-Session.");
       }
     } catch (error) {
       console.error("Purchase/Request failed:", error);
-      alert("Prozess fehlgeschlagen. Bitte erneut versuchen.");
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Prozess fehlgeschlagen. Bitte erneut versuchen.",
+      );
     } finally {
       setLoading(false);
     }
@@ -177,7 +182,11 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
       }); // Clear pending state
     } catch (error) {
       console.error("Withdraw failed", error);
-      alert("Fehler beim Zurückziehen der Anfrage.");
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Fehler beim Zurückziehen der Anfrage.",
+      );
     } finally {
       setLoading(false);
     }
@@ -321,7 +330,11 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
                     if (url) window.location.href = url;
                   } catch (e) {
                     console.error(e);
-                    alert("Fehler beim Starten der Zahlung");
+                    toast.error(
+                      e instanceof Error
+                        ? e.message
+                        : "Fehler beim Starten der Zahlung",
+                    );
                   } finally {
                     setLoading(false);
                   }

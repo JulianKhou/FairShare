@@ -9,6 +9,7 @@ import { createStripeCheckoutSession } from "@/services/stripeFunctions";
 import { useQueryClient } from "@tanstack/react-query";
 import { useIncomingRequests } from "@/hooks/queries/useIncomingRequests";
 import { usePaymentDue } from "@/hooks/queries/usePaymentDue";
+import { toast } from "sonner";
 
 export const NotificationBell = () => {
   const { user } = useAuth();
@@ -114,7 +115,7 @@ export const NotificationBell = () => {
       }
     } catch (e) {
       console.error("Accept failed", e);
-      alert("Fehler beim Akzeptieren.");
+      toast.error(e instanceof Error ? e.message : "Fehler beim Akzeptieren.");
     } finally {
       setActionLoading(null);
     }
@@ -132,7 +133,7 @@ export const NotificationBell = () => {
       }
     } catch (e) {
       console.error("Reject failed", e);
-      alert("Fehler beim Ablehnen.");
+      toast.error(e instanceof Error ? e.message : "Fehler beim Ablehnen.");
     } finally {
       setActionLoading(null);
     }
@@ -144,7 +145,9 @@ export const NotificationBell = () => {
       const { url } = await createStripeCheckoutSession(contractId);
       window.location.href = url;
     } catch (e: any) {
-      alert("Fehler beim Starten der Zahlung: " + e.message);
+      toast.error(
+        e instanceof Error ? e.message : "Fehler beim Starten der Zahlung",
+      );
       setPayLoading(null);
     }
   };
