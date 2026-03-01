@@ -113,17 +113,17 @@ export const Analytics = () => {
                     </div>
                   </div>
                   <div
-                    className="p-4 bg-muted/30 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors ring-1 ring-transparent hover:ring-primary/20 relative group"
+                    className="p-4 bg-muted/30 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors ring-1 ring-transparent hover:ring-rose-600/20 relative group"
                     onClick={() => setShowReactorsModal(true)}
                   >
-                    <div className="text-2xl font-bold text-primary group-hover:scale-110 transition-transform">
+                    <div className="text-2xl font-bold text-rose-600 group-hover:scale-110 transition-transform">
                       {analytics.totalReactors}
                     </div>
                     <div className="text-xs text-muted-foreground uppercase tracking-wide mt-1">
                       Unique Reactors
                     </div>
                     <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <ArrowUpRight className="h-3 w-3 text-primary" />
+                      <ArrowUpRight className="h-3 w-3 text-rose-600" />
                     </div>
                   </div>
                   <div className="p-4 bg-muted/30 rounded-lg">
@@ -157,7 +157,7 @@ export const Analytics = () => {
                           </div>
                           <div className="h-2 rounded-full bg-muted overflow-hidden">
                             <div
-                              className="h-full rounded-full bg-primary transition-all duration-500"
+                              className="h-full rounded-full bg-rose-600 transition-all duration-500"
                               style={{ width: `${Math.max(percentage, 2)}%` }}
                             />
                           </div>
@@ -268,8 +268,8 @@ function StatCard({
       onClick={onClick}
       className={`cursor-pointer transition-all hover:shadow-md ${
         accent
-          ? "border-primary ring-1 ring-primary/20 bg-primary/5 shadow-sm"
-          : "hover:border-primary/50"
+          ? "border-rose-600 ring-1 ring-rose-600/20 bg-rose-600/5 shadow-sm"
+          : "hover:border-rose-600/50"
       }`}
     >
       <CardContent className="pt-6 pb-6">
@@ -277,7 +277,7 @@ function StatCard({
           {icon}
           <span className="text-sm font-medium">{label}</span>
         </div>
-        <p className={`text-3xl font-bold ${accent ? "text-primary" : ""}`}>
+        <p className={`text-3xl font-bold ${accent ? "text-rose-600" : ""}`}>
           {value}
         </p>
         {subtext && (
