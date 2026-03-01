@@ -22,10 +22,10 @@ export default function Impressum() {
           <p>
             E-Mail:{" "}
             <a
-              href="mailto:[EMAIL_ADDRESS]"
+              href="mailto:contact@simpleshare.eu"
               className="text-primary hover:underline"
             >
-              [EMAIL_ADDRESS]
+              contact@simpleshare.eu
             </a>
           </p>
         </section>

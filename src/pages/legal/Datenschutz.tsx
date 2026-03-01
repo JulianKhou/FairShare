@@ -25,13 +25,13 @@ export default function Datenschutz() {
             Verantwortlich für die Datenverarbeitung auf dieser Website ist:
           </p>
           <p className="text-sm mt-2">
-            <strong>[Vor- und Nachname]</strong>
+            <strong>Julian Khoudraji</strong>
             <br />
-            [Straße und Hausnummer]
+            Bromberger Weg 13
             <br />
-            [PLZ und Ort]
+            32339 Espelkamp
             <br />
-            E-Mail: kontakt@simpleshare.de
+            E-Mail: contact@simpleshare.eu
           </p>
         </section>
 
@@ -66,8 +66,8 @@ export default function Datenschutz() {
             Google/YouTube Login
           </h3>
           <p className="text-muted-foreground text-sm leading-relaxed">
-            Für die Nutzung von SimpleShare ist eine Anmeldung über Google (OAuth
-            2.0) erforderlich. Dabei werden folgende Daten von Google
+            Für die Nutzung von SimpleShare ist eine Anmeldung über Google
+            (OAuth 2.0) erforderlich. Dabei werden folgende Daten von Google
             übermittelt: Name, E-Mail-Adresse und Profilbild. Zusätzlich
             erhalten wir Zugriff auf Ihre öffentlichen YouTube-Videodaten
             (Titel, Views, Kategorie, Veröffentlichungsdatum), um den
