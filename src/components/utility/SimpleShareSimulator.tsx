@@ -38,7 +38,7 @@ export default function SimpleShareSimulator() {
     setSharePercent(share);
 
     // 3. Price Calculation (Buyout)
-    const calcPrice = Math.max((viewsCreator * share * customRpm) / 1000, 0.5);
+    const calcPrice = Math.max((viewsReactor * share * customRpm) / 1000, 0.5);
     setPrice(calcPrice);
   }, [viewsCreator, viewsReactor, customRpm, daysSinceUpload]);
 
