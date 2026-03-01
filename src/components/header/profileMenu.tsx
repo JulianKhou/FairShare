@@ -3,6 +3,7 @@ import { handleLogout, handleLogin } from "../../hooks/auth/useHandleAuth";
 import { useNavigate } from "react-router-dom";
 import { HelpRequestModal } from "../profile/HelpRequestModal";
 import { useUnreadAdminReplies } from "@/hooks/support/useUnreadAdminReplies";
+import profileCircle from "../../assets/profileCircle.svg";
 
 interface UserMenuProps {
   isOpen: boolean;
@@ -38,19 +39,16 @@ export const UserMenu = ({
           <div className="absolute top-14 right-4 w-64 bg-popover border border-border rounded-2xl shadow-2xl z-50 p-4 animate-in fade-in zoom-in duration-200">
             <div className="flex items-center gap-3 mb-4 p-2">
               <img
-                src={
-                  user?.user_metadata?.avatar_url ||
-                  "../../assets/profileCircle.svg"
-                }
+                src={user?.user_metadata?.avatar_url || profileCircle}
                 referrerPolicy="no-referrer"
                 className="w-10 h-10 rounded-full border-2 border-gray-500"
               />
               <div>
                 <p className="text-sm font-bold">
-                  {user?.user_metadata?.full_name}
+                  {user?.user_metadata?.full_name || (user ? "User" : "Gast")}
                 </p>
                 <p className="text-xs text-muted-foreground truncate">
-                  {user?.email}
+                  {user?.email || "Nicht angemeldet"}
                 </p>
               </div>
             </div>
