@@ -4,8 +4,8 @@
  */
 const SIMPLE_SHARE_CONFIG = {
   BASE_SHARE: 0.5, // Startwert: 50%
-  HYPE_WINDOW_DAYS: 2, // Zeitraum für "Hype-Strafe"
-  HYPE_FACTOR: 1.5, // Straffaktor
+  HYPE_DECAY_DAYS: 7, // Zeitraum, in dem der Aufschlag linear abnimmt
+  HYPE_FACTOR: 1.5, // Maximaler Straffaktor an Tag 0
   EVERGREEN_DAYS: 30, // Ab wann gilt es als "alt"?
   EVERGREEN_FACTOR: 0.8, // Rabatt für alte Videos
 } as const;
@@ -47,8 +47,12 @@ export const calculateSimpleShare = (params: SimpleShareParams): number => {
 
   // 2. Zeit-Faktor (Z) bestimmen
   let timeFactor = 1.0;
-  if (daysSinceUpload <= SIMPLE_SHARE_CONFIG.HYPE_WINDOW_DAYS) {
-    timeFactor = SIMPLE_SHARE_CONFIG.HYPE_FACTOR;
+  if (daysSinceUpload < SIMPLE_SHARE_CONFIG.HYPE_DECAY_DAYS) {
+    // Linearer Zerfall von HYPE_FACTOR (Tag 0) zu 1.0 (Tag 7)
+    const decayProgress = daysSinceUpload / SIMPLE_SHARE_CONFIG.HYPE_DECAY_DAYS;
+    timeFactor =
+      SIMPLE_SHARE_CONFIG.HYPE_FACTOR -
+      decayProgress * (SIMPLE_SHARE_CONFIG.HYPE_FACTOR - 1.0);
   } else if (daysSinceUpload > SIMPLE_SHARE_CONFIG.EVERGREEN_DAYS) {
     timeFactor = SIMPLE_SHARE_CONFIG.EVERGREEN_FACTOR;
   }
@@ -58,7 +62,10 @@ export const calculateSimpleShare = (params: SimpleShareParams): number => {
   const transformFactor = durationCreatorSeconds / safeReactDuration;
 
   const contentScore =
-    SIMPLE_SHARE_CONFIG.BASE_SHARE * percentShown * transformFactor * timeFactor;
+    SIMPLE_SHARE_CONFIG.BASE_SHARE *
+    percentShown *
+    transformFactor *
+    timeFactor;
 
   // 4. Reichweiten-Rabatt (E) berechnen
   // Ratio: Wie viel größer ist der Reactor?
@@ -79,7 +86,15 @@ export const calculateSimpleShare = (params: SimpleShareParams): number => {
   console.group("SimpleShare Calculation Debug");
   console.log("Params:", params);
   console.log("Time Factor:", timeFactor, "(Days:", daysSinceUpload, ")");
-  console.log("Transform Factor:", transformFactor, "(Creator:", durationCreatorSeconds, "/ Reactor:", safeReactDuration, ")");
+  console.log(
+    "Transform Factor:",
+    transformFactor,
+    "(Creator:",
+    durationCreatorSeconds,
+    "/ Reactor:",
+    safeReactDuration,
+    ")",
+  );
   console.log("Content Score:", contentScore);
   console.log("Discount Factor:", discountFactor, "(Ratio:", ratio, ")");
   console.log("Final Share (Uncapped):", finalShare);
