@@ -27,10 +27,10 @@ export default function HowItWorks() {
           </span>{" "}
           funktioniert
         </h1>
-        <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
-          Wir glauben, dass fairer Umsatz-Share keine Hexerei sein muss. Unser
-          Algorithmus berechnet dynamische Preise basierend auf Reichweite und
-          Nische – transparent für beide Seiten.
+        <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+          In unter 60 Sekunden zur rechtlich sicheren Lizenz. Wir machen Schluss
+          mit komplizierten Verträgen – unser Algorithmus erledigt alles
+          vollautomatisch für dich.
         </p>
       </section>
 
@@ -51,59 +51,75 @@ export default function HowItWorks() {
               </h3>
             </div>
             <div className="space-y-4">
-              <div className="flex gap-4 p-5 rounded-2xl bg-card border border-border/50 hover:border-simple-purple/30 transition-colors group">
+              <div className="flex gap-4 p-5 rounded-2xl bg-card border border-border/50 hover:border-simple-purple/30 transition-all group">
                 <div className="w-10 h-10 rounded-full bg-simple-purple/15 text-simple-purple flex items-center justify-center font-bold shrink-0 group-hover:bg-simple-purple group-hover:text-white transition-colors">
                   1
                 </div>
                 <div>
-                  <h4 className="font-bold text-foreground mb-1">
-                    Videos auswählen
-                  </h4>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h4 className="font-bold text-foreground">Video wählen</h4>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-simple-purple/10 text-simple-purple font-bold uppercase tracking-wider">
+                      Sekundenschnell
+                    </span>
+                  </div>
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    Gib die URL des Original-Videos ein, auf das du reagieren
-                    möchtest, und füge dein geplantes Video hinzu.
+                    Einfach die YouTube-URL einfügen. Wir ziehen uns alle
+                    notwendigen Daten automatisch.
                   </p>
                 </div>
               </div>
-              <div className="flex gap-4 p-5 rounded-2xl bg-card border border-border/50 hover:border-simple-purple/30 transition-colors group">
+              <div className="flex gap-4 p-5 rounded-2xl bg-card border border-border/50 hover:border-simple-purple/30 transition-all group">
                 <div className="w-10 h-10 rounded-full bg-simple-purple/15 text-simple-purple flex items-center justify-center font-bold shrink-0 group-hover:bg-simple-purple group-hover:text-white transition-colors">
                   2
                 </div>
                 <div>
-                  <h4 className="font-bold text-foreground mb-1">
-                    Fairen Preis berechnen
-                  </h4>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h4 className="font-bold text-foreground">
+                      Preis erhalten
+                    </h4>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-simple-purple/10 text-simple-purple font-bold uppercase tracking-wider">
+                      KI-Berechnet
+                    </span>
+                  </div>
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    Unser Algorithmus ermittelt einen fairen Preis basierend auf
-                    der Reichweite beider Kanäle.
+                    Unser fairer Algorithmus ermittelt sofort einen Preis, der
+                    für beide Seiten passt. Kein Verhandeln nötig.
                   </p>
                 </div>
               </div>
-              <div className="flex gap-4 p-5 rounded-2xl bg-card border border-border/50 hover:border-simple-purple/30 transition-colors group">
+              <div className="flex gap-4 p-5 rounded-2xl bg-card border border-border/50 hover:border-simple-purple/30 transition-all group">
                 <div className="w-10 h-10 rounded-full bg-simple-purple/15 text-simple-purple flex items-center justify-center font-bold shrink-0 group-hover:bg-simple-purple group-hover:text-white transition-colors">
                   3
                 </div>
                 <div>
-                  <h4 className="font-bold text-foreground mb-1">
-                    Lizenz kaufen
-                  </h4>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h4 className="font-bold text-foreground">1-Click Kauf</h4>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-simple-purple/10 text-simple-purple font-bold uppercase tracking-wider">
+                      Stripe Safe
+                    </span>
+                  </div>
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    Bezahle sicher und transparent über Stripe oder schließe ein
-                    praktisches Abo ab.
+                    Bezahle sicher und unkompliziert. Die Lizenz wird dir sofort
+                    digital ausgestellt.
                   </p>
                 </div>
               </div>
-              <div className="flex gap-4 p-5 rounded-2xl bg-card border border-border/50 hover:border-simple-purple/30 transition-colors group">
+              <div className="flex gap-4 p-5 rounded-2xl bg-card border border-border/50 hover:border-simple-purple/30 transition-all group">
                 <div className="w-10 h-10 rounded-full bg-simple-purple/15 text-simple-purple flex items-center justify-center font-bold shrink-0 group-hover:bg-simple-purple group-hover:text-white transition-colors">
                   4
                 </div>
                 <div>
-                  <h4 className="font-bold text-foreground mb-1">
-                    Rechtlich sicher hochladen
-                  </h4>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h4 className="font-bold text-foreground">
+                      Sicher hochladen
+                    </h4>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-simple-purple/10 text-simple-purple font-bold uppercase tracking-wider">
+                      Copyright Schutz
+                    </span>
+                  </div>
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    Du erhältst eine offiziell dokumentierte Lizenz. Kein Stress
-                    mehr mit Copyright-Strikes.
+                    Deine Lizenz ist dein Schutzschild. Lade dein Video hoch,
+                    ohne Angst vor Copyright-Claims oder Strikes.
                   </p>
                 </div>
               </div>
@@ -121,59 +137,73 @@ export default function HowItWorks() {
               </h3>
             </div>
             <div className="space-y-4">
-              <div className="flex gap-4 p-5 rounded-2xl bg-card border border-border/50 hover:border-simple-teal/30 transition-colors group">
+              <div className="flex gap-4 p-5 rounded-2xl bg-card border border-border/50 hover:border-simple-teal/30 transition-all group">
                 <div className="w-10 h-10 rounded-full bg-simple-teal/15 text-simple-teal flex items-center justify-center font-bold shrink-0 group-hover:bg-simple-teal group-hover:text-white transition-colors">
                   1
                 </div>
                 <div>
-                  <h4 className="font-bold text-foreground mb-1">
-                    Kanal verknüpfen
-                  </h4>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h4 className="font-bold text-foreground">Connect</h4>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-simple-teal/10 text-simple-teal font-bold uppercase tracking-wider">
+                      Einmalig
+                    </span>
+                  </div>
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    Registriere dich kostenlos bei SimpleShare und verknüpfe
-                    deinen YouTube-Account.
+                    Registriere dich kostenlos und verbinde deinen Kanal. Wir
+                    erstellen automatisch dein Portfolio.
                   </p>
                 </div>
               </div>
-              <div className="flex gap-4 p-5 rounded-2xl bg-card border border-border/50 hover:border-simple-teal/30 transition-colors group">
+              <div className="flex gap-4 p-5 rounded-2xl bg-card border border-border/50 hover:border-simple-teal/30 transition-all group">
                 <div className="w-10 h-10 rounded-full bg-simple-teal/15 text-simple-teal flex items-center justify-center font-bold shrink-0 group-hover:bg-simple-teal group-hover:text-white transition-colors">
                   2
                 </div>
                 <div>
-                  <h4 className="font-bold text-foreground mb-1">
-                    Lizenzierung aktivieren
-                  </h4>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h4 className="font-bold text-foreground">Go Live</h4>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-simple-teal/10 text-simple-teal font-bold uppercase tracking-wider">
+                      Vollautomatisch
+                    </span>
+                  </div>
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    Schalte deine Videos für Lizenzierungen frei. Du kannst
-                    Anfragen auch automatisch akzeptieren lassen.
+                    Schalte die Lizenzierung frei. Ab jetzt können andere deine
+                    Videos offiziell lizenzieren.
                   </p>
                 </div>
               </div>
-              <div className="flex gap-4 p-5 rounded-2xl bg-card border border-border/50 hover:border-simple-teal/30 transition-colors group">
+              <div className="flex gap-4 p-5 rounded-2xl bg-card border border-border/50 hover:border-simple-teal/30 transition-all group">
                 <div className="w-10 h-10 rounded-full bg-simple-teal/15 text-simple-teal flex items-center justify-center font-bold shrink-0 group-hover:bg-simple-teal group-hover:text-white transition-colors">
                   3
                 </div>
                 <div>
-                  <h4 className="font-bold text-foreground mb-1">
-                    Automatisch verdienen
-                  </h4>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h4 className="font-bold text-foreground">
+                      Passiv verdienen
+                    </h4>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-simple-teal/10 text-simple-teal font-bold uppercase tracking-wider">
+                      Ohne Aufwand
+                    </span>
+                  </div>
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    Lass Reaction-Kanäle faire Preise zahlen und generiere
-                    mühelos Zusatzeinnahmen mit deinem Content.
+                    Lass Reaction-Kanäle für dich arbeiten und generiere mühelos
+                    zusätzliche Einnahmen.
                   </p>
                 </div>
               </div>
-              <div className="flex gap-4 p-5 rounded-2xl bg-card border border-border/50 hover:border-simple-teal/30 transition-colors group">
+              <div className="flex gap-4 p-5 rounded-2xl bg-card border border-border/50 hover:border-simple-teal/30 transition-all group">
                 <div className="w-10 h-10 rounded-full bg-simple-teal/15 text-simple-teal flex items-center justify-center font-bold shrink-0 group-hover:bg-simple-teal group-hover:text-white transition-colors">
                   4
                 </div>
                 <div>
-                  <h4 className="font-bold text-foreground mb-1">
-                    Alles im Blick behalten
-                  </h4>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h4 className="font-bold text-foreground">Auszahlung</h4>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-simple-teal/10 text-simple-teal font-bold uppercase tracking-wider">
+                      Direkt via Stripe
+                    </span>
+                  </div>
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    Verfolge alle verkauften Lizenzen und deine Einnahmen
-                    transparent direkt in deinem SimpleShare-Dashboard.
+                    Behalte alle Einnahmen transparent im Blick. Wir kümmern uns
+                    um die Abrechnung.
                   </p>
                 </div>
               </div>

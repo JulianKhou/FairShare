@@ -14,8 +14,11 @@ function LandingPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const handleGetStarted = () => {
-    // Navigate to explore, which will trigger auth flow if needed
+  const handleHowItWorks = () => {
+    navigate("/how-it-works");
+  };
+
+  const handleGoToPlatform = () => {
     navigate("/overview");
   };
 
@@ -42,22 +45,20 @@ function LandingPage() {
 
         <div className="flex gap-4 items-center animate-fade-in">
           <Button
-            onClick={handleGetStarted}
+            onClick={handleHowItWorks}
             size="lg"
-            className="text-lg px-8 py-6 hover:scale-105 transition-transform"
+            className="text-lg px-8 py-6 hover:scale-105 transition-transform shadow-lg shadow-simple-purple/20"
           >
-            {user ? "Zur Plattform" : "Jetzt entdecken"}
+            So funktioniert's
           </Button>
-          {!user && (
-            <Button
-              onClick={handleLogin}
-              size="lg"
-              variant="outline"
-              className="text-lg px-8 py-6 hover:scale-105 transition-transform bg-background/50 backdrop-blur-md border-simple-purple/50 text-foreground hover:bg-simple-purple/20"
-            >
-              Anmelden
-            </Button>
-          )}
+          <Button
+            onClick={user ? handleGoToPlatform : handleLogin}
+            size="lg"
+            variant="outline"
+            className="text-lg px-8 py-6 hover:scale-105 transition-transform bg-background/50 backdrop-blur-md border-simple-purple/50 text-foreground hover:bg-simple-purple/20"
+          >
+            {user ? "Zur Plattform" : "Anmelden"}
+          </Button>
         </div>
       </section>
 
@@ -130,22 +131,20 @@ function LandingPage() {
           </p>
           <div className="flex justify-center gap-4 items-center">
             <Button
-              onClick={handleGetStarted}
+              onClick={handleHowItWorks}
               size="lg"
               className="text-lg px-8 py-6 hover:scale-105 transition-transform"
             >
-              {user ? "Zur Plattform" : "Jetzt entdecken"}
+              So funktioniert's
             </Button>
-            {!user && (
-              <Button
-                onClick={handleLogin}
-                size="lg"
-                variant="outline"
-                className="text-lg px-8 py-6 hover:scale-105 transition-transform bg-background/50 backdrop-blur-md border-simple-purple/50 text-foreground hover:bg-simple-purple/20"
-              >
-                Anmelden
-              </Button>
-            )}
+            <Button
+              onClick={user ? handleGoToPlatform : handleLogin}
+              size="lg"
+              variant="outline"
+              className="text-lg px-8 py-6 hover:scale-105 transition-transform bg-background/50 backdrop-blur-md border-simple-purple/50 text-foreground hover:bg-simple-purple/20"
+            >
+              {user ? "Zur Plattform" : "Anmelden"}
+            </Button>
           </div>
         </div>
       </section>
