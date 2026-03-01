@@ -9,15 +9,13 @@ import { IconInfoCircle } from "@tabler/icons-react";
 export default function SimpleShareSimulator() {
   const [viewsCreator, setViewsCreator] = useState(100000);
   const [viewsReactor, setViewsReactor] = useState(50000);
-  const [categoryId, setCategoryId] = useState("entertainment"); // default
 
   const [price, setPrice] = useState(0);
   const [sharePercent, setSharePercent] = useState(0);
 
   useEffect(() => {
-    // 1. Get RPM
-    let niche = NICHE_DATA.find((n) => n.id === categoryId);
-    if (!niche) niche = NICHE_DATA[0]; // fallback
+    // 1. Get RPM - Use a default for the simulator or first niche
+    const niche = NICHE_DATA[0]; // Entertainment or similar as baseline
     const rpm = niche.rpm * getSeasonalityFactor();
 
     // 2. SimpleShare calculation
@@ -36,7 +34,7 @@ export default function SimpleShareSimulator() {
     // 3. Price Calculation (Buyout)
     const calcPrice = Math.max((viewsCreator * share * rpm) / 1000, 0.5);
     setPrice(calcPrice);
-  }, [viewsCreator, viewsReactor, categoryId]);
+  }, [viewsCreator, viewsReactor]);
 
   return (
     <div className="bg-white/5 border border-white/10 rounded-3xl p-6 md:p-8 backdrop-blur-md shadow-2xl max-w-2xl mx-auto">
@@ -112,25 +110,6 @@ export default function SimpleShareSimulator() {
               onChange={(e) => setViewsReactor(Number(e.target.value))}
               className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-simple-purple"
             />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-semibold">Content-Kategorie</label>
-            <select
-              value={categoryId}
-              onChange={(e) => setCategoryId(e.target.value)}
-              className="w-full bg-background/50 border border-white/10 rounded-lg p-2 text-sm focus:outline-none focus:border-simple-purple transition-colors"
-            >
-              {NICHE_DATA.map((niche) => (
-                <option
-                  key={niche.id}
-                  value={niche.id}
-                  className="bg-background"
-                >
-                  {niche.name_de}
-                </option>
-              ))}
-            </select>
           </div>
         </div>
 

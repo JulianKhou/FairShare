@@ -43,7 +43,9 @@ export default function HowItWorks() {
           <div className="p-3 bg-simple-purple/10 text-simple-purple rounded-xl">
             <IconScale size={28} />
           </div>
-          <h3 className="text-xl font-bold">Faire Bewertung</h3>
+          <h3 className="text-xl font-bold text-simple-purple">
+            Faire Bewertung
+          </h3>
           <p className="text-muted-foreground text-sm leading-relaxed">
             Der Preis richtet sich nach der Reichweite beider Parteien. Große
             Kanäle zahlen mehr für einen Clip, kleinere Kanäle profitieren von
@@ -56,7 +58,9 @@ export default function HowItWorks() {
           <div className="p-3 bg-simple-teal/10 text-simple-teal rounded-xl">
             <IconChartLine size={28} />
           </div>
-          <h3 className="text-xl font-bold">Performance & RPM</h3>
+          <h3 className="text-xl font-bold text-simple-teal">
+            Performance & RPM
+          </h3>
           <p className="text-muted-foreground text-sm leading-relaxed">
             Unterschiedliche Nischen (Gaming vs. Finance) haben unterschiedliche
             Einnahme-Potenziale (RPM). SimpleShare bezieht diese Daten aus dem
@@ -68,7 +72,9 @@ export default function HowItWorks() {
           <div className="p-3 bg-orange-500/10 text-orange-500 rounded-xl">
             <IconHeartHandshake size={28} />
           </div>
-          <h3 className="text-xl font-bold">Volle Transparenz</h3>
+          <h3 className="text-xl font-bold text-orange-500">
+            Volle Transparenz
+          </h3>
           <p className="text-muted-foreground text-sm leading-relaxed">
             Keine versteckten Gebühren. Creator wissen, dass ihr Content
             wertgeschätzt wird. React-Kanäle wissen, dass sie rechtlich sicher

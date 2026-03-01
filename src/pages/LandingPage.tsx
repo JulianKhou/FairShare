@@ -69,48 +69,48 @@ function LandingPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Feature 1: Fair Prices */}
-          <Card className="p-6 hover:shadow-lg transition-shadow">
-            <div className="flex justify-center mb-4">
-              <div className="p-3 bg-simple-purple/10 rounded-full">
-                <IconCurrencyDollar size={40} className="text-simple-purple" />
+          <Card className="p-6 transition-all hover:shadow-xl hover:border-simple-purple/50 bg-card/50 backdrop-blur-sm group">
+            <div className="flex justify-center mb-6 px-0">
+              <div className="p-4 bg-simple-purple/10 rounded-2xl group-hover:scale-110 transition-transform">
+                <IconCurrencyDollar size={36} className="text-simple-purple" />
               </div>
             </div>
-            <h3 className="text-xl font-semibold text-center mb-3">
+            <h3 className="text-xl font-bold text-center mb-3 text-simple-purple">
               Faire Preise
             </h3>
-            <p className="text-muted-foreground text-center">
+            <p className="text-muted-foreground text-center text-sm leading-relaxed">
               Transparente Preisgestaltung durch einen fairen Algorithmus.
               Verkäufer verdienen, was ihre Inhalte wert sind.
             </p>
           </Card>
 
           {/* Feature 2: Easy Processing */}
-          <Card className="p-6 hover:shadow-lg transition-shadow">
-            <div className="flex justify-center mb-4">
-              <div className="p-3 bg-simple-teal/10 rounded-full">
-                <IconBolt size={40} className="text-simple-teal" />
+          <Card className="p-6 transition-all hover:shadow-xl hover:border-simple-teal/50 bg-card/50 backdrop-blur-sm group">
+            <div className="flex justify-center mb-6 px-0">
+              <div className="p-4 bg-simple-teal/10 rounded-2xl group-hover:scale-110 transition-transform">
+                <IconBolt size={36} className="text-simple-teal" />
               </div>
             </div>
-            <h3 className="text-xl font-semibold text-center mb-3">
+            <h3 className="text-xl font-bold text-center mb-3 text-simple-teal">
               Einfache Abwicklung
             </h3>
-            <p className="text-muted-foreground text-center">
+            <p className="text-muted-foreground text-center text-sm leading-relaxed">
               Schneller und unkomplizierter Kauf- und Verkaufsprozess.
               Sofortiger Zugriff auf lizenzierte Videos.
             </p>
           </Card>
 
           {/* Feature 3: Legal Security */}
-          <Card className="p-6 hover:shadow-lg transition-shadow">
-            <div className="flex justify-center mb-4">
-              <div className="p-3 bg-green-500/10 rounded-full">
-                <IconShieldCheck size={40} className="text-green-500" />
+          <Card className="p-6 transition-all hover:shadow-xl hover:border-green-500/50 bg-card/50 backdrop-blur-sm group">
+            <div className="flex justify-center mb-6 px-0">
+              <div className="p-4 bg-green-500/10 rounded-2xl group-hover:scale-110 transition-transform">
+                <IconShieldCheck size={36} className="text-green-500" />
               </div>
             </div>
-            <h3 className="text-xl font-semibold text-center mb-3">
+            <h3 className="text-xl font-bold text-center mb-3 text-green-500">
               Rechtssicherheit
             </h3>
-            <p className="text-muted-foreground text-center">
+            <p className="text-muted-foreground text-center text-sm leading-relaxed">
               Alle Lizenzen sind rechtlich bindend und dokumentiert. Schutz für
               Käufer und Verkäufer.
             </p>
@@ -149,7 +149,6 @@ function LandingPage() {
           </div>
         </div>
       </section>
-
     </div>
   );
 }

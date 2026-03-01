@@ -70,30 +70,36 @@ export default function AboutUs() {
             Wofür wir stehen
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center p-6">
-              <div className="text-simple-purple mb-4 flex justify-center">
-                <IconShieldCheck size={48} stroke={1.5} />
+            <div className="text-center p-8 rounded-2xl border border-transparent hover:border-simple-purple/30 hover:bg-simple-purple/5 transition-all group">
+              <div className="w-16 h-16 bg-simple-purple/10 text-simple-purple rounded-2xl flex items-center justify-center mb-6 mx-auto group-hover:scale-110 transition-transform">
+                <IconShieldCheck size={32} />
               </div>
-              <h3 className="text-xl font-bold mb-2">Rechtssicherheit</h3>
+              <h3 className="text-xl font-bold mb-2 text-simple-purple">
+                Rechtssicherheit
+              </h3>
               <p className="text-muted-foreground text-sm">
                 Offiziell geprüfte Lizenzen, die vor Copyright-Claims schützen.
               </p>
             </div>
-            <div className="text-center p-6">
-              <div className="text-simple-teal mb-4 flex justify-center">
-                <IconUsers size={48} stroke={1.5} />
+            <div className="text-center p-8 rounded-2xl border border-transparent hover:border-simple-teal/30 hover:bg-simple-teal/5 transition-all group">
+              <div className="w-16 h-16 bg-simple-teal/10 text-simple-teal rounded-2xl flex items-center justify-center mb-6 mx-auto group-hover:scale-110 transition-transform">
+                <IconUsers size={32} />
               </div>
-              <h3 className="text-xl font-bold mb-2">Community Fokus</h3>
+              <h3 className="text-xl font-bold mb-2 text-simple-teal">
+                Community Fokus
+              </h3>
               <p className="text-muted-foreground text-sm">
                 Entwickelt von Creatoren für Creatoren. Wir verstehen eure
                 Bedürfnisse.
               </p>
             </div>
-            <div className="text-center p-6">
-              <div className="text-orange-500 mb-4 flex justify-center">
-                <IconShieldCheck size={48} stroke={1.5} />
+            <div className="text-center p-8 rounded-2xl border border-transparent hover:border-orange-500/30 hover:bg-orange-500/5 transition-all group">
+              <div className="w-16 h-16 bg-orange-500/10 text-orange-500 rounded-2xl flex items-center justify-center mb-6 mx-auto group-hover:scale-110 transition-transform">
+                <IconShieldCheck size={32} />
               </div>
-              <h3 className="text-xl font-bold mb-2">Transparenz</h3>
+              <h3 className="text-xl font-bold mb-2 text-orange-500">
+                Transparenz
+              </h3>
               <p className="text-muted-foreground text-sm">
                 Keine versteckten Kosten. Klare Aufschlüsselung jedes Euros.
               </p>
