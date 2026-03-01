@@ -27,7 +27,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { useFindVideo } from "@/hooks/videoDetails/useFindVideo";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { VideoItem } from "./videoItem";
 import { BuyOptions } from "./buyOptions";
 import { useAdmin } from "@/hooks/auth/useAdmin";
@@ -43,6 +43,7 @@ import { Badge } from "@/components/ui/badge";
 import { useQueryClient } from "@tanstack/react-query";
 import { useContractsForVideo } from "@/hooks/queries/useContractsForVideo";
 import { usePendingContractsForVideo } from "@/hooks/queries/usePendingContractsForVideo";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 interface VideoDetailsProps {
   video: any;
@@ -63,6 +64,7 @@ export const VideoDetails = ({
   const { video: foundVideo, findVideo, isLoading } = useFindVideo();
   const [activeTab, setActiveTab] = useState<"details" | "pending">("details");
   const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
   const { data: contracts = [] } = useContractsForVideo(video?.id, isOpen);
   const { data: pendingContracts = [] } = usePendingContractsForVideo(
@@ -447,8 +449,28 @@ export const VideoDetails = ({
                               </FieldDescription>
                             </FieldContent>
                             <Switch
-                              onCheckedChange={toggleLicense}
+                              onCheckedChange={(checked) => {
+                                if (!checked) {
+                                  // Video is currently licensed, user wants to unlicense -> show confirm
+                                  setIsConfirmOpen(true);
+                                } else {
+                                  // Video is not licensed, user wants to license -> just do it
+                                  toggleLicense();
+                                }
+                              }}
                               checked={isLicensed}
+                            />
+
+                            <ConfirmDialog
+                              isOpen={isConfirmOpen}
+                              onClose={() => setIsConfirmOpen(false)}
+                              onConfirm={() => {
+                                toggleLicense();
+                              }}
+                              title="Lizenzierung widerrufen"
+                              description="Bist du sicher, dass du dieses Video nicht mehr zur Lizenzierung anbieten möchtest? Bestehende (bereits gekaufte) Lizenzen behalten ihre Gültigkeit."
+                              isDestructive={true}
+                              confirmLabel="Entlizenzieren"
                             />
                           </Field>
                         </div>
@@ -457,17 +479,18 @@ export const VideoDetails = ({
                         <div className="p-4 rounded-xl bg-muted/20 border border-border/50">
                           <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
                             <Link2 className="h-4 w-4 text-primary" />
-                            Reaction-Video suchen
+                            Original-Video verlinken
                           </h3>
                           <p className="text-xs text-muted-foreground mb-4">
-                            Sammle ausstehende Lizenzen ein, indem du manuell
-                            nach Reaction-Videos von anderen Creatorn suchst,
-                            die dein Video verwendet haben.
+                            Hast du auf ein Video reagiert? Suche nach dem
+                            Original-Video, um zu prüfen, ob eine Lizenz
+                            verfügbar ist, und erwerbe diese direkt für deine
+                            Reaction.
                           </p>
 
                           <InputGroup className="max-w-full">
                             <InputGroupInput
-                              placeholder="YouTube URL einfügen..."
+                              placeholder="YouTube URL des Originals einfügen..."
                               value={videoUrl}
                               onChange={(e) => setVideoUrl(e.target.value)}
                               onKeyDown={(e) => {
@@ -510,7 +533,7 @@ export const VideoDetails = ({
 
                               <div className="mt-4 p-3 bg-primary/5 rounded-lg border border-primary/20">
                                 <p className="text-sm font-medium mb-2">
-                                  Aktion für dieses Video:
+                                  Lizenz für deine Reaction erwerben:
                                 </p>
                                 <BuyOptions
                                   videoCreator={activeFoundVideo}

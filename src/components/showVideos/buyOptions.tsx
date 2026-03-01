@@ -42,8 +42,10 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
     "myVideos",
     user?.id,
   );
+
+  const isDirectLink = videoCreator?.id !== videoReactor?.id;
   const [selectedReactionVideoId, setSelectedReactionVideoId] =
-    useState<string>("");
+    useState<string>(isDirectLink ? videoReactor?.id : "");
 
   const { data: existingContract, isLoading: checkingLicense } =
     useExistingLicense(user?.id, videoCreator?.id, selectedReactionVideoId);
@@ -216,31 +218,33 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
         </div>
       )}
 
-      <FieldSet className="w-full max-w-xs space-y-1">
-        <FieldLegend variant="label">Select your Reaction Video</FieldLegend>
-        {isLoadingVideos ? (
-          <FieldDescription>Loading videos...</FieldDescription>
-        ) : myVideos.length > 0 ? (
-          <select
-            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            value={selectedReactionVideoId}
-            onChange={(e) => setSelectedReactionVideoId(e.target.value)}
-          >
-            <option value="" disabled>
-              Select a video...
-            </option>
-            {myVideos.map((video) => (
-              <option key={video.id} value={video.id}>
-                {video.title}
+      {!isDirectLink && (
+        <FieldSet className="w-full max-w-xs space-y-1">
+          <FieldLegend variant="label">Select your Reaction Video</FieldLegend>
+          {isLoadingVideos ? (
+            <FieldDescription>Loading videos...</FieldDescription>
+          ) : myVideos.length > 0 ? (
+            <select
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              value={selectedReactionVideoId}
+              onChange={(e) => setSelectedReactionVideoId(e.target.value)}
+            >
+              <option value="" disabled>
+                Select a video...
               </option>
-            ))}
-          </select>
-        ) : (
-          <FieldDescription className="text-destructive">
-            You have no uploaded videos to link.
-          </FieldDescription>
-        )}
-      </FieldSet>
+              {myVideos.map((video) => (
+                <option key={video.id} value={video.id}>
+                  {video.title}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <FieldDescription className="text-destructive">
+              You have no uploaded videos to link.
+            </FieldDescription>
+          )}
+        </FieldSet>
+      )}
 
       {!isPaid && !isPending && !isRejected && (
         <FieldSet className="w-full max-w-xs space-y-2">

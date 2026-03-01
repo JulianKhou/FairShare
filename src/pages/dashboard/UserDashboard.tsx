@@ -10,7 +10,6 @@ import { CreatorContracts } from "@/components/profile/CreatorContracts";
 import { Analytics } from "@/components/profile/Analytics";
 import { supabase } from "@/services/supabaseCollum/client";
 import { createStripeCheckoutSession } from "@/services/stripeFunctions";
-import { deleteReactionContract } from "@/services/supabaseCollum/reactionContract";
 import { toast } from "sonner";
 import { useDashboardStats } from "@/hooks/queries/useDashboardStats";
 import { useOpenInvoices } from "@/hooks/queries/useOpenInvoices";
@@ -125,19 +124,10 @@ export default function UserDashboard() {
     if (canceled) {
       alertShown.current = true;
       if (contractId) {
-        deleteReactionContract(contractId)
-          .then(() => {
-            toast.info("Zahlung abgebrochen", {
-              description: "Die ausstehende Anfrage wurde gelöscht.",
-            });
-          })
-          .catch((err) => {
-            console.error("Failed to delete contract:", err);
-            toast.error("Zahlung abgebrochen", {
-              description:
-                "Die ausstehende Anfrage konnte nicht gelöscht werden.",
-            });
-          });
+        toast.info("Zahlung abgebrochen", {
+          description:
+            "Die Zahlung wurde nicht abgeschlossen. Die Rechnung bleibt offen.",
+        });
       } else {
         toast.info("Zahlung abgebrochen");
       }

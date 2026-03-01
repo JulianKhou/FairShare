@@ -343,7 +343,7 @@ function SimpleBarChart({
         />
         <Bar
           dataKey="amount"
-          fill="hsl(var(--primary))"
+          fill="#e11d48"
           radius={[4, 4, 0, 0]}
           maxBarSize={50}
         />
