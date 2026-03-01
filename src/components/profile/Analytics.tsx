@@ -324,16 +324,16 @@ function SimpleBarChart({
           tickFormatter={(value) => `€${value}`}
         />
         <Tooltip
-          cursor={{ fill: "hsl(var(--muted)/0.5)" }}
+          cursor={{ fill: "rgba(255, 255, 255, 0.05)" }}
           contentStyle={{
             backgroundColor: "hsl(var(--popover))",
             borderRadius: "8px",
             border: "1px solid hsl(var(--border))",
             boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
           }}
-          itemStyle={{ color: "hsl(var(--foreground))", fontWeight: "bold" }}
+          itemStyle={{ color: "#ffffff", fontWeight: "bold" }}
           labelStyle={{
-            color: "hsl(var(--muted-foreground))",
+            color: "#ffffff",
             marginBottom: "4px",
           }}
           formatter={(value: any) => [
@@ -343,7 +343,7 @@ function SimpleBarChart({
         />
         <Bar
           dataKey="amount"
-          fill="#e11d48"
+          fill="#10b981"
           radius={[4, 4, 0, 0]}
           maxBarSize={50}
         />
