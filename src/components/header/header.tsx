@@ -42,7 +42,12 @@ function Header() {
         }
 
         // Auto-fetch channel data if missing
-        if (profile && (!profile.youtube_channel_id || !profile.youtube_channel_title || !profile.youtube_channel_avatar)) {
+        if (
+          profile &&
+          (!profile.youtube_channel_id ||
+            !profile.youtube_channel_title ||
+            !profile.youtube_channel_avatar)
+        ) {
           const channelData = await fetchChannelData();
           if (channelData) {
             await updateProfile(user.id, {
@@ -121,18 +126,20 @@ function Header() {
         <NavLink to="/overview" className={navLinkClasses}>
           Übersicht
         </NavLink>
-        <NavLink 
-          to={user ? "/my-channel" : "#"} 
-          className={navLinkClasses}
-          onClick={(e) => {
-            if (!user) {
-              e.preventDefault();
-              toast.info("Bitte logge dich ein, um deine Videos zu sehen.");
+        {user ? (
+          <NavLink to="/my-channel" className={navLinkClasses}>
+            Meine Videos
+          </NavLink>
+        ) : (
+          <button
+            onClick={() =>
+              toast.info("Bitte logge dich ein, um deine Videos zu sehen.")
             }
-          }}
-        >
-          Meine Videos
-        </NavLink>
+            className={navLinkClasses({ isActive: false })}
+          >
+            Meine Videos
+          </button>
+        )}
         {user && (
           <NavLink to="/dashboard" className={navLinkClasses}>
             Dashboard
