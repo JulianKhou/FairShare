@@ -8,6 +8,7 @@ import Overview from "./pages/overview.tsx";
 
 import { Navigate } from "react-router-dom";
 import LandingPage from "./pages/LandingPage.tsx";
+import HowItWorks from "./pages/HowItWorks.tsx";
 import { ThemeProvider } from "./components/utility/theme-provider.tsx";
 import SettingsPage from "./pages/settings.tsx";
 import CreatorProfile from "./pages/creatorProfile.tsx";
@@ -52,6 +53,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                 <main className="flex-1 pt-20">
                   <Routes>
                     <Route path="/" element={<LandingPage />} />
+                    <Route path="/how-it-works" element={<HowItWorks />} />
                     <Route path="/overview" element={<Overview />} />
                     <Route
                       path="/upload"

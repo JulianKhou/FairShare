@@ -123,6 +123,9 @@ function Header() {
 
       {/* Navigation */}
       <nav className="flex gap-8 h-full">
+        <NavLink to="/how-it-works" className={navLinkClasses}>
+          So funktioniert's
+        </NavLink>
         <NavLink to="/overview" className={navLinkClasses}>
           Übersicht
         </NavLink>
