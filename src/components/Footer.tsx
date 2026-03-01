@@ -7,7 +7,7 @@ export default function Footer() {
         <div className="text-muted-foreground order-2 md:order-1">
           © 2026 SimpleShare. Alle Rechte vorbehalten.
         </div>
-        
+
         <nav className="flex items-center gap-6 text-muted-foreground order-1 md:order-2">
           <Link
             to="/impressum"
@@ -21,11 +21,17 @@ export default function Footer() {
           >
             Datenschutz
           </Link>
-          <Link 
-            to="/agb" 
+          <Link
+            to="/agb"
             className="hover:text-simple-purple transition-colors"
           >
             AGB
+          </Link>
+          <Link
+            to="/about-us"
+            className="hover:text-simple-purple transition-colors"
+          >
+            Über uns
           </Link>
         </nav>
       </div>

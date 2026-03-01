@@ -13,6 +13,7 @@ import { ThemeProvider } from "./components/utility/theme-provider.tsx";
 import SettingsPage from "./pages/settings.tsx";
 import CreatorProfile from "./pages/creatorProfile.tsx";
 import MyChannel from "./pages/myChannel.tsx";
+import AboutUs from "./pages/AboutUs.tsx";
 import { VideoSyncProvider } from "./components/utility/VideoSyncProvider.tsx";
 import { Toaster } from "sonner";
 import { AdminProtectedRoute } from "./components/utility/AdminProtectedRoute.tsx";
@@ -74,6 +75,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                     <Route path="/impressum" element={<Impressum />} />
                     <Route path="/datenschutz" element={<Datenschutz />} />
                     <Route path="/agb" element={<AGB />} />
+                    <Route path="/about-us" element={<AboutUs />} />
 
                     {/* Admin Routes */}
                     <Route element={<AdminProtectedRoute />}>
