@@ -6,21 +6,13 @@ import {
   IconShieldCheck,
   IconBolt,
 } from "@tabler/icons-react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/auth/useAuth";
 import { handleLogin } from "../hooks/auth/useHandleAuth";
 
 function LandingPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-
-  const handleHowItWorks = () => {
-    navigate("/how-it-works");
-  };
-
-  const handleGoToPlatform = () => {
-    navigate("/overview");
-  };
 
   return (
     <div className="flex flex-col flex-1 bg-background">
@@ -45,14 +37,14 @@ function LandingPage() {
 
         <div className="flex gap-4 items-center animate-fade-in">
           <Button
-            onClick={handleHowItWorks}
+            asChild
             size="lg"
             className="text-lg px-8 py-6 hover:scale-105 transition-transform shadow-lg shadow-simple-purple/20"
           >
-            So funktioniert's
+            <Link to="/how-it-works">So funktioniert's</Link>
           </Button>
           <Button
-            onClick={user ? handleGoToPlatform : handleLogin}
+            onClick={user ? () => navigate("/overview") : handleLogin}
             size="lg"
             variant="outline"
             className="text-lg px-8 py-6 hover:scale-105 transition-transform bg-background/50 backdrop-blur-md border-simple-purple/50 text-foreground hover:bg-simple-purple/20"
@@ -131,14 +123,14 @@ function LandingPage() {
           </p>
           <div className="flex justify-center gap-4 items-center">
             <Button
-              onClick={handleHowItWorks}
+              asChild
               size="lg"
               className="text-lg px-8 py-6 hover:scale-105 transition-transform"
             >
-              So funktioniert's
+              <Link to="/how-it-works">So funktioniert's</Link>
             </Button>
             <Button
-              onClick={user ? handleGoToPlatform : handleLogin}
+              onClick={user ? () => navigate("/overview") : handleLogin}
               size="lg"
               variant="outline"
               className="text-lg px-8 py-6 hover:scale-105 transition-transform bg-background/50 backdrop-blur-md border-simple-purple/50 text-foreground hover:bg-simple-purple/20"
