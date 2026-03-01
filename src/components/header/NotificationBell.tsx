@@ -2,83 +2,35 @@ import { useEffect, useState, useRef } from "react";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/services/supabaseCollum/client";
-import {
-  ReactionContract,
-  updateReactionContract,
-} from "@/services/supabaseCollum/reactionContract";
+import { updateReactionContract } from "@/services/supabaseCollum/reactionContract";
 import { Bell, Check, X, Loader2, CreditCard } from "lucide-react";
 import { generateLicensePDF } from "@/services/supabaseFunctions";
 import { createStripeCheckoutSession } from "@/services/stripeFunctions";
+import { useQueryClient } from "@tanstack/react-query";
+import { useIncomingRequests } from "@/hooks/queries/useIncomingRequests";
+import { usePaymentDue } from "@/hooks/queries/usePaymentDue";
 
 export const NotificationBell = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
+  const queryClient = useQueryClient();
+
   // Licensor side: incoming pending requests
-  const [requests, setRequests] = useState<ReactionContract[]>([]);
-  const [licenseeNames, setLicenseeNames] = useState<Record<string, string>>(
-    {},
-  );
+  const { data: requestsData } = useIncomingRequests(user?.id);
+  const requests = requestsData?.requests || [];
+  const licenseeNames = requestsData?.licenseeNames || {};
 
   // Licensee side: accepted requests waiting for payment
-  const [paymentDue, setPaymentDue] = useState<ReactionContract[]>([]);
+  const { data: paymentDue = [] } = usePaymentDue(user?.id);
 
   const [isOpen, setIsOpen] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [payLoading, setPayLoading] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const fetchRequests = async () => {
-    if (!user) return;
-
-    const { data, error } = await supabase
-      .from("reaction_contracts")
-      .select("*")
-      .eq("licensor_id", user.id)
-      .eq("accepted_by_licensor", false)
-      .eq("status", "PENDING")
-      .order("created_at", { ascending: false });
-
-    if (!error && data) {
-      setRequests(data);
-
-      const ids = [...new Set(data.map((c) => c.licensee_id))];
-      if (ids.length > 0) {
-        const { data: profiles } = await supabase
-          .from("profiles")
-          .select("id, full_name")
-          .in("id", ids);
-        if (profiles) {
-          const nameMap: Record<string, string> = {};
-          profiles.forEach((p) => (nameMap[p.id] = p.full_name || "Unbekannt"));
-          setLicenseeNames(nameMap);
-        }
-      }
-    }
-  };
-
-  const fetchPaymentDue = async () => {
-    if (!user) return;
-
-    // Contracts where I am the reactor and the creator has accepted, but I haven't paid yet
-    const { data, error } = await supabase
-      .from("reaction_contracts")
-      .select("*")
-      .eq("licensee_id", user.id)
-      .eq("accepted_by_licensor", true)
-      .eq("status", "PENDING")
-      .order("created_at", { ascending: false });
-
-    if (!error && data) {
-      setPaymentDue(data);
-    }
-  };
-
   useEffect(() => {
     if (!user?.id) return;
-
-    fetchRequests();
-    fetchPaymentDue();
 
     // Licensor side: incoming requests
     const licensorChannel = supabase
@@ -92,8 +44,10 @@ export const NotificationBell = () => {
           filter: `licensor_id=eq.${user.id}`,
         },
         () => {
-          fetchRequests();
-          fetchPaymentDue();
+          queryClient.invalidateQueries({
+            queryKey: ["incomingRequests", user.id],
+          });
+          queryClient.invalidateQueries({ queryKey: ["paymentDue", user.id] });
         },
       )
       .subscribe();
@@ -110,24 +64,19 @@ export const NotificationBell = () => {
           filter: `licensee_id=eq.${user.id}`,
         },
         () => {
-          fetchPaymentDue();
-          fetchRequests();
+          queryClient.invalidateQueries({ queryKey: ["paymentDue", user.id] });
+          queryClient.invalidateQueries({
+            queryKey: ["incomingRequests", user.id],
+          });
         },
       )
       .subscribe();
 
-    // Fallback polling every 30s in case Realtime connection drops silently
-    const pollInterval = setInterval(() => {
-      fetchRequests();
-      fetchPaymentDue();
-    }, 30_000);
-
     return () => {
       supabase.removeChannel(licensorChannel);
       supabase.removeChannel(licenseeChannel);
-      clearInterval(pollInterval);
     };
-  }, [user?.id]);
+  }, [user?.id, queryClient]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -158,7 +107,11 @@ export const NotificationBell = () => {
           pdfErr,
         );
       }
-      setRequests((prev) => prev.filter((r) => r.id !== contractId));
+      if (user) {
+        queryClient.invalidateQueries({
+          queryKey: ["incomingRequests", user.id],
+        });
+      }
     } catch (e) {
       console.error("Accept failed", e);
       alert("Fehler beim Akzeptieren.");
@@ -172,7 +125,11 @@ export const NotificationBell = () => {
     setActionLoading(contractId);
     try {
       await updateReactionContract(contractId, { status: "REJECTED" as any });
-      setRequests((prev) => prev.filter((r) => r.id !== contractId));
+      if (user) {
+        queryClient.invalidateQueries({
+          queryKey: ["incomingRequests", user.id],
+        });
+      }
     } catch (e) {
       console.error("Reject failed", e);
       alert("Fehler beim Ablehnen.");

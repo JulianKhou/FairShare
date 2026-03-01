@@ -10,16 +10,16 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useEffect, useRef, useState } from "react";
 import {
-  getAllHelpRequests,
   updateHelpRequestStatus,
-  getThreadMessages,
   addAdminReply,
   HelpRequest,
-  HelpRequestMessage,
 } from "@/services/supabaseCollum/helpRequests";
 import { Loader2, MessageSquare, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { useQueryClient } from "@tanstack/react-query";
+import { useAllHelpRequests } from "@/hooks/queries/useAllHelpRequests";
+import { useHelpThread } from "@/hooks/queries/useHelpThread";
 import {
   Dialog,
   DialogContent,
@@ -32,8 +32,9 @@ import { supabase } from "@/services/supabaseCollum/client";
 import { cn } from "@/lib/utils";
 
 export default function AdminSupport() {
-  const [requests, setRequests] = useState<HelpRequest[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const { data: requests = [], isLoading: loading } = useAllHelpRequests();
+
   const [selectedRequest, setSelectedRequest] = useState<HelpRequest | null>(
     null,
   );
@@ -41,47 +42,21 @@ export default function AdminSupport() {
   const [isUpdating, setIsUpdating] = useState(false);
 
   // Thread state
-  const [threadMessages, setThreadMessages] = useState<HelpRequestMessage[]>(
-    [],
+  const { data: threadMessages = [], isLoading: threadLoading } = useHelpThread(
+    selectedRequest?.id,
   );
-  const [threadLoading, setThreadLoading] = useState(false);
   const [replyText, setReplyText] = useState("");
   const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const fetchRequests = async () => {
-    try {
-      const data = await getAllHelpRequests();
-      setRequests(data);
-    } catch (error) {
-      console.error("Failed to load help requests:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchThread = async (requestId: string) => {
-    setThreadLoading(true);
-    try {
-      const msgs = await getThreadMessages(requestId);
-      setThreadMessages(msgs);
-    } catch (error) {
-      console.error("Failed to load thread:", error);
-    } finally {
-      setThreadLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchRequests();
-
     const channel = supabase
       .channel("admin-support-channel")
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "help_requests" },
         () => {
-          fetchRequests();
+          queryClient.invalidateQueries({ queryKey: ["allHelpRequests"] });
         },
       )
       .subscribe();
@@ -89,7 +64,7 @@ export default function AdminSupport() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [queryClient]);
 
   // Realtime subscription for thread messages when a ticket is open
   useEffect(() => {
@@ -105,11 +80,10 @@ export default function AdminSupport() {
           table: "help_request_messages",
           filter: `help_request_id=eq.${selectedRequest.id}`,
         },
-        (payload) => {
-          const incoming = payload.new as HelpRequestMessage;
-          setThreadMessages((prev) =>
-            prev.some((m) => m.id === incoming.id) ? prev : [...prev, incoming],
-          );
+        () => {
+          queryClient.invalidateQueries({
+            queryKey: ["helpThread", selectedRequest.id],
+          });
         },
       )
       .subscribe();
@@ -117,7 +91,7 @@ export default function AdminSupport() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [selectedRequest]);
+  }, [selectedRequest, queryClient]);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -126,17 +100,14 @@ export default function AdminSupport() {
 
   const handleRowClick = (req: HelpRequest) => {
     setSelectedRequest(req);
-    setThreadMessages([]);
     setReplyText("");
     setIsDialogOpen(true);
-    fetchThread(req.id);
   };
 
   const handleDialogClose = (open: boolean) => {
     setIsDialogOpen(open);
     if (!open) {
       setSelectedRequest(null);
-      setThreadMessages([]);
       setReplyText("");
     }
   };
@@ -149,13 +120,10 @@ export default function AdminSupport() {
     try {
       await updateHelpRequestStatus(selectedRequest.id, newStatus);
       toast.success("Status aktualisiert!");
+      queryClient.invalidateQueries({ queryKey: ["allHelpRequests"] });
+      queryClient.invalidateQueries({ queryKey: ["adminDashboardStats"] });
       setSelectedRequest((prev) =>
         prev ? { ...prev, status: newStatus } : null,
-      );
-      setRequests((prev) =>
-        prev.map((r) =>
-          r.id === selectedRequest.id ? { ...r, status: newStatus } : r,
-        ),
       );
     } catch (e: any) {
       toast.error("Fehler beim Update: " + e.message);
@@ -168,24 +136,20 @@ export default function AdminSupport() {
     if (!selectedRequest || !replyText.trim()) return;
     setIsSending(true);
     try {
-      const newMsg = await addAdminReply(selectedRequest.id, replyText.trim());
-      // Optimistically add the message so it shows immediately
-      setThreadMessages((prev) =>
-        prev.some((m) => m.id === newMsg.id) ? prev : [...prev, newMsg],
-      );
+      await addAdminReply(selectedRequest.id, replyText.trim());
+      queryClient.invalidateQueries({
+        queryKey: ["helpThread", selectedRequest.id],
+      });
       setReplyText("");
 
       // Auto-switch status from OPEN to IN_PROGRESS on first admin reply
       if (selectedRequest.status === "OPEN") {
         try {
           await updateHelpRequestStatus(selectedRequest.id, "IN_PROGRESS");
+          queryClient.invalidateQueries({ queryKey: ["allHelpRequests"] });
+          queryClient.invalidateQueries({ queryKey: ["adminDashboardStats"] });
           setSelectedRequest((prev) =>
             prev ? { ...prev, status: "IN_PROGRESS" } : null,
-          );
-          setRequests((prev) =>
-            prev.map((r) =>
-              r.id === selectedRequest.id ? { ...r, status: "IN_PROGRESS" } : r,
-            ),
           );
         } catch {
           // Non-critical – reply was sent, status update is best-effort

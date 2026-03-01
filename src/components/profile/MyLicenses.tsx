@@ -1,9 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/auth/useAuth";
-import {
-  getPurchasedContracts,
-  ReactionContract,
-} from "@/services/supabaseCollum/reactionContract";
+import { type ReactionContract } from "@/services/supabaseCollum/reactionContract";
 import { supabase } from "@/services/supabaseCollum/client";
 import {
   Loader2,
@@ -19,38 +16,35 @@ import { downloadLicensePDF } from "@/services/supabaseFunctions";
 import { createStripeCheckoutSession } from "@/services/stripeFunctions";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useQueryClient } from "@tanstack/react-query";
+import { useMyLicenses } from "@/hooks/queries/useMyLicenses";
 
 type LicenseFilter = "all" | "one_time" | "subscription" | "rejected";
 
 export const MyLicenses = () => {
   const { user } = useAuth();
-  const [licenses, setLicenses] = useState<ReactionContract[]>([]);
-  const [reactionTitles, setReactionTitles] = useState<Record<string, string>>(
-    {},
-  );
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+
+  const { data, isLoading: loading, error } = useMyLicenses(user?.id);
+  const licenses = data?.licenses || [];
+  const reactionTitles = data?.reactionTitles || {};
+  const licenseSpents = data?.licenseSpents || {};
+
   const [payingId, setPayingId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [licenseSpents, setLicenseSpents] = useState<Record<string, number>>(
-    {},
-  );
   const [activeFilter, setActiveFilter] = useState<LicenseFilter>("all");
 
   // Auto-refresh logic for incoming payments
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("success") === "true") {
-      setLoading(true);
       let attempts = 0;
       const interval = setInterval(() => {
         if (!user) return;
         attempts++;
-        getPurchasedContracts(user.id).then((data) => {
-          setLicenses(data || []);
-        });
-        if (attempts >= 30) {
+        queryClient.invalidateQueries({ queryKey: ["myLicenses", user.id] });
+        if (attempts >= 15) {
+          // Stop after 30 seconds
           clearInterval(interval);
-          setLoading(false);
           window.history.replaceState(
             {},
             document.title,
@@ -60,55 +54,7 @@ export const MyLicenses = () => {
       }, 2000);
       return () => clearInterval(interval);
     }
-  }, [user]);
-
-  useEffect(() => {
-    if (user) {
-      getPurchasedContracts(user.id)
-        .then(async (data) => {
-          const validLicenses = data || [];
-          setLicenses(validLicenses);
-
-          // Fetch titles for reaction videos
-          const reactionIds = validLicenses
-            .map((l) => l.reaction_video_id)
-            .filter((id): id is string => !!id);
-
-          if (reactionIds.length > 0) {
-            const { data: videos } = await supabase
-              .from("videos")
-              .select("id, title")
-              .in("id", reactionIds);
-
-            if (videos) {
-              const titleMap: Record<string, string> = {};
-              videos.forEach((v) => (titleMap[v.id] = v.title));
-              setReactionTitles(titleMap);
-            }
-          }
-
-          // Fetch actual accumulated spent per contract
-          const { data: spents } = await supabase
-            .from("revenue_events")
-            .select("contract_id, amount_cents")
-            .eq("licensee_id", user.id);
-
-          if (spents) {
-            const spentMap: Record<string, number> = {};
-            spents.forEach((s) => {
-              if (!spentMap[s.contract_id]) spentMap[s.contract_id] = 0;
-              spentMap[s.contract_id] += s.amount_cents / 100;
-            });
-            setLicenseSpents(spentMap);
-          }
-        })
-        .catch((err) => {
-          console.error(err);
-          setError("Fehler beim Laden der Lizenzen.");
-        })
-        .finally(() => setLoading(false));
-    }
-  }, [user]);
+  }, [user, queryClient]);
 
   // Realtime: auto-refresh when a contract is updated by webhook (PENDING -> PAID/ACTIVE)
   useEffect(() => {
@@ -126,8 +72,8 @@ export const MyLicenses = () => {
         (payload) => {
           const newStatus = (payload.new as any)?.status;
           if (["PAID", "ACTIVE", "REJECTED", "CANCELLED"].includes(newStatus)) {
-            getPurchasedContracts(user.id).then((data) => {
-              setLicenses(data || []);
+            queryClient.invalidateQueries({
+              queryKey: ["myLicenses", user.id],
             });
           }
         },
@@ -136,7 +82,7 @@ export const MyLicenses = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [user, queryClient]);
 
   const handleDownload = async (license: ReactionContract) => {
     try {
@@ -233,7 +179,9 @@ export const MyLicenses = () => {
   if (error) {
     return (
       <div className="text-destructive p-4 bg-destructive/10 rounded-lg">
-        {error}
+        {error instanceof Error
+          ? error.message
+          : "Fehler beim Laden der Lizenzen."}
       </div>
     );
   }

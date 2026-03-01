@@ -5,7 +5,7 @@ import { AuthProvider } from "./hooks/auth/useAuth.tsx";
 import Header from "./components/header/header.tsx";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Overview from "./pages/overview.tsx";
-import Upload from "./pages/upload.tsx";
+
 import { Navigate } from "react-router-dom";
 import LandingPage from "./pages/LandingPage.tsx";
 import { ThemeProvider } from "./components/utility/theme-provider.tsx";

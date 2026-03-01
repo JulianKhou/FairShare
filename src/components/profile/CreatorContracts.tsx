@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { supabase } from "@/services/supabaseCollum/client";
 import {
-  ReactionContract,
+  type ReactionContract,
   updateReactionContract,
 } from "@/services/supabaseCollum/reactionContract";
 import {
@@ -19,6 +19,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { generateLicensePDF } from "@/services/supabaseFunctions";
+import { useQueryClient } from "@tanstack/react-query";
+import { useCreatorContracts } from "@/hooks/queries/useCreatorContracts";
 
 type FilterStatus =
   | "all"
@@ -38,71 +40,23 @@ export const CreatorContracts = ({
   mode = "requests",
 }: CreatorContractsProps) => {
   const { user } = useAuth();
-  const [contracts, setContracts] = useState<ReactionContract[]>([]);
-  const [licenseeNames, setLicenseeNames] = useState<Record<string, string>>(
-    {},
-  );
-  const [contractRevenues, setContractRevenues] = useState<
-    Record<string, number>
-  >({});
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+
+  const { data, isLoading: loading } = useCreatorContracts(user?.id);
+  const contracts = data?.contracts || [];
+  const licenseeNames = data?.licenseeNames || {};
+  const contractRevenues = data?.contractRevenues || {};
+
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   // Default filter: in active mode start at 'all'; in requests mode start at 'pending'
   const [filter, setFilter] = useState<FilterStatus>(
     mode === "active" ? "all" : "pending",
   );
 
-  const fetchContracts = async () => {
-    if (!user) return;
-
-    const { data, error } = await supabase
-      .from("reaction_contracts")
-      .select("*")
-      .eq("licensor_id", user.id)
-      .order("created_at", { ascending: false });
-
-    if (!error && data) {
-      setContracts(data);
-
-      // Fetch licensee names
-      const ids = [...new Set(data.map((c) => c.licensee_id))];
-      if (ids.length > 0) {
-        const { data: profiles } = await supabase
-          .from("profiles")
-          .select("id, full_name")
-          .in("id", ids);
-        if (profiles) {
-          const nameMap: Record<string, string> = {};
-          profiles.forEach((p) => (nameMap[p.id] = p.full_name || "Unbekannt"));
-          setLicenseeNames(nameMap);
-        }
-      }
-
-      // Fetch actual accumulated revenue per contract
-      const { data: revenues } = await supabase
-        .from("revenue_events")
-        .select("contract_id, amount_cents")
-        .eq("licensor_id", user.id);
-
-      if (revenues) {
-        const revMap: Record<string, number> = {};
-        revenues.forEach((r) => {
-          if (!revMap[r.contract_id]) revMap[r.contract_id] = 0;
-          revMap[r.contract_id] += r.amount_cents / 100;
-        });
-        setContractRevenues(revMap);
-      }
-    }
-    setLoading(false);
-  };
-
   useEffect(() => {
-    fetchContracts();
-
     if (!user) return;
 
-    // Realtime updates — optimistically apply event data immediately,
-    // then do a full re-fetch to ensure consistency (e.g. for licensee names)
+    // Realtime updates: simply invalidate the query when an event occurs
     const channel = supabase
       .channel(`creator-contracts-${user.id}`)
       .on(
@@ -113,25 +67,14 @@ export const CreatorContracts = ({
           table: "reaction_contracts",
           filter: `licensor_id=eq.${user.id}`,
         },
-        (payload) => {
-          if (payload.eventType === "INSERT") {
-            // Immediately add the new contract so it shows without waiting for re-fetch
-            setContracts((prev) => [payload.new as ReactionContract, ...prev]);
-          } else if (payload.eventType === "UPDATE") {
-            setContracts((prev) =>
-              prev.map((c) =>
-                c.id === (payload.new as ReactionContract).id
-                  ? (payload.new as ReactionContract)
-                  : c,
-              ),
-            );
-          } else if (payload.eventType === "DELETE") {
-            setContracts((prev) =>
-              prev.filter((c) => c.id !== (payload.old as any).id),
-            );
-          }
-          // Background re-fetch to get up-to-date data (e.g. licensee names)
-          fetchContracts();
+        () => {
+          queryClient.invalidateQueries({
+            queryKey: ["creatorContracts", user.id],
+          });
+          queryClient.invalidateQueries({
+            queryKey: ["incomingRequests", user.id],
+          });
+          queryClient.invalidateQueries({ queryKey: ["paymentDue", user.id] });
         },
       )
       .subscribe();
@@ -139,7 +82,7 @@ export const CreatorContracts = ({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [user, queryClient]);
 
   const handleAccept = async (contractId: string) => {
     setActionLoading(contractId);
@@ -157,7 +100,13 @@ export const CreatorContracts = ({
           pdfErr,
         );
       }
-      await fetchContracts();
+      queryClient.invalidateQueries({
+        queryKey: ["creatorContracts", user?.id],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["incomingRequests", user?.id],
+      });
+      queryClient.invalidateQueries({ queryKey: ["paymentDue", user?.id] });
     } catch (e) {
       console.error("Accept failed", e);
       alert("Fehler beim Akzeptieren.");
@@ -173,7 +122,13 @@ export const CreatorContracts = ({
       await updateReactionContract(contractId, {
         status: "REJECTED" as any,
       });
-      await fetchContracts();
+      queryClient.invalidateQueries({
+        queryKey: ["creatorContracts", user?.id],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["incomingRequests", user?.id],
+      });
+      queryClient.invalidateQueries({ queryKey: ["paymentDue", user?.id] });
     } catch (e) {
       console.error("Reject failed", e);
       alert("Fehler beim Ablehnen.");

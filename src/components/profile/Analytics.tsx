@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useAuth } from "@/hooks/auth/useAuth";
-import { supabase } from "@/services/supabaseCollum/client";
+import { useAnalytics } from "@/hooks/queries/useAnalytics";
 import {
   Loader2,
   TrendingUp,
@@ -9,224 +9,15 @@ import {
   ArrowUpRight,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ReactionContract } from "@/services/supabaseCollum/reactionContract";
 import { ReactorsModal } from "./ReactorsModal";
-
-interface AnalyticsData {
-  // As Licensor (Creator)
-  totalRevenue: number;
-  activeContracts: number;
-  totalContracts: number;
-  totalReactors: number;
-  licensedVideoCount: number;
-  revenueByModel: { model: string; amount: number; count: number }[];
-  recentContracts: {
-    id: string;
-    title: string;
-    licensee_name: string;
-    pricing_value: number;
-    pricing_currency: string;
-    pricing_model_type: number;
-    status: string;
-    created_at: string;
-  }[];
-  revenueByMonth: { month: string; amount: number; count: number }[];
-  allLicensorContracts: ReactionContract[]; // For Modal
-
-  // As Licensee (Reactor)
-  totalSpent: number;
-  purchasedLicenses: number;
-  activeSubs: number;
-}
-
-const PRICING_MODEL_LABELS: Record<number, string> = {
-  1: "One-Time",
-  2: "Per 1000 Views",
-  3: "Per 1000 Views (CPM)",
-};
-
-type ViewMode = "revenue" | "activity";
 
 export const Analytics = () => {
   const { user } = useAuth();
-  const [data, setData] = useState<AnalyticsData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [selectedView, setSelectedView] = useState<ViewMode>("revenue");
+  const { data: analytics, isLoading: loading, error } = useAnalytics(user?.id);
   const [showReactorsModal, setShowReactorsModal] = useState(false);
-
-  useEffect(() => {
-    if (!user) return;
-
-    const fetchAnalytics = async () => {
-      setLoading(true);
-      try {
-        // Fetch all contracts where user is licensor (earning money)
-        const { data: licensorContracts, error: lcError } = await supabase
-          .from("reaction_contracts")
-          .select("*")
-          .eq("licensor_id", user.id)
-          .order("created_at", { ascending: true }); // Order by date for chart
-
-        if (lcError) throw lcError;
-
-        // Fetch all contracts where user is licensee (spending money)
-        const { data: licenseeContracts, error: leError } = await supabase
-          .from("reaction_contracts")
-          .select("*")
-          .eq("licensee_id", user.id)
-          .order("created_at", { ascending: false });
-
-        if (leError) throw leError;
-
-        // Fetch actual earned revenue from revenue_events (licensor side)
-        const { data: revenueEventsLicensor } = await supabase
-          .from("revenue_events")
-          .select("contract_id, amount_cents, created_at, payment_type")
-          .eq("licensor_id", user.id);
-
-        // Fetch actual spent amounts from revenue_events (licensee side)
-        const { data: revenueEventsLicensee } = await supabase
-          .from("revenue_events")
-          .select("contract_id, amount_cents, created_at")
-          .eq("licensee_id", user.id);
-
-        // Fetch licensed videos count
-        const { count: licensedCount } = await supabase
-          .from("videos")
-          .select("*", { count: "exact", head: true })
-          .eq("creator_id", user.id)
-          .eq("islicensed", true);
-
-        const contracts = licensorContracts || [];
-        const purchases = licenseeContracts || [];
-
-        // --- As Licensor ---
-        // Sum actual revenue from revenue_events (correct!) instead of pricing_value
-        const totalRevenue = (revenueEventsLicensor || []).reduce(
-          (sum, r) => sum + r.amount_cents / 100,
-          0,
-        );
-
-        const activeContracts = contracts.filter(
-          (c) => c.status === "ACTIVE",
-        ).length;
-
-        // Unique reactors
-        const uniqueReactors = new Set(contracts.map((c) => c.licensee_id));
-
-        // Revenue by pricing model — map contract pricing type from revenue events
-        // Build a lookup: contract_id -> pricing_model_type
-        const contractModelMap = new Map<string, number>();
-        for (const c of contracts)
-          contractModelMap.set(c.id, c.pricing_model_type);
-
-        const modelMap = new Map<number, { amount: number; count: number }>();
-        for (const ev of revenueEventsLicensor || []) {
-          const modelType = contractModelMap.get(ev.contract_id) ?? 1;
-          const existing = modelMap.get(modelType) || { amount: 0, count: 0 };
-          existing.amount += ev.amount_cents / 100;
-          existing.count += 1;
-          modelMap.set(modelType, existing);
-        }
-
-        const revenueByModel = Array.from(modelMap.entries()).map(
-          ([model, { amount, count }]) => ({
-            model: PRICING_MODEL_LABELS[model] || `Model ${model}`,
-            amount,
-            count,
-          }),
-        );
-
-        // Revenue by Month — use actual payment dates from revenue_events
-        const monthMap = new Map<string, { amount: number; count: number }>();
-        // Initialize last 6 months with 0
-        for (let i = 5; i >= 0; i--) {
-          const d = new Date();
-          d.setMonth(d.getMonth() - i);
-          const key = d.toISOString().slice(0, 7); // YYYY-MM
-          monthMap.set(key, { amount: 0, count: 0 });
-        }
-
-        // Aggregate revenue_events by payment month (created_at)
-        for (const ev of revenueEventsLicensor || []) {
-          const key = (ev.created_at as string).slice(0, 7); // YYYY-MM
-          const existing = monthMap.get(key) || { amount: 0, count: 0 };
-          existing.amount += ev.amount_cents / 100;
-          existing.count += 1;
-          monthMap.set(key, existing);
-        }
-
-        // Convert to array and format month label
-        const revenueByMonth = Array.from(monthMap.entries()).map(
-          ([monthIso, val]) => {
-            const date = new Date(monthIso + "-01");
-            return {
-              month: date.toLocaleDateString("de-DE", {
-                month: "short",
-                year: "2-digit",
-              }),
-              amount: val.amount,
-              count: val.count,
-            };
-          },
-        );
-
-        // Recent contracts (last 5 - need to reverse sort first as we sorted ascending for chart)
-        const sortedDescending = [...contracts].sort(
-          (a, b) =>
-            new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-        );
-        const recentContracts = sortedDescending.slice(0, 5).map((c) => ({
-          id: c.id,
-          title: c.original_video_title,
-          licensee_name: c.licensee_name,
-          pricing_value: c.pricing_value,
-          pricing_currency: c.pricing_currency,
-          pricing_model_type: c.pricing_model_type,
-          status: c.status || "PENDING",
-          created_at: c.created_at,
-        }));
-
-        // --- As Licensee ---
-        const paidPurchases = purchases.filter(
-          (c) => c.status === "PAID" || c.status === "ACTIVE",
-        );
-
-        // Sum actual spent from revenue_events (correct!) instead of pricing_value
-        const totalSpent = (revenueEventsLicensee || []).reduce(
-          (sum, r) => sum + r.amount_cents / 100,
-          0,
-        );
-
-        const activeSubs = purchases.filter(
-          (c) => c.status === "ACTIVE",
-        ).length;
-
-        setData({
-          totalRevenue,
-          activeContracts,
-          totalContracts: contracts.length,
-          totalReactors: uniqueReactors.size,
-          licensedVideoCount: licensedCount || 0,
-          revenueByModel,
-          recentContracts,
-          revenueByMonth,
-          allLicensorContracts: contracts, // Store for Modal
-          totalSpent,
-          purchasedLicenses: paidPurchases.length,
-          activeSubs,
-        });
-      } catch (err: any) {
-        console.error("Analytics fetch error:", err);
-        setError("Analytics konnten nicht geladen werden.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAnalytics();
-  }, [user]);
+  const [selectedView, setSelectedView] = useState<"revenue" | "activity">(
+    "revenue",
+  );
 
   if (loading) {
     return (
@@ -236,11 +27,18 @@ export const Analytics = () => {
     );
   }
 
-  if (error) {
-    return <div className="text-destructive p-4">{error}</div>;
+  if (error || !analytics) {
+    return (
+      <div className="flex flex-col items-center justify-center p-12 text-center rounded-xl border border-dashed border-destructive/30 bg-destructive/5">
+        <p className="text-destructive font-medium">
+          Analytics konnten nicht geladen werden.
+        </p>
+        <p className="text-sm text-muted-foreground mt-1">
+          Bitte versuche es später erneut.
+        </p>
+      </div>
+    );
   }
-
-  if (!data) return null;
 
   return (
     <div className="space-y-8">
@@ -256,7 +54,7 @@ export const Analytics = () => {
           <StatCard
             icon={<DollarSign className="h-4 w-4" />}
             label="Gesamteinnahmen"
-            value={`€${data.totalRevenue.toFixed(2)}`}
+            value={`€${analytics.totalRevenue.toFixed(2)}`}
             accent={selectedView === "revenue"}
             onClick={() => setSelectedView("revenue")}
             subtext="Klicken für Verlauf"
@@ -264,10 +62,10 @@ export const Analytics = () => {
           <StatCard
             icon={<Activity className="h-4 w-4" />}
             label="Aktivität (Verträge & Abos)"
-            value={`${data.totalContracts}`}
+            value={`${analytics.totalContracts}`}
             accent={selectedView === "activity"}
             onClick={() => setSelectedView("activity")}
-            subtext={`${data.activeContracts} Aktive Abos · ${data.totalReactors} Reactors`}
+            subtext={`${analytics.activeContracts} Aktive Abos · ${analytics.totalReactors} Reactors`}
           />
         </div>
 
@@ -278,22 +76,24 @@ export const Analytics = () => {
               {selectedView === "revenue"
                 ? "Einnahmen Verlauf (letzte 6 Monate)"
                 : "Aktivitäts-Details"}
-              {selectedView === "revenue" && data.totalRevenue > 0 && (
-                <div className="flex items-center gap-1 text-xs text-green-500 font-normal bg-green-500/10 px-2 py-1 rounded-full">
-                  <ArrowUpRight className="h-3 w-3" /> +
-                  {data.revenueByMonth[
-                    data.revenueByMonth.length - 1
-                  ].amount.toFixed(2)}
-                  € diesen Monat
-                </div>
-              )}
+              {selectedView === "revenue" &&
+                analytics.totalRevenue > 0 &&
+                analytics.revenueByMonth.length > 0 && (
+                  <div className="flex items-center gap-1 text-xs text-green-500 font-normal bg-green-500/10 px-2 py-1 rounded-full">
+                    <ArrowUpRight className="h-3 w-3" /> +
+                    {analytics.revenueByMonth[
+                      analytics.revenueByMonth.length - 1
+                    ].amount.toFixed(2)}
+                    € diesen Monat
+                  </div>
+                )}
             </CardTitle>
           </CardHeader>
           <CardContent>
             {selectedView === "revenue" ? (
               <div className="h-[250px] w-full flex items-end justify-between gap-2 pt-4 pl-4 pr-4">
-                {data.revenueByMonth.length > 0 ? (
-                  <SimpleBarChart data={data.revenueByMonth} />
+                {analytics.revenueByMonth.length > 0 ? (
+                  <SimpleBarChart data={analytics.revenueByMonth} />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                     Keine Daten verfügbar
@@ -306,7 +106,7 @@ export const Analytics = () => {
                 <div className="grid grid-cols-3 gap-4 text-center">
                   <div className="p-4 bg-muted/30 rounded-lg">
                     <div className="text-2xl font-bold">
-                      {data.totalContracts}
+                      {analytics.totalContracts}
                     </div>
                     <div className="text-xs text-muted-foreground uppercase tracking-wide mt-1">
                       Verträge Gesamt
@@ -317,7 +117,7 @@ export const Analytics = () => {
                     onClick={() => setShowReactorsModal(true)}
                   >
                     <div className="text-2xl font-bold text-primary group-hover:scale-110 transition-transform">
-                      {data.totalReactors}
+                      {analytics.totalReactors}
                     </div>
                     <div className="text-xs text-muted-foreground uppercase tracking-wide mt-1">
                       Unique Reactors
@@ -328,7 +128,7 @@ export const Analytics = () => {
                   </div>
                   <div className="p-4 bg-muted/30 rounded-lg">
                     <div className="text-2xl font-bold">
-                      {data.activeContracts}
+                      {analytics.activeContracts}
                     </div>
                     <div className="text-xs text-muted-foreground uppercase tracking-wide mt-1">
                       Aktive Abos
@@ -342,10 +142,10 @@ export const Analytics = () => {
                     Verteilung nach Preis-Modell
                   </h4>
                   <div className="space-y-3">
-                    {data.revenueByModel.map((item) => {
+                    {analytics.revenueByModel.map((item) => {
                       const percentage =
-                        data.totalRevenue > 0
-                          ? (item.amount / data.totalRevenue) * 100
+                        analytics.totalRevenue > 0
+                          ? (item.amount / analytics.totalRevenue) * 100
                           : 0;
                       return (
                         <div key={item.model}>
@@ -364,7 +164,7 @@ export const Analytics = () => {
                         </div>
                       );
                     })}
-                    {data.revenueByModel.length === 0 && (
+                    {analytics.revenueByModel.length === 0 && (
                       <p className="text-sm text-muted-foreground">
                         Keine Daten.
                       </p>
@@ -377,7 +177,7 @@ export const Analytics = () => {
         </Card>
 
         {/* Recent Contracts */}
-        {data.recentContracts.length > 0 && (
+        {analytics.recentContracts.length > 0 && (
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -386,7 +186,7 @@ export const Analytics = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {data.recentContracts.map((contract) => (
+                {analytics.recentContracts.map((contract) => (
                   <div
                     key={contract.id}
                     className="flex items-center justify-between py-2 border-b border-border last:border-0"
@@ -430,7 +230,7 @@ export const Analytics = () => {
       <ReactorsModal
         isOpen={showReactorsModal}
         onClose={() => setShowReactorsModal(false)}
-        contracts={data.allLicensorContracts}
+        contracts={analytics.allLicensorContracts}
       />
     </div>
   );
@@ -478,13 +278,12 @@ function StatCard({
   );
 }
 
-// Simple SVG Bar Chart
 function SimpleBarChart({
   data,
 }: {
   data: { month: string; amount: number }[];
 }) {
-  const maxVal = Math.max(...data.map((d) => d.amount), 1); // Avoid div by zero
+  const maxVal = Math.max(...data.map((d) => d.amount), 1);
 
   return (
     <div className="w-full h-full flex items-end justify-between gap-2">
@@ -496,12 +295,10 @@ function SimpleBarChart({
             className="flex-1 h-full flex flex-col items-center gap-2 group"
           >
             <div className="relative w-full bg-muted/30 rounded-t-sm hover:bg-muted/50 transition-colors flex items-end justify-center group-hover:bg-primary/10 h-full">
-              {/* Bar */}
               <div
                 className="w-2/3 bg-primary rounded-t-sm transition-all duration-500 relative group-hover:bg-primary/80"
                 style={{ height: `${Math.max(heightPercent, 2)}%` }}
               >
-                {/* Tooltip on hover */}
                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-popover text-popover-foreground text-xs px-2 py-1 rounded shadow-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10 border">
                   {item.amount.toFixed(2)}€
                 </div>

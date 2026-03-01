@@ -1,157 +1,161 @@
-// src/hooks/youtube/useVideos.ts
-import { useState, useEffect, useCallback } from "react";
+import { useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../auth/useAuth";
-import { getVideosFromSupabase } from "../../services/supabaseCollum/database";
-import { useSyncVideos } from "./syncVideos";
-
+import {
+  getVideosFromSupabase,
+  saveVideosToSupabase,
+  updateVideoStatistics,
+} from "../../services/supabaseCollum/database";
+import { fetchAllVideos } from "../../services/youtube";
+import { getProfile } from "../../services/supabaseCollum/profiles";
 import { supabase } from "../../services/supabaseCollum/client";
 
-export function useVideos(
-  videoType: "licensed" | "licensedByMe" | "myVideos" | "myVideosLicensed" | "myVideosUnlicensed",
-  userId?: string,
-) {
+export type VideoType =
+  | "licensed"
+  | "licensedByMe"
+  | "myVideos"
+  | "myVideosLicensed"
+  | "myVideosUnlicensed";
+
+export function useVideos(videoType: VideoType, userId?: string) {
   const { user } = useAuth();
-  const { sync: syncService, loading: isSyncing } = useSyncVideos();
+  const queryClient = useQueryClient();
+  const targetUserId = userId || user?.id;
 
-  // Wir verwalten die echten Daten UND den Status
-  const [videos, setVideos] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // useCallback verhindert, dass die Funktion bei jedem Render neu erstellt wird
-  const loadVideos = useCallback(async () => {
-    // Wenn wir "myVideos" laden wollen, brauchen wir eine User-ID (entweder übergeben oder vom Auth)
-    const targetUserId = userId || user?.id;
-
-    // Safety check: Cannot fetch user-specific videos without a user ID
-    if (!targetUserId && videoType !== "licensed") {
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      // 1. Versuche Videos aus Supabase zu laden
-      // Hier nutzen wir targetUserId, falls vorhanden, sonst einen leeren String (für "all" irrelevant)
-      let data = await getVideosFromSupabase(targetUserId || "", videoType);
-
-      // 2. Wenn keine Daten da sind (null oder leeres Array), versuche YouTube direkt
-      if (!data || data.length === 0) {
-        console.log("Keine Videos in DB, lade direkt von YouTube...");
-        // fetchAllVideos() benötigt keine Argumente (nutzt intern den Auth-Token)
-        syncService();
+  const query = useQuery({
+    queryKey: ["videos", videoType, targetUserId],
+    queryFn: async () => {
+      // Safety check: Cannot fetch user-specific videos without a user ID
+      if (!targetUserId && videoType !== "licensed") {
+        return [];
       }
+      const data = await getVideosFromSupabase(targetUserId || "", videoType);
+      return data || [];
+    },
+    enabled: !!targetUserId || videoType === "licensed",
+  });
 
-      setVideos(data || []);
-    } catch (error) {
-      console.error("Fehler beim Laden:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [user?.id, userId, videoType]);
+  // Sync mutation
+  const syncMutation = useMutation({
+    mutationFn: async () => {
+      if (!user) return;
+      console.log("Syncing videos for user:", user.id);
 
-  // 1. Automatisch laden, wenn der User feststeht
+      const videos = await fetchAllVideos();
+      const profile = await getProfile(user.id);
+      const autoLicense = profile?.auto_license_videos || "none";
+      const autoLicenseSince = profile?.auto_license_since;
+
+      await saveVideosToSupabase(
+        user.id,
+        videos,
+        autoLicense,
+        autoLicenseSince,
+      );
+      return videos;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["videos"] });
+    },
+  });
+
+  // Update mutation (stats)
+  const updateMutation = useMutation({
+    mutationFn: async () => {
+      if (!user) return;
+      console.log("Updating video stats for user:", user.id);
+
+      const videos = await fetchAllVideos();
+      const profile = await getProfile(user.id);
+      const autoLicense = profile?.auto_license_videos || "none";
+      const autoLicenseSince = profile?.auto_license_since;
+
+      await saveVideosToSupabase(
+        user.id,
+        videos,
+        autoLicense,
+        autoLicenseSince,
+      );
+
+      const updatePromises = videos.map((video: any) =>
+        updateVideoStatistics(video.id, video.viewCount),
+      );
+      await Promise.all(updatePromises);
+      return videos;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["videos"] });
+    },
+  });
+
+  // Realtime Subscription
   useEffect(() => {
-    loadVideos();
-  }, [loadVideos]);
+    if (!query.data) return;
 
-  // 2. Realtime Subscription: Hört auf Änderungen in der DB
-  useEffect(() => {
-    // Wir brechen hier NICHT mehr ab, damit auch "licensed" (Public) funktioniert.
-    // Aber wir müssen sicherstellen, dass wir für user-spezifische Dinge eine ID haben.
-
-    let channel = supabase.channel(`video-updates-${videoType}-${user?.id || 'public'}`);
-    let isSubscribed = false;
-
+    let filter = "";
     if (videoType === "myVideos" && user?.id) {
-      console.log(
-        "Setting up Realtime subscription for myVideos (User:",
-        user.id,
-        ")",
-      );
-      channel = channel
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "videos",
-            filter: `user_id=eq.${user.id}`,
-          },
-          (payload: any) => {
-            console.log("Realtime change received!", payload);
-            loadVideos();
-          },
-        )
-        .subscribe();
-      isSubscribed = true;
+      filter = `user_id=eq.${user.id}`;
     } else if (videoType === "licensed") {
-      console.log(
-        "Setting up Realtime subscription for licensed videos (Public)",
-      );
-      channel = channel
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "videos",
-            filter: `islicensed=eq.true`,
-          },
-          (payload: any) => {
-            // Optimierung: Wenn das Event von mir selbst kommt, ignorieren wir es,
-            // da meine Videos auf "Explore" ohnehin nicht angezeigt werden sollen.
-            if (user?.id && payload.new && payload.new.creator_id === user.id) {
-              return;
-            }
-            console.log("Realtime change received!", payload);
-            loadVideos();
-          },
-        )
-        .subscribe();
-      isSubscribed = true;
+      filter = `islicensed=eq.true`;
     } else if (videoType === "licensedByMe" && user?.id) {
-      console.log(
-        "Setting up Realtime subscription for licensedByMe (User:",
-        user.id,
-        ")",
-      );
-      channel = channel
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "videos",
-            filter: `creator_id=eq.${user.id}`,
-          },
-          (payload: any) => {
-            console.log("Realtime change received!", payload);
-            loadVideos();
-          },
-        )
-        .subscribe();
-      isSubscribed = true;
+      filter = `creator_id=eq.${user.id}`;
     }
+
+    if (!filter) return;
+
+    const channel = supabase
+      .channel(`video-updates-${videoType}-${user?.id || "public"}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "videos",
+          filter,
+        },
+        (payload: any) => {
+          // If it's my own video and I'm on public licensed view, maybe skip
+          if (
+            videoType === "licensed" &&
+            user?.id &&
+            payload.new &&
+            payload.new.creator_id === user.id
+          ) {
+            return;
+          }
+          queryClient.invalidateQueries({
+            queryKey: ["videos", videoType, targetUserId],
+          });
+        },
+      )
+      .subscribe();
 
     return () => {
-      // Cleanup nur, wenn wir auch subscribed haben
-      if (isSubscribed) {
-        console.log("Cleaning up Realtime subscription");
-        supabase.removeChannel(channel);
-      }
+      supabase.removeChannel(channel);
     };
-  }, [user?.id, loadVideos, videoType]);
+  }, [videoType, user?.id, query.data, queryClient, targetUserId]);
 
-  // 2. Sync-Wrapper, der danach die lokale Liste aktualisiert
-  const syncAndRefresh = async () => {
-    await syncService(); // Holt Daten von YouTube -> Supabase
-    await loadVideos(); // Holt neue Daten von Supabase -> UI
-  };
+  // Auto-sync if empty and it's "myVideos"
+  useEffect(() => {
+    if (
+      query.isSuccess &&
+      query.data.length === 0 &&
+      videoType === "myVideos" &&
+      !syncMutation.isPending &&
+      !syncMutation.isError
+    ) {
+      // syncMutation.mutate(); // Potentially dangerous auto-sync loop if YouTube also returns empty.
+      // Better to let user trigger it via LoadVideosButton.
+    }
+  }, [query.isSuccess, query.data?.length, videoType]);
 
   return {
-    videos,
-    hasVideos: videos.length > 0,
-    isSyncing,
-    isLoading,
-    sync: syncAndRefresh,
+    videos: query.data || [],
+    hasVideos: (query.data?.length || 0) > 0,
+    isSyncing: syncMutation.isPending || updateMutation.isPending,
+    isLoading: query.isLoading,
+    isError: query.isError,
+    sync: () => syncMutation.mutate(),
+    update: () => updateMutation.mutate(),
   };
 }

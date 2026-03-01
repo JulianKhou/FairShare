@@ -1,30 +1,12 @@
-import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { IconArrowLeft, IconUserCircle } from "@tabler/icons-react";
 import ShowVideoList from "../components/showVideos/showVideoList";
-import { getProfile, Profile } from "../services/supabaseCollum/profiles";
+import { useProfile } from "../hooks/queries/useProfile";
 
 export default function CreatorProfile() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function loadProfile() {
-      if (!id) return;
-      try {
-        setLoading(true);
-        const data = await getProfile(id);
-        setProfile(data);
-      } catch (error) {
-        console.error("Failed to load profile:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadProfile();
-  }, [id]);
+  const { data: profile, isLoading: loading } = useProfile(id);
 
   if (loading) {
     return (
@@ -61,12 +43,12 @@ export default function CreatorProfile() {
           >
             <IconArrowLeft className="w-6 h-6" />
           </button>
-          
+
           <div className="flex items-center gap-3">
             {profile?.youtube_channel_avatar ? (
-              <img 
-                src={profile.youtube_channel_avatar} 
-                alt={profile.youtube_channel_title || "Kanal Avatar"} 
+              <img
+                src={profile.youtube_channel_avatar}
+                alt={profile.youtube_channel_title || "Kanal Avatar"}
                 className="w-10 h-10 rounded-full object-cover ring-2 ring-primary/20"
               />
             ) : (

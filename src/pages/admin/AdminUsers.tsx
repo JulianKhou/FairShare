@@ -8,27 +8,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { useEffect, useState } from "react";
-import { getAllProfiles, Profile } from "@/services/supabaseCollum/profiles";
+import { useAllProfiles } from "@/hooks/queries/useAllProfiles";
 import { Loader2 } from "lucide-react";
 
 export default function AdminUsers() {
-  const [profiles, setProfiles] = useState<Profile[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchProfiles = async () => {
-      try {
-        const data = await getAllProfiles();
-        setProfiles(data || []);
-      } catch (error) {
-        console.error("Failed to load profiles:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchProfiles();
-  }, []);
+  const { data: profiles = [], isLoading: loading } = useAllProfiles();
 
   return (
     <div className="flex flex-col gap-6">
@@ -73,10 +57,16 @@ export default function AdminUsers() {
                       {profile.id.substring(0, 12)}...
                     </TableCell>
                     <TableCell className="font-medium">
-                      {profile.youtube_channel_title || <span className="text-muted-foreground italic text-xs">Ohne Kanal</span>}
+                      {profile.youtube_channel_title || (
+                        <span className="text-muted-foreground italic text-xs">
+                          Ohne Kanal
+                        </span>
+                      )}
                     </TableCell>
                     <TableCell className="text-muted-foreground">
-                      {profile.full_name || <span className="italic text-xs">Fehlt</span>}
+                      {profile.full_name || (
+                        <span className="italic text-xs">Fehlt</span>
+                      )}
                     </TableCell>
                     <TableCell>
                       {profile.is_admin ? (

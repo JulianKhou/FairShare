@@ -21,14 +21,15 @@ import {
 import { toast } from "sonner";
 import {
   createHelpRequest,
-  getUserHelpRequests,
-  getThreadMessages,
   addUserReply,
   HelpRequest,
-  HelpRequestMessage,
 } from "@/services/supabaseCollum/helpRequests";
 import { supabase } from "@/services/supabaseCollum/client";
 import { cn } from "@/lib/utils";
+import { useQueryClient } from "@tanstack/react-query";
+import { useUserHelpRequests } from "@/hooks/queries/useUserHelpRequests";
+import { useHelpThread } from "@/hooks/queries/useHelpThread";
+import { useAuth } from "@/hooks/auth/useAuth";
 
 interface HelpRequestModalProps {
   isOpen: boolean;
@@ -39,58 +40,34 @@ export function HelpRequestModal({
   isOpen,
   onOpenChange,
 }: HelpRequestModalProps) {
-  const [subject, setSubject] = useState("");
-  const [message, setMessage] = useState("");
-  const [submitting, setSubmitting] = useState(false);
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const { data: requests = [], isLoading: loading } = useUserHelpRequests(
+    user?.id,
+  );
 
-  const [activeTab, setActiveTab] = useState("new");
-  const [myRequests, setMyRequests] = useState<HelpRequest[]>([]);
-  const [loadingRequests, setLoadingRequests] = useState(false);
-
-  // Thread detail state
+  const [activeTab, setActiveTab] = useState<string>("new");
   const [selectedRequest, setSelectedRequest] = useState<HelpRequest | null>(
     null,
   );
-  const [threadMessages, setThreadMessages] = useState<HelpRequestMessage[]>(
-    [],
+  const [subject, setSubject] = useState("");
+  const [message, setMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Thread state
+  const { data: threadMessages = [], isLoading: threadLoading } = useHelpThread(
+    selectedRequest?.id,
   );
-  const [threadLoading, setThreadLoading] = useState(false);
   const [replyText, setReplyText] = useState("");
-  const [isSendingReply, setIsSendingReply] = useState(false);
+  const [isReplying, setIsReplying] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (isOpen && activeTab === "mine") {
-      fetchMyRequests();
-    }
-  }, [isOpen, activeTab]);
-
-  // Realtime: refresh request list
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const channel = supabase
-      .channel("user-support-channel")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "help_requests" },
-        () => {
-          if (activeTab === "mine") fetchMyRequests();
-        },
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [isOpen, activeTab]);
 
   // Realtime: listen for new thread messages in the selected ticket
   useEffect(() => {
     if (!selectedRequest) return;
 
     const channel = supabase
-      .channel(`user-thread-${selectedRequest.id}`)
+      .channel(`help-thread-${selectedRequest.id}`)
       .on(
         "postgres_changes",
         {
@@ -99,11 +76,10 @@ export function HelpRequestModal({
           table: "help_request_messages",
           filter: `help_request_id=eq.${selectedRequest.id}`,
         },
-        (payload) => {
-          const incoming = payload.new as HelpRequestMessage;
-          setThreadMessages((prev) =>
-            prev.some((m) => m.id === incoming.id) ? prev : [...prev, incoming],
-          );
+        () => {
+          queryClient.invalidateQueries({
+            queryKey: ["helpThread", selectedRequest.id],
+          });
         },
       )
       .subscribe();
@@ -111,61 +87,65 @@ export function HelpRequestModal({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [selectedRequest]);
+  }, [selectedRequest, queryClient]);
+
+  // Realtime: refresh request list
+  useEffect(() => {
+    if (!isOpen || !user) return;
+
+    const channel = supabase
+      .channel(`user-help-requests-${user.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "help_requests",
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => {
+          queryClient.invalidateQueries({
+            queryKey: ["userHelpRequests", user.id],
+          });
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [isOpen, user, queryClient]);
 
   // Auto-scroll to latest message
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [threadMessages]);
 
-  const fetchMyRequests = async () => {
-    setLoadingRequests(true);
-    try {
-      const data = await getUserHelpRequests();
-      setMyRequests(data);
-    } catch (error) {
-      console.error("Fehler beim Laden der Anfragen:", error);
-      toast.error("Fehler beim Laden deiner Anfragen.");
-    } finally {
-      setLoadingRequests(false);
-    }
-  };
-
-  const handleTicketClick = async (req: HelpRequest) => {
+  const handleTicketClick = (req: HelpRequest) => {
     setSelectedRequest(req);
-    setThreadMessages([]);
     setReplyText("");
-    setThreadLoading(true);
-    try {
-      const msgs = await getThreadMessages(req.id);
-      setThreadMessages(msgs);
-    } catch (error) {
-      console.error("Fehler beim Laden des Threads:", error);
-    } finally {
-      setThreadLoading(false);
-    }
+    // We don't change activeTab here, we just show details within the "mine" tab
   };
 
   const handleBackToList = () => {
     setSelectedRequest(null);
-    setThreadMessages([]);
     setReplyText("");
   };
 
   const handleUserReply = async () => {
     if (!selectedRequest || !replyText.trim()) return;
-    setIsSendingReply(true);
+    setIsReplying(true);
     try {
-      const newMsg = await addUserReply(selectedRequest.id, replyText.trim());
-      // Optimistically add the message so it shows immediately
-      setThreadMessages((prev) =>
-        prev.some((m) => m.id === newMsg.id) ? prev : [...prev, newMsg],
-      );
+      await addUserReply(selectedRequest.id, replyText.trim());
+      queryClient.invalidateQueries({
+        queryKey: ["helpThread", selectedRequest.id],
+      });
       setReplyText("");
-    } catch (error: any) {
-      toast.error("Fehler beim Senden: " + (error.message || "Unbekannt"));
+      toast.success("Antwort gesendet!");
+    } catch (e: any) {
+      toast.error("Fehler: " + e.message);
     } finally {
-      setIsSendingReply(false);
+      setIsReplying(false);
     }
   };
 
@@ -173,18 +153,22 @@ export function HelpRequestModal({
     e.preventDefault();
     if (!subject.trim() || !message.trim()) return;
 
-    setSubmitting(true);
+    setIsSubmitting(true);
     try {
       await createHelpRequest(subject, message);
-      toast.success("Deine Anfrage wurde erfolgreich abgeschickt!");
+      toast.success("Support-Anfrage wurde gesendet!");
+      queryClient.invalidateQueries({
+        queryKey: ["userHelpRequests", user?.id],
+      });
+      queryClient.invalidateQueries({ queryKey: ["adminDashboardStats"] });
       setSubject("");
       setMessage("");
       setActiveTab("mine");
-    } catch (error: any) {
-      console.error("Fehler beim Senden:", error);
-      toast.error("Fehler beim Senden: " + (error.message || "Unbekannt"));
+    } catch (e: any) {
+      console.error("Fehler beim Senden:", e);
+      toast.error("Fehler beim Senden: " + (e.message || "Unbekannt"));
     } finally {
-      setSubmitting(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -218,9 +202,9 @@ export function HelpRequestModal({
   const renderTicketDetail = () => {
     if (!selectedRequest) return null;
     const canReply = selectedRequest.status !== "CLOSED";
+
     return (
       <div className="flex flex-col h-full">
-        {/* Back button */}
         <Button
           variant="ghost"
           size="sm"
@@ -231,15 +215,12 @@ export function HelpRequestModal({
           Zurück zur Übersicht
         </Button>
 
-        {/* Subject + status */}
         <div className="flex items-start justify-between mb-3 shrink-0">
           <h4 className="font-semibold text-base">{selectedRequest.subject}</h4>
           {getStatusBadge(selectedRequest.status)}
         </div>
 
-        {/* Chat thread */}
         <div className="flex-1 overflow-y-auto space-y-3 pr-1">
-          {/* Original user message */}
           <div className="flex justify-end">
             <div className="max-w-[85%] space-y-1">
               <div className="flex items-center justify-end gap-1.5 mr-1">
@@ -256,7 +237,6 @@ export function HelpRequestModal({
             </div>
           </div>
 
-          {/* Thread replies */}
           {threadLoading ? (
             <div className="flex justify-center py-6">
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -280,7 +260,7 @@ export function HelpRequestModal({
                       )}
                     >
                       {!isUser && (
-                        <span className="text-[10px] font-semibold bg-blue-500/15 text-blue-600 dark:text-blue-400 rounded-full px-2 py-0.5">
+                        <span className="text-[10px] font-semibold bg-blue-500/15 text-blue-600 rounded-full px-2 py-0.5">
                           Support
                         </span>
                       )}
@@ -308,16 +288,9 @@ export function HelpRequestModal({
               );
             })
           )}
-
-          {threadMessages.length === 0 && !threadLoading && (
-            <p className="text-center text-xs text-muted-foreground py-4">
-              Noch keine Antwort vom Support-Team. Wir melden uns bald!
-            </p>
-          )}
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Reply box – only visible when ticket is IN_PROGRESS */}
         {canReply && (
           <div className="shrink-0 border-t pt-3 mt-2 flex flex-col gap-2">
             <Textarea
@@ -325,24 +298,18 @@ export function HelpRequestModal({
               rows={3}
               value={replyText}
               onChange={(e) => setReplyText(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-                  e.preventDefault();
-                  handleUserReply();
-                }
-              }}
-              disabled={isSendingReply}
+              disabled={isReplying}
             />
             <div className="flex justify-between items-center">
               <p className="text-xs text-muted-foreground">
-                ⌘+Enter zum Senden
+                Antworte dem Support-Team
               </p>
               <Button
                 size="sm"
                 onClick={handleUserReply}
-                disabled={isSendingReply || !replyText.trim()}
+                disabled={isReplying || !replyText.trim()}
               >
-                {isSendingReply ? (
+                {isReplying ? (
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 ) : (
                   <Send className="w-4 h-4 mr-2" />
@@ -358,10 +325,10 @@ export function HelpRequestModal({
 
   const renderRequestList = (statusFilter: string[] | null) => {
     const filtered = statusFilter
-      ? myRequests.filter((r) => statusFilter.includes(r.status))
-      : myRequests;
+      ? requests.filter((r) => statusFilter.includes(r.status))
+      : requests;
 
-    if (loadingRequests) {
+    if (loading) {
       return (
         <div className="flex justify-center p-8">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -421,10 +388,7 @@ export function HelpRequestModal({
         <div className="flex-1 overflow-hidden flex flex-col mt-4">
           <Tabs
             value={activeTab}
-            onValueChange={(v) => {
-              setActiveTab(v);
-              setSelectedRequest(null);
-            }}
+            onValueChange={setActiveTab}
             className="flex flex-col h-full"
           >
             <TabsList className="grid w-full grid-cols-2 shrink-0">
@@ -470,10 +434,10 @@ export function HelpRequestModal({
                     <Button
                       type="submit"
                       disabled={
-                        submitting || !subject.trim() || !message.trim()
+                        isSubmitting || !subject.trim() || !message.trim()
                       }
                     >
-                      {submitting ? (
+                      {isSubmitting ? (
                         <>
                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />{" "}
                           Senden...
@@ -502,24 +466,23 @@ export function HelpRequestModal({
                       </TabsTrigger>
                       <TabsTrigger
                         value="open"
-                        className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none shadow-none text-red-500 data-[state=active]:text-red-500"
+                        className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none shadow-none text-red-500"
                       >
                         Offen
                       </TabsTrigger>
                       <TabsTrigger
                         value="progress"
-                        className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none shadow-none text-yellow-600 data-[state=active]:text-yellow-600"
+                        className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none shadow-none text-yellow-600"
                       >
                         In Bearbeitung
                       </TabsTrigger>
                       <TabsTrigger
                         value="closed"
-                        className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none shadow-none text-emerald-500 data-[state=active]:text-emerald-500"
+                        className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none shadow-none text-emerald-500"
                       >
                         Geschlossen
                       </TabsTrigger>
                     </TabsList>
-
                     <TabsContent value="all" className="mt-0">
                       {renderRequestList(null)}
                     </TabsContent>

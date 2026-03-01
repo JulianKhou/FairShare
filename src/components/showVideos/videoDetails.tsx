@@ -35,14 +35,14 @@ import { useLocation } from "react-router-dom";
 import { ChangeVideoSettings } from "../debug/changeVideoSettings";
 import { useVideoSimulation } from "@/hooks/debughooks/changeViewsLokal";
 import {
-  getContractsForVideo,
-  ReactionContract,
-  getPendingReactionContracts,
   updateReactionContract,
   deleteReactionContract,
 } from "@/services/supabaseCollum/reactionContract";
 import { generateLicensePDF } from "@/services/supabaseFunctions";
 import { Badge } from "@/components/ui/badge";
+import { useQueryClient } from "@tanstack/react-query";
+import { useContractsForVideo } from "@/hooks/queries/useContractsForVideo";
+import { usePendingContractsForVideo } from "@/hooks/queries/usePendingContractsForVideo";
 
 interface VideoDetailsProps {
   video: any;
@@ -57,28 +57,19 @@ export const VideoDetails = ({
   onClose,
   mode,
 }: VideoDetailsProps) => {
+  const queryClient = useQueryClient();
   const [videoUrl, setVideoUrl] = useState("");
   const { isLicensed, toggleLicense } = useVideoDetails(video);
   const { video: foundVideo, findVideo, isLoading } = useFindVideo();
   const [activeTab, setActiveTab] = useState<"details" | "pending">("details");
-  const [contracts, setContracts] = useState<ReactionContract[]>([]);
-  const [pendingContracts, setPendingContracts] = useState<ReactionContract[]>(
-    [],
-  );
   const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
 
-  useEffect(() => {
-    if (isOpen && video?.id) {
-      getContractsForVideo(video.id).then((data) => {
-        if (data) setContracts(data as ReactionContract[]);
-      });
-      if (mode === "owner") {
-        getPendingReactionContracts(video.id).then((data) => {
-          if (data) setPendingContracts(data as ReactionContract[]);
-        });
-      }
-    }
-  }, [isOpen, video, mode]);
+  const { data: contracts = [] } = useContractsForVideo(video?.id, isOpen);
+  const { data: pendingContracts = [] } = usePendingContractsForVideo(
+    video?.id,
+    isOpen,
+    mode,
+  );
 
   const handleAccept = async (contractId: string) => {
     if (processingIds.has(contractId)) return;
@@ -92,10 +83,12 @@ export const VideoDetails = ({
         console.error("Failed to generate PDF:", pdfError);
         alert("Vertrag akzeptiert, aber PDF-Generierung fehlgeschlagen.");
       }
-      const pending = await getPendingReactionContracts(video.id);
-      const accepted = await getContractsForVideo(video.id);
-      if (pending) setPendingContracts(pending as ReactionContract[]);
-      if (accepted) setContracts(accepted as ReactionContract[]);
+      queryClient.invalidateQueries({
+        queryKey: ["pendingContractsForVideo", video?.id],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["contractsForVideo", video?.id],
+      });
     } catch (e) {
       console.error("Failed to accept contract", e);
       alert("Fehler beim Akzeptieren.");
@@ -111,8 +104,9 @@ export const VideoDetails = ({
   const handleDelete = async (contractId: string) => {
     try {
       await deleteReactionContract(contractId);
-      const pending = await getPendingReactionContracts(video.id);
-      if (pending) setPendingContracts(pending as ReactionContract[]);
+      queryClient.invalidateQueries({
+        queryKey: ["pendingContractsForVideo", video?.id],
+      });
     } catch (e) {
       console.error("Failed to delete contract", e);
     }

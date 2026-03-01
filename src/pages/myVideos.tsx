@@ -1,4 +1,3 @@
-import React from "react";
 import ShowVideoList from "../components/showVideos/showVideoList";
 import LoadVideosButton from "../components/showVideos/loadVideosButton";
 import { useAuth } from "../hooks/auth/useAuth";

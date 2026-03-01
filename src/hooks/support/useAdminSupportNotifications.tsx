@@ -1,57 +1,48 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/services/supabaseCollum/client";
 import { toast } from "sonner";
 import { MailOpen } from "lucide-react";
 
 const ADMIN_STORAGE_KEY = "admin_support_last_seen";
 
-/**
- * For admin: counts open tickets created since the admin last visited the
- * support page. Also fires a toast when a new ticket arrives in realtime.
- */
 export function useAdminSupportNotifications(isSupportPageActive: boolean) {
-  const [newTicketCount, setNewTicketCount] = useState(0);
+  const queryClient = useQueryClient();
 
   const getLastSeen = (): string => {
     return localStorage.getItem(ADMIN_STORAGE_KEY) ?? new Date(0).toISOString();
   };
 
+  const { data: newTicketCount = 0 } = useQuery({
+    queryKey: ["adminSupportNotifications"],
+    queryFn: async () => {
+      const lastSeen = getLastSeen();
+      const { count, error } = await supabase
+        .from("help_requests")
+        .select("id", { count: "exact", head: true })
+        .gt("created_at", lastSeen);
+
+      if (error) throw error;
+      return count ?? 0;
+    },
+    refetchInterval: 30000,
+  });
+
   const markAsSeen = () => {
     const now = new Date().toISOString();
     localStorage.setItem(ADMIN_STORAGE_KEY, now);
-    setNewTicketCount(0);
+    queryClient.setQueryData(["adminSupportNotifications"], 0);
   };
 
-  const fetchNewTickets = async () => {
-    const lastSeen = getLastSeen();
-    const { count, error } = await supabase
-      .from("help_requests")
-      .select("id", { count: "exact", head: true })
-      .gt("created_at", lastSeen);
-
-    if (!error) {
-      setNewTicketCount(count ?? 0);
-    }
-  };
-
-  useEffect(() => {
-    fetchNewTickets();
-    // Fallback polling every 30s in case Realtime isn't working
-    const interval = setInterval(fetchNewTickets, 30_000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // Mark as seen when admin navigates to the support page
   useEffect(() => {
     if (isSupportPageActive) {
       markAsSeen();
     }
   }, [isSupportPageActive]);
 
-  // Realtime: new ticket toast + badge increment
   useEffect(() => {
     const channel = supabase
-      .channel("admin-new-ticket-notifications")
+      .channel("admin-new-tickets")
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "help_requests" },
@@ -62,7 +53,9 @@ export function useAdminSupportNotifications(isSupportPageActive: boolean) {
             duration: 8000,
             icon: <MailOpen className="w-4 h-4" />,
           });
-          setNewTicketCount((prev) => prev + 1);
+          queryClient.invalidateQueries({
+            queryKey: ["adminSupportNotifications"],
+          });
         },
       )
       .subscribe();
@@ -70,7 +63,7 @@ export function useAdminSupportNotifications(isSupportPageActive: boolean) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [queryClient]);
 
   return { newTicketCount, markAsSeen };
 }

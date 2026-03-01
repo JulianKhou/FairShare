@@ -8,12 +8,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
-  getAllReactionContracts,
   adminDeleteReactionContract,
   ReactionContract,
 } from "@/services/supabaseCollum/reactionContract";
+import { useQueryClient } from "@tanstack/react-query";
+import { useAllReactionContracts } from "@/hooks/queries/useAllReactionContracts";
 import { supabase } from "@/services/supabaseCollum/client";
 import {
   Loader2,
@@ -35,27 +36,15 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 
 export default function AdminContracts() {
-  const [contracts, setContracts] = useState<ReactionContract[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const { data: contracts = [], isLoading: loading } =
+    useAllReactionContracts();
+
   const [selectedContract, setSelectedContract] =
     useState<ReactionContract | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
-
-  useEffect(() => {
-    const fetchContracts = async () => {
-      try {
-        const data = await getAllReactionContracts();
-        setContracts(data || []);
-      } catch (error) {
-        console.error("Failed to load contracts:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchContracts();
-  }, []);
 
   const handleRowClick = (contract: ReactionContract) => {
     setSelectedContract(contract);
@@ -76,8 +65,9 @@ export default function AdminContracts() {
     setIsDeleting(true);
     try {
       await adminDeleteReactionContract(selectedContract.id);
+      queryClient.invalidateQueries({ queryKey: ["allContracts"] });
+      queryClient.invalidateQueries({ queryKey: ["adminDashboardStats"] });
 
-      setContracts((prev) => prev.filter((c) => c.id !== selectedContract.id));
       setIsDialogOpen(false);
       toast.success("Vertrag wurde erfolgreich gelöscht.");
     } catch (err: any) {
@@ -105,8 +95,8 @@ export default function AdminContracts() {
 
       // Refresh contracts list if anything changed
       if (result.updated > 0) {
-        const freshData = await getAllReactionContracts();
-        setContracts(freshData || []);
+        queryClient.invalidateQueries({ queryKey: ["allContracts"] });
+        queryClient.invalidateQueries({ queryKey: ["adminDashboardStats"] });
       }
     } catch (err: any) {
       console.error("Sync failed:", err);

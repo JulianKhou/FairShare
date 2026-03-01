@@ -1,12 +1,12 @@
 // src/components/showVideos/LoadVideosButton.tsx
 import { useVideos } from "../../hooks/youtube/useVideos";
-import { useUpdateVideos } from "../../hooks/youtube/useUpdateVideos";
 
 function LoadVideosButton() {
-  // 1. Alle Hooks ganz oben "auspacken"
-  const { hasVideos, isSyncing, sync, videos } = useVideos("myVideos", "");
-  // 2. Den neuen Update-Hook verwenden
-  const { updateVideos, loading: isUpdating } = useUpdateVideos();
+  const { hasVideos, isSyncing, sync, update, videos } = useVideos(
+    "myVideos",
+    "",
+  );
+
   const buttonClasses =
     "w-full text-left px-3 py-2 rounded-lg border border-white/10";
   const buttonClassesHover = "hover:bg-white/5 transition-colors";
@@ -25,10 +25,10 @@ function LoadVideosButton() {
         ) : (
           <button
             className={buttonClasses + " " + buttonClassesHover}
-            onClick={updateVideos}
-            disabled={isUpdating || isSyncing}
+            onClick={update}
+            disabled={isSyncing}
           >
-            {isUpdating ? "Aktualisiere..." : "Liste aktualisieren"}
+            {isSyncing ? "Aktualisiere..." : "Liste aktualisieren"}
           </button>
         )}
       </div>

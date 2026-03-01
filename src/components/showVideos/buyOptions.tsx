@@ -12,16 +12,18 @@ import { useAuth } from "@/hooks/auth/useAuth";
 import {
   createReactionContract,
   ReactionContract,
-  checkExistingLicense,
-  checkAnyExistingLicense,
   withdrawReactionContract,
 } from "@/services/supabaseCollum/reactionContract";
 import { getProfile } from "@/services/supabaseCollum/profiles";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { generateUUID } from "@/lib/utils";
 import { useVideos } from "@/hooks/youtube/useVideos";
 import { AlertCircle, CheckCircle2, XCircle, HelpCircle } from "lucide-react";
 import { createStripeCheckoutSession } from "@/services/stripeFunctions";
+import { useExistingLicense } from "@/hooks/queries/useExistingLicense";
+import { useAnyExistingLicense } from "@/hooks/queries/useAnyExistingLicense";
+import { useCreatorMinPrice } from "@/hooks/queries/useCreatorMinPrice";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface BuyOptionsProps {
   videoCreator: any;
@@ -30,16 +32,9 @@ interface BuyOptionsProps {
 
 export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [selectedPlan, setSelectedPlan] = useState<"fixed" | "views">("fixed");
   const [loading, setLoading] = useState(false);
-  const [existingContract, setExistingContract] = useState<{
-    id: string;
-    status: string;
-    accepted_by_licensor?: boolean;
-  } | null>(null);
-  const [checkingLicense, setCheckingLicense] = useState(false);
-  const [hasAnyLicense, setHasAnyLicense] = useState(false);
-  const [creatorMinPrice, setCreatorMinPrice] = useState<number>(0);
 
   // Fetch user's videos for selection
   const { videos: myVideos, isLoading: isLoadingVideos } = useVideos(
@@ -49,74 +44,17 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
   const [selectedReactionVideoId, setSelectedReactionVideoId] =
     useState<string>("");
 
-  // Check for existing license
-  useEffect(() => {
-    const checkLicense = async () => {
-      if (user?.id && videoCreator?.id && selectedReactionVideoId) {
-        setCheckingLicense(true);
-        try {
-          // Now returns object { status, id, accepted_by_licensor } or null
-          const result = await checkExistingLicense(
-            user.id,
-            videoCreator.id,
-            selectedReactionVideoId,
-          );
-          setExistingContract(result);
-        } catch (err) {
-          console.error("Failed to check license", err);
-        } finally {
-          setCheckingLicense(false);
-        }
-      } else {
-        setExistingContract(null);
-      }
-    };
+  const { data: existingContract, isLoading: checkingLicense } =
+    useExistingLicense(user?.id, videoCreator?.id, selectedReactionVideoId);
 
-    checkLicense();
-  }, [user, videoCreator, selectedReactionVideoId]);
+  const { data: hasAnyLicense } = useAnyExistingLicense(
+    user?.id,
+    videoCreator?.id,
+  );
 
-  // Check for ANY existing license for this base video
-  useEffect(() => {
-    const checkAnyLicense = async () => {
-      if (user?.id && videoCreator?.id) {
-        try {
-          const result = await checkAnyExistingLicense(
-            user.id,
-            videoCreator.id,
-          );
-          setHasAnyLicense(result);
-        } catch (err) {
-          console.error("Failed to check any license", err);
-        }
-      } else {
-        setHasAnyLicense(false);
-      }
-    };
-
-    checkAnyLicense();
-  }, [user, videoCreator]);
-
-  // Fetch creator's min license price
-  useEffect(() => {
-    const fetchCreatorMinPrice = async () => {
-      const creatorId = videoCreator?.creator_id || videoCreator?.id;
-      if (!creatorId) return;
-      try {
-        const creatorProfile = await getProfile(creatorId);
-        if (
-          creatorProfile?.use_auto_pricing === false &&
-          creatorProfile?.min_license_price
-        ) {
-          setCreatorMinPrice(creatorProfile.min_license_price);
-        } else {
-          setCreatorMinPrice(0);
-        }
-      } catch {
-        setCreatorMinPrice(0);
-      }
-    };
-    fetchCreatorMinPrice();
-  }, [videoCreator]);
+  const { data: creatorMinPrice = 0 } = useCreatorMinPrice(
+    videoCreator?.creator_id || videoCreator?.id,
+  );
 
   // Determine which video is selected
   const selectedVideo =
@@ -194,11 +132,14 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
       const contractId = customContract?.id || newContract.id;
 
       if (!autoAccept) {
-        // If NOT auto-accepted, stop here and show Pending UI
-        setExistingContract({
-          id: contractId,
-          status: "PENDING",
-          accepted_by_licensor: false,
+        // If NOT auto-accepted, invalidate query to show Pending UI
+        queryClient.invalidateQueries({
+          queryKey: [
+            "existingLicense",
+            user.id,
+            videoCreator.id,
+            selectedReactionVideoId,
+          ],
         });
         return;
       }
@@ -226,7 +167,14 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
     setLoading(true);
     try {
       await withdrawReactionContract(existingContract.id);
-      setExistingContract(null); // Clear pending state
+      queryClient.invalidateQueries({
+        queryKey: [
+          "existingLicense",
+          user?.id,
+          videoCreator?.id,
+          selectedReactionVideoId,
+        ],
+      }); // Clear pending state
     } catch (error) {
       console.error("Withdraw failed", error);
       alert("Fehler beim Zurückziehen der Anfrage.");

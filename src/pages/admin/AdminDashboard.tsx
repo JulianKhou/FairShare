@@ -7,76 +7,26 @@ import {
   Loader2,
   MessageSquare,
 } from "lucide-react";
-import { useEffect, useState } from "react";
-import { getAllProfiles } from "@/services/supabaseCollum/profiles";
-import {
-  getAllReactionContracts,
-  ReactionContract,
-} from "@/services/supabaseCollum/reactionContract";
-import { getAllHelpRequests } from "@/services/supabaseCollum/helpRequests";
+import { useEffect } from "react";
 import { supabase } from "@/services/supabaseCollum/client";
 import { RevenueChart } from "./components/RevenueChart";
+import { useQueryClient } from "@tanstack/react-query";
+import { useAdminDashboardStats } from "@/hooks/queries/useAdminDashboardStats";
 
 export default function AdminDashboard() {
-  const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({
+  const queryClient = useQueryClient();
+  const { data, isLoading: loading } = useAdminDashboardStats();
+
+  const stats = data?.stats || {
     totalUsers: 0,
     activeLicenses: 0,
     pendingLicenses: 0,
     totalRevenue: 0,
     openSupportTickets: 0,
-  });
-  const [rawContracts, setRawContracts] = useState<ReactionContract[]>([]);
+  };
+  const rawContracts = data?.rawContracts || [];
 
   useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const [profiles, contracts, helpRequests] = await Promise.all([
-          getAllProfiles(),
-          getAllReactionContracts(),
-          getAllHelpRequests(),
-        ]);
-
-        const totalUsers = (profiles || []).length;
-
-        let activeLicenses = 0;
-        let pendingLicenses = 0;
-        let totalRevenue = 0;
-
-        (contracts || []).forEach((c) => {
-          if (c.status === "ACTIVE" || c.status === "PAID") {
-            activeLicenses++;
-            totalRevenue += c.pricing_value;
-          } else if (c.status === "PENDING" || !c.accepted_by_licensor) {
-            pendingLicenses++;
-          }
-        });
-
-        // Berechne 10% Plattformgebühr (Beispielhaft)
-        const platformRevenue = totalRevenue * 0.1;
-
-        // Support Tickets berechnen
-        const openSupportTickets = (helpRequests || []).filter(
-          (req) => req.status === "OPEN",
-        ).length;
-
-        setStats({
-          totalUsers,
-          activeLicenses,
-          pendingLicenses,
-          totalRevenue: platformRevenue,
-          openSupportTickets,
-        });
-        setRawContracts(contracts || []);
-      } catch (error) {
-        console.error("Failed to fetch dashboard stats", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchStats();
-
     // Subscribe to realtime changes on reaction_contracts
     const contractsChannel = supabase
       .channel("admin-dashboard-contracts")
@@ -84,8 +34,7 @@ export default function AdminDashboard() {
         "postgres_changes",
         { event: "*", schema: "public", table: "reaction_contracts" },
         () => {
-          // Whenever a contract is created, updated, or deleted, refetch stats
-          fetchStats();
+          queryClient.invalidateQueries({ queryKey: ["adminDashboardStats"] });
         },
       )
       .subscribe();
@@ -97,8 +46,7 @@ export default function AdminDashboard() {
         "postgres_changes",
         { event: "*", schema: "public", table: "profiles" },
         () => {
-          // Whenever a profile is created or deleted, refetch stats
-          fetchStats();
+          queryClient.invalidateQueries({ queryKey: ["adminDashboardStats"] });
         },
       )
       .subscribe();
@@ -110,8 +58,7 @@ export default function AdminDashboard() {
         "postgres_changes",
         { event: "*", schema: "public", table: "help_requests" },
         () => {
-          // Whenever a request is created or updated, refetch stats
-          fetchStats();
+          queryClient.invalidateQueries({ queryKey: ["adminDashboardStats"] });
         },
       )
       .subscribe();
@@ -121,7 +68,7 @@ export default function AdminDashboard() {
       supabase.removeChannel(profilesChannel);
       supabase.removeChannel(helpRequestsChannel);
     };
-  }, []);
+  }, [queryClient]);
 
   return (
     <div className="flex flex-col gap-6">

@@ -1,5 +1,4 @@
 import { supabase } from "./client";
-import { parseISO8601Duration } from "../../lib/utils";
 
 /**
  * Speichert oder aktualisiert YouTube-Videos in der Supabase-Datenbank.
@@ -22,7 +21,7 @@ export const saveVideosToSupabase = async (
 
     const rowsToInsert = videos.map((video) => {
       const isNew = !existingIds.has(video.id);
-      
+
       const row: any = {
         id: video.id, // Primary Key (YouTube ID)
         creator_id: userId, // Verknüpfung zum User
@@ -40,10 +39,12 @@ export const saveVideosToSupabase = async (
         last_view_count_update: new Date().toISOString(),
 
         // Kategorien & Dauer
-        category_id: video.snippet?.categoryId || video.categoryId ||
-          video.category_id,
+        category_id:
+          video.snippet?.categoryId || video.categoryId || video.category_id,
         duration_seconds: video.duration_seconds || 0,
-        channel_title: video.snippet?.channelTitle || video.channel_title ||
+        channel_title:
+          video.snippet?.channelTitle ||
+          video.channel_title ||
           "Unknown Channel",
 
         // Algorithmus-Startwerte
@@ -55,13 +56,18 @@ export const saveVideosToSupabase = async (
       // published after the cutoff date
       if (isNew && autoLicense !== "none") {
         const publishedAt = video.snippet?.publishedAt || video.publishedAt;
-        const isAfterCutoff = !autoLicenseSince || !publishedAt ||
+        const isAfterCutoff =
+          !autoLicenseSince ||
+          !publishedAt ||
           new Date(publishedAt) >= new Date(autoLicenseSince);
 
         if (isAfterCutoff) {
           if (autoLicense === "all") {
             row.islicensed = true;
-          } else if (autoLicense === "public_only" && video.privacyStatus === "public") {
+          } else if (
+            autoLicense === "public_only" &&
+            video.privacyStatus === "public"
+          ) {
             row.islicensed = true;
           }
         }
@@ -85,7 +91,12 @@ export const saveVideosToSupabase = async (
 
 export const getVideosFromSupabase = async (
   userId: string,
-  videoType: "licensed" | "myVideos" | "licensedByMe" | "myVideosLicensed" | "myVideosUnlicensed",
+  videoType:
+    | "licensed"
+    | "myVideos"
+    | "licensedByMe"
+    | "myVideosLicensed"
+    | "myVideosUnlicensed",
 ) => {
   console.log(
     `Fetching videos from Supabase for user: ${userId}, type: ${videoType}`,

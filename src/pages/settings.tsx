@@ -12,18 +12,18 @@ import {
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/hooks/auth/useAuth";
-import {
-  getProfile,
-  updateProfile,
-  Profile,
-} from "@/services/supabaseCollum/profiles";
+import { updateProfile, Profile } from "@/services/supabaseCollum/profiles";
 import { Loader2, Save } from "lucide-react";
 import { createStripeConnectAccount } from "@/services/stripeFunctions";
+import { useProfile } from "@/hooks/queries/useProfile";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function SettingsPage() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const { data: initialProfile, isLoading: loading } = useProfile(user?.id);
+
   const [profile, setProfile] = useState<Partial<Profile>>({});
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{
     text: string;
@@ -31,13 +31,10 @@ export default function SettingsPage() {
   } | null>(null);
 
   useEffect(() => {
-    if (user) {
-      getProfile(user.id).then((data) => {
-        if (data) setProfile(data);
-        setLoading(false);
-      });
+    if (initialProfile) {
+      setProfile(initialProfile);
     }
-  }, [user]);
+  }, [initialProfile]);
 
   const handleChange = (field: keyof Profile, value: any) => {
     setProfile((prev) => ({ ...prev, [field]: value }));
@@ -49,6 +46,7 @@ export default function SettingsPage() {
     setMessage(null);
     try {
       await updateProfile(user.id, profile);
+      queryClient.invalidateQueries({ queryKey: ["profile", user.id] });
       setMessage({
         text: "Einstellungen erfolgreich gespeichert!",
         type: "success",

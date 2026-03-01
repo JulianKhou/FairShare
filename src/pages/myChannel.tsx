@@ -1,36 +1,16 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { IconUserCircle } from "@tabler/icons-react";
 import ShowVideoList from "../components/showVideos/showVideoList";
 import LoadVideosButton from "../components/showVideos/loadVideosButton";
 import { useAuth } from "../hooks/auth/useAuth";
-import { getProfile, Profile } from "../services/supabaseCollum/profiles";
+import { useProfile } from "../hooks/queries/useProfile";
 
 type VideoFilter = "public" | "all";
 
 export default function MyChannel() {
   const { user } = useAuth();
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: profile, isLoading: loading } = useProfile(user?.id);
   const [filter, setFilter] = useState<VideoFilter>("public");
-
-  useEffect(() => {
-    async function loadProfile() {
-      if (!user) {
-        setLoading(false);
-        return;
-      }
-      try {
-        setLoading(true);
-        const data = await getProfile(user.id);
-        setProfile(data);
-      } catch (error) {
-        console.error("Failed to load profile:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadProfile();
-  }, [user]);
 
   if (loading) {
     return (
@@ -44,7 +24,9 @@ export default function MyChannel() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
         <h2 className="text-xl font-semibold">Nicht angemeldet</h2>
-        <p className="text-muted-foreground">Bitte melde dich an, um deinen Kanal zu sehen.</p>
+        <p className="text-muted-foreground">
+          Bitte melde dich an, um deinen Kanal zu sehen.
+        </p>
       </div>
     );
   }
@@ -52,14 +34,13 @@ export default function MyChannel() {
   return (
     <div className="flex flex-col items-center pt-10 pb-20 gap-8 w-full">
       <div className="w-full max-w-7xl px-4 lg:px-8">
-        
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8 border-b border-border/50 pb-6">
           <div className="flex items-center gap-4">
             {profile?.youtube_channel_avatar ? (
-              <img 
-                src={profile.youtube_channel_avatar} 
-                alt={profile.youtube_channel_title || "Mein Kanal Avatar"} 
+              <img
+                src={profile.youtube_channel_avatar}
+                alt={profile.youtube_channel_title || "Mein Kanal Avatar"}
                 className="w-16 h-16 rounded-full object-cover ring-2 ring-primary/20"
               />
             ) : (
@@ -76,7 +57,7 @@ export default function MyChannel() {
               </p>
             </div>
           </div>
-          
+
           <LoadVideosButton />
         </div>
 
@@ -108,12 +89,11 @@ export default function MyChannel() {
 
         {/* Video List */}
         <div className="mt-4">
-          <ShowVideoList 
-            videoType={filter === "public" ? "myVideosLicensed" : "myVideos"} 
-            userId={user.id} 
+          <ShowVideoList
+            videoType={filter === "public" ? "myVideosLicensed" : "myVideos"}
+            userId={user.id}
           />
         </div>
-        
       </div>
     </div>
   );
