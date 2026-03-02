@@ -316,14 +316,53 @@ export default function SettingsPage() {
 
             {profile.stripe_connect_id ? (
               <div className="flex flex-col gap-2">
-                <div className="p-4 bg-green-50 border border-green-200 rounded-md text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-300 flex items-center gap-2">
-                  <span className="text-xl">✅</span>
-                  <div>
-                    <p className="font-bold">Stripe verbunden</p>
-                    <p className="text-sm opacity-80">
-                      Account ID: {profile.stripe_connect_id}
-                    </p>
+                <div className="p-4 bg-green-50 border border-green-200 rounded-md text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-300 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">✅</span>
+                    <div>
+                      <p className="font-bold">Stripe verbunden</p>
+                      <p className="text-sm opacity-80">
+                        Account ID: {profile.stripe_connect_id}
+                      </p>
+                    </div>
                   </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
+                    onClick={async () => {
+                      if (
+                        confirm(
+                          "Möchtest du die Stripe-Verbindung wirklich zurücksetzen? Dies ist nötig, wenn du vom Test- in den Live-Modus wechselst.",
+                        )
+                      ) {
+                        try {
+                          setSaving(true);
+                          // @ts-ignore
+                          await updateProfile(user!.id, {
+                            stripe_connect_id: null,
+                          });
+                          queryClient.invalidateQueries({
+                            queryKey: ["profile", user!.id],
+                          });
+                          setMessage({
+                            text: "Stripe-Verbindung wurde zurückgesetzt.",
+                            type: "success",
+                          });
+                        } catch (err) {
+                          console.error(err);
+                          setMessage({
+                            text: "Fehler beim Zurücksetzen der Verbindung.",
+                            type: "error",
+                          });
+                        } finally {
+                          setSaving(false);
+                        }
+                      }
+                    }}
+                  >
+                    Zurücksetzen
+                  </Button>
                 </div>
                 <Button
                   variant="outline"

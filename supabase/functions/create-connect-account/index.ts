@@ -99,23 +99,33 @@ serve(async (req) => {
     } catch (stripeError: any) {
       console.error("Stripe accountLink creation failed:", stripeError);
 
-      // If the account doesn't exist (e.g. deleted in test mode), clear it from DB
-      if (stripeError.code === "resource_missing") {
-        console.log("Stripe account is missing, clearing from DB.");
+      // If the account doesn't exist (e.g. deleted in test mode OR mismatch between Test/Live), clear it from DB
+      const isMissingAccount =
+        stripeError.code === "resource_missing" ||
+        stripeError.message?.toLowerCase().includes("no such account") ||
+        stripeError.message?.toLowerCase().includes("account_invalid");
+
+      if (isMissingAccount) {
+        console.log("Stripe account is invalid or missing, clearing from DB.");
         await supabaseClient
           .from("profiles")
           .update({ stripe_connect_id: null })
           .eq("id", user.id);
-        throw new Error("Stripe Account wurde nicht gefunden (evtl. gelöscht). Bitte versuche es erneut, um einen neuen Account zu erstellen.");
+        throw new Error(
+          "Stripe Account wurde nicht gefunden oder gehört zum Test-Modus. Bitte versuche es erneut, um einen neuen Live-Account zu erstellen.",
+        );
       }
 
       throw stripeError;
     }
   } catch (error: any) {
     console.error("Edge Function Error:", error);
-    return new Response(JSON.stringify({ error: error.message || "Unknown error" }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 400,
-    });
+    return new Response(
+      JSON.stringify({ error: error.message || "Unknown error" }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      },
+    );
   }
 });
