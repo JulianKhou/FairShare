@@ -40,22 +40,39 @@ function LandingPage() {
           Fair, transparent und rechtssicher.
         </p>
 
-        <div className="flex gap-4 items-center animate-fade-in">
-          <Button
-            asChild
-            size="lg"
-            className="text-lg px-8 py-6 hover:scale-105 transition-transform shadow-lg shadow-simple-purple/20"
-          >
-            <Link to="/how-it-works">So funktioniert's</Link>
-          </Button>
-          <Button
-            onClick={user ? () => navigate("/overview") : handleLogin}
-            size="lg"
-            variant="outline"
-            className="text-lg px-8 py-6 hover:scale-105 transition-transform bg-background/50 backdrop-blur-md border-simple-purple/50 text-foreground hover:bg-simple-purple/20"
-          >
-            {user ? "Zur Plattform" : "Anmelden"}
-          </Button>
+        <div className="flex flex-col items-center gap-6 animate-fade-in">
+          <div className="flex gap-4 items-center">
+            <Button
+              asChild
+              size="lg"
+              className="text-lg px-8 py-6 hover:scale-105 transition-transform shadow-lg shadow-simple-purple/20"
+            >
+              <Link to="/how-it-works">So funktioniert's</Link>
+            </Button>
+            <Button
+              onClick={user ? () => navigate("/overview") : handleLogin}
+              size="lg"
+              variant="outline"
+              className="text-lg px-8 py-6 hover:scale-105 transition-transform bg-background/50 backdrop-blur-md border-simple-purple/50 text-foreground hover:bg-simple-purple/20"
+            >
+              {user ? "Zur Plattform" : "Anmelden"}
+            </Button>
+          </div>
+
+          <p className="text-xs text-muted-foreground/60 max-w-md text-center">
+            Mit der Anmeldung stimmst du unseren{" "}
+            <Link to="/agb" className="underline hover:text-simple-purple">
+              AGB
+            </Link>{" "}
+            und unserer{" "}
+            <Link
+              to="/datenschutz"
+              className="underline hover:text-simple-purple font-medium"
+            >
+              Datenschutzerklärung
+            </Link>{" "}
+            zu.
+          </p>
         </div>
       </section>
 
