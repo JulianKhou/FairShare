@@ -74,7 +74,7 @@ serve(async (req) => {
     let origin = req.headers.get("origin");
     if (!origin) {
       // Fallback if browser extensions stripped the Origin header
-      // Depending on environment, we might use a predefined env var 
+      // Depending on environment, we might use a predefined env var
       origin = Deno.env.get("PUBLIC_APP_URL") || "https://example.com";
       console.warn("Origin header missing, falling back to:", origin);
     }
@@ -83,7 +83,7 @@ serve(async (req) => {
     // Assuming pricing_value is in EUR currency unit (e.g. 50.00)
     // Stripe expects amounts in cents.
     const amount = Math.round(contract.pricing_value * 100);
-    const APP_FEE_PERCENTAGE = 0.10; // 10%
+    const APP_FEE_PERCENTAGE = 0.1; // 10%
     // Application fee is per-transaction. For subscriptions, it applies to invoices?
     // Stripe Connect subscriptions fees are handled differently (on the subscription object or invoice).
     // For now, we will set it on the session context if possible, or application_fee_percent.
@@ -112,8 +112,7 @@ serve(async (req) => {
             currency: contract.pricing_currency || "eur",
             product_data: {
               name: `License: ${contract.original_video_title}`,
-              description:
-                `License for using video: ${contract.original_video_title}`,
+              description: `License for using video: ${contract.original_video_title}`,
             },
             unit_amount: amount,
           },
@@ -164,7 +163,9 @@ serve(async (req) => {
 
       sessionParams.customer = customerId;
 
-      const USAGE_PRODUCT_ID = "prod_TyiT0TPODEVOFx";
+      // Hole die Product-ID aus den Umgebungsvariablen (Live) oder nutze die Test-ID als Fallback
+      const USAGE_PRODUCT_ID =
+        Deno.env.get("STRIPE_USAGE_PRODUCT_ID") || "prod_TyiT0TPODEVOFx";
 
       // Create a Price for this specific contract/amount because price_data
       // in Checkout does not support 'usage_type' or 'aggregate_usage'

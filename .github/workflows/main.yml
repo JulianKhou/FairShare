@@ -16,7 +16,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
+          cache: "npm"
 
       - name: Install Dependencies
         run: npm install
@@ -27,6 +27,7 @@ jobs:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           VITE_SUPABASE_KEY: ${{ secrets.VITE_SUPABASE_KEY }} # Füge das sicherheitshalber hinzu
+          VITE_STRIPE_PUBLIC_KEY: ${{ secrets.VITE_STRIPE_PUBLIC_KEY }}
 
       # NEU: Kopiert die .htaccess in den dist Ordner, damit sie mit hochgeladen wird
       - name: Copy .htaccess to dist
