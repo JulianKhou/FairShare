@@ -73,12 +73,24 @@ export default function Datenschutz() {
             (Titel, Views, Kategorie, Veröffentlichungsdatum), um den
             SimpleShare-Algorithmus anzuwenden.
           </p>
+          <p className="text-muted-foreground text-sm leading-relaxed mt-2">
+            <strong>Weitergabe und Offenlegung von Google-Nutzerdaten:</strong>{" "}
+            Ihre von Google übermittelten Daten werden ausschließlich intern
+            verwendet, um die Dienste von SimpleShare bereitzustellen (z.B.
+            Identifizierung im System, Erstellung von Lizenzverträgen). Wir
+            verkaufen Ihre Daten nicht. Eine Weitergabe an Dritte erfolgt nur,
+            wenn dies zur Vertragserfüllung zwingend erforderlich ist (z.B.
+            Übermittlung des Namens an den Vertragspartner bei Abschluss eines
+            Lizenzvertrags) oder wenn wir gesetzlich dazu verpflichtet sind.
+          </p>
 
           <h3 className="text-lg font-medium mb-1 mt-4">Supabase</h3>
           <p className="text-muted-foreground text-sm leading-relaxed">
             Wir nutzen Supabase als Backend-Dienst für Authentifizierung und
-            Datenspeicherung. Ihre Daten werden auf europäischen Servern
-            gespeichert. Weitere Informationen:{" "}
+            Datenspeicherung. Ihre Daten werden auf gesicherten, europäischen
+            Servern gespeichert. Durch die Nutzung von Supabase werden Ihre
+            (Google-)Daten verschlüsselt an deren Infrastruktur übertragen und
+            dort sicher verwaltet. Weitere Informationen:{" "}
             <a
               href="https://supabase.com/privacy"
               target="_blank"
@@ -91,7 +103,37 @@ export default function Datenschutz() {
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold mb-2">5. Zahlungsabwicklung</h2>
+          <h2 className="text-xl font-semibold mb-2">5. Datensicherheit</h2>
+          <p className="text-muted-foreground text-sm leading-relaxed">
+            Wir setzen moderne technische und organisatorische
+            Sicherheitsmaßnahmen (TOMs) ein, um Ihre Daten gegen zufällige oder
+            vorsätzliche Manipulationen, Verlust, Zerstörung oder gegen den
+            Zugriff unbefugter Personen zu schützen.
+          </p>
+          <ul className="text-muted-foreground text-sm list-disc list-inside mt-2 space-y-1">
+            <li>
+              <strong>SSL/TLS-Verschlüsselung:</strong> Aus Sicherheitsgründen
+              und zum Schutz der Übertragung vertraulicher Inhalte nutzt diese
+              Seite eine SSL- bzw. TLS-Verschlüsselung.
+            </li>
+            <li>
+              <strong>Sichere Infrastruktur:</strong> Die Speicherung erfolgt
+              bei Supabase (gehostet auf AWS), welche höchste
+              Sicherheitsstandards (ISO 27001, SOC2) erfüllen.
+            </li>
+            <li>
+              <strong>Verschlüsselung "At Rest":</strong> Sensible Daten in der
+              Datenbank werden verschlüsselt gespeichert.
+            </li>
+            <li>
+              <strong>Zugriffskontrolle:</strong> Nur autorisierte Personen
+              haben Zugriff auf die zur Verwaltung notwendigen Daten.
+            </li>
+          </ul>
+        </section>
+
+        <section>
+          <h2 className="text-xl font-semibold mb-2">6. Zahlungsabwicklung</h2>
 
           <h3 className="text-lg font-medium mb-1 mt-4">Stripe</h3>
           <p className="text-muted-foreground text-sm leading-relaxed">
