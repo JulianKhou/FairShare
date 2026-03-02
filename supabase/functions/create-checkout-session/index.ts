@@ -101,6 +101,7 @@ serve(async (req) => {
       },
       success_url: `https://simpleshare.eu/dashboard?success=true&contractId=${contract.id}&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `https://simpleshare.eu/dashboard?canceled=true&contractId=${contract.id}`,
+      allow_promotion_codes: true,
     };
 
     if (contract.pricing_model_type === 1) {
