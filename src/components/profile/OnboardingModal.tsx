@@ -19,6 +19,7 @@ import {
   ShoppingBag,
   CreditCard,
   Check,
+  SkipForward,
 } from "lucide-react";
 import { toast } from "sonner";
 import { createStripeConnectAccount } from "@/services/stripeFunctions";
@@ -296,10 +297,10 @@ export function OnboardingModal({
             <div className="flex justify-between items-center w-full">
               <Button
                 variant="ghost"
-                onClick={() => setStep("role")}
-                className="text-muted-foreground"
+                onClick={handleNextStep}
+                className="text-muted-foreground hover:bg-muted/50"
               >
-                Zurück
+                Später ausfüllen <SkipForward className="ml-2 w-4 h-4" />
               </Button>
               <Button onClick={handleNextStep} disabled={!isProfileStepValid}>
                 {isCreator
@@ -385,8 +386,12 @@ export function OnboardingModal({
             </div>
 
             <div className="flex justify-between items-center w-full">
-              <Button variant="outline" onClick={() => setStep("profile")}>
-                Zurück
+              <Button
+                variant="ghost"
+                onClick={handleNextStep}
+                className="text-muted-foreground hover:bg-muted/50"
+              >
+                Später <SkipForward className="ml-2 w-4 h-4" />
               </Button>
               <Button onClick={handleNextStep}>
                 Weiter <ArrowRight className="ml-2 w-4 h-4" />

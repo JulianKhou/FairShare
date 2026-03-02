@@ -10,10 +10,12 @@ import {
   CheckCircle2,
   AlertCircle,
   PlayCircle,
+  XCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { downloadLicensePDF } from "@/services/supabaseFunctions";
 import { createStripeCheckoutSession } from "@/services/stripeFunctions";
+import { updateReactionContract } from "@/services/supabaseCollum/reactionContract";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useQueryClient } from "@tanstack/react-query";
@@ -91,6 +93,23 @@ export const MyLicenses = () => {
       await downloadLicensePDF(license.id, fileName, license.pdf_storage_path);
     } catch (e: any) {
       toast.error(`Download fehlgeschlagen: ${e.message}`);
+    }
+  };
+
+  const handleCancelPayment = async (contractId: string) => {
+    try {
+      await updateReactionContract(contractId, { status: "CANCELLED" });
+      toast.success("Zahlung abgebrochen", {
+        description: "Die ausstehende Zahlung wurde erfolgreich storniert.",
+      });
+      if (user) {
+        queryClient.invalidateQueries({ queryKey: ["myLicenses", user.id] });
+        queryClient.invalidateQueries({
+          queryKey: ["dashboardStats", user.id],
+        }); // In case it's used elsewhere
+      }
+    } catch (e: any) {
+      toast.error("Stornierung fehlgeschlagen: " + e.message);
     }
   };
 
@@ -450,33 +469,44 @@ export const MyLicenses = () => {
                   <div className="flex gap-3 w-full sm:w-auto">
                     {license.status === "PENDING" &&
                       license.accepted_by_licensor && (
-                        <Button
-                          size="sm"
-                          className="flex-1 sm:flex-none bg-green-600 hover:bg-green-700 text-white"
-                          disabled={payingId === license.id}
-                          onClick={async () => {
-                            setPayingId(license.id);
-                            try {
-                              const { url } = await createStripeCheckoutSession(
-                                license.id,
-                              );
-                              if (url) window.location.href = url;
-                            } catch (e) {
-                              console.error(e);
-                              toast.error(
-                                e instanceof Error
-                                  ? e.message
-                                  : "Fehler beim Starten der Zahlung.",
-                              );
-                            } finally {
-                              setPayingId(null);
-                            }
-                          }}
-                        >
-                          {payingId === license.id
-                            ? "Lade..."
-                            : "Jetzt bezahlen"}
-                        </Button>
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleCancelPayment(license.id)}
+                            className="flex-none px-2 text-muted-foreground hover:bg-rose-50 hover:text-rose-600 border border-transparent"
+                            title="Zahlung abbrechen"
+                          >
+                            <XCircle className="w-4 h-4" />
+                            <span className="sr-only">Abbrechen</span>
+                          </Button>
+                          <Button
+                            size="sm"
+                            className="flex-1 sm:flex-none bg-green-600 hover:bg-green-700 text-white"
+                            disabled={payingId === license.id}
+                            onClick={async () => {
+                              setPayingId(license.id);
+                              try {
+                                const { url } =
+                                  await createStripeCheckoutSession(license.id);
+                                if (url) window.location.href = url;
+                              } catch (e) {
+                                console.error(e);
+                                toast.error(
+                                  e instanceof Error
+                                    ? e.message
+                                    : "Fehler beim Starten der Zahlung.",
+                                );
+                              } finally {
+                                setPayingId(null);
+                              }
+                            }}
+                          >
+                            {payingId === license.id
+                              ? "Lade..."
+                              : "Jetzt bezahlen"}
+                          </Button>
+                        </>
                       )}
                     <Button
                       variant="outline"

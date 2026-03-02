@@ -24,7 +24,9 @@ import {
   Loader2,
   Receipt,
   ExternalLink,
+  XCircle,
 } from "lucide-react";
+import { updateReactionContract } from "@/services/supabaseCollum/reactionContract";
 
 export default function UserDashboard() {
   const { user } = useAuth();
@@ -143,6 +145,23 @@ export default function UserDashboard() {
     } catch (e: any) {
       toast.error("Zahlung fehlgeschlagen: " + e.message);
       setPayingId(null);
+    }
+  };
+
+  const handleCancelPayment = async (contractId: string) => {
+    try {
+      await updateReactionContract(contractId, { status: "CANCELLED" });
+      toast.success("Zahlung abgebrochen", {
+        description: "Die ausstehende Zahlung wurde erfolgreich storniert.",
+      });
+      if (user) {
+        queryClient.invalidateQueries({ queryKey: ["openInvoices", user.id] });
+        queryClient.invalidateQueries({
+          queryKey: ["dashboardStats", user.id],
+        });
+      }
+    } catch (e: any) {
+      toast.error("Stornierung fehlgeschlagen: " + e.message);
     }
   };
 
@@ -451,31 +470,45 @@ export default function UserDashboard() {
                                   </span>
                                 </div>
                               </div>
-                              <div className="flex items-center gap-4 shrink-0 sm:w-auto w-full justify-between">
-                                <span className="text-base font-bold text-foreground">
+                              <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 shrink-0 sm:w-auto w-full justify-end sm:justify-between">
+                                <span className="text-base font-bold text-foreground sm:mr-4">
                                   {invoice.pricing_value.toFixed(2)}{" "}
                                   {invoice.pricing_currency?.toUpperCase() ||
                                     "EUR"}
                                 </span>
-                                <Button
-                                  size="sm"
-                                  onClick={() => handlePay(invoice.id)}
-                                  disabled={
-                                    payingId === invoice.id ||
-                                    pollingContractId === invoice.id
-                                  }
-                                  className="bg-rose-600 hover:bg-rose-700 text-white shadow-sm transition-all group-hover:shadow-md"
-                                >
-                                  {payingId === invoice.id ||
-                                  pollingContractId === invoice.id ? (
-                                    <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
-                                  ) : (
-                                    <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
-                                  )}
-                                  {pollingContractId === invoice.id
-                                    ? "Wird verarbeitet..."
-                                    : "Bezahlen"}
-                                </Button>
+                                <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() =>
+                                      handleCancelPayment(invoice.id)
+                                    }
+                                    className="text-muted-foreground hover:bg-rose-50 hover:text-rose-600 px-2"
+                                    title="Zahlung abbrechen"
+                                  >
+                                    <XCircle className="w-4 h-4" />
+                                    <span className="sr-only">Abbrechen</span>
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    onClick={() => handlePay(invoice.id)}
+                                    disabled={
+                                      payingId === invoice.id ||
+                                      pollingContractId === invoice.id
+                                    }
+                                    className="bg-rose-600 hover:bg-rose-700 text-white shadow-sm transition-all group-hover:shadow-md whitespace-nowrap"
+                                  >
+                                    {payingId === invoice.id ||
+                                    pollingContractId === invoice.id ? (
+                                      <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
+                                    ) : (
+                                      <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
+                                    )}
+                                    {pollingContractId === invoice.id
+                                      ? "Verarbeitet..."
+                                      : "Bezahlen"}
+                                  </Button>
+                                </div>
                               </div>
                             </div>
                           ))}
@@ -535,32 +568,46 @@ export default function UserDashboard() {
                                       pro 1.000 Aufrufe
                                     </span>
                                   </div>
-                                  <Button
-                                    size="sm"
-                                    onClick={() => handlePay(invoice.id)}
-                                    disabled={
-                                      payingId === invoice.id ||
-                                      pollingContractId === invoice.id
-                                    }
-                                    className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-all group-hover:shadow-md"
-                                  >
-                                    {payingId === invoice.id ||
-                                    pollingContractId === invoice.id ? (
-                                      <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
-                                    ) : (
-                                      <CreditCard className="w-3.5 h-3.5 mr-1.5" />
-                                    )}
-                                    <span className="hidden sm:inline">
-                                      {pollingContractId === invoice.id
-                                        ? "Verarbeitet..."
-                                        : "Abo abschließen"}
-                                    </span>
-                                    <span className="sm:hidden">
-                                      {pollingContractId === invoice.id
-                                        ? "Warten..."
-                                        : "Abschließen"}
-                                    </span>
-                                  </Button>
+                                  <div className="flex items-center gap-2 w-full sm:w-auto mt-3 sm:mt-0 justify-end">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() =>
+                                        handleCancelPayment(invoice.id)
+                                      }
+                                      className="text-muted-foreground hover:bg-rose-50 hover:text-rose-600 px-2"
+                                      title="Zahlung abbrechen"
+                                    >
+                                      <XCircle className="w-4 h-4" />
+                                      <span className="sr-only">Abbrechen</span>
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      onClick={() => handlePay(invoice.id)}
+                                      disabled={
+                                        payingId === invoice.id ||
+                                        pollingContractId === invoice.id
+                                      }
+                                      className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-all group-hover:shadow-md whitespace-nowrap"
+                                    >
+                                      {payingId === invoice.id ||
+                                      pollingContractId === invoice.id ? (
+                                        <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
+                                      ) : (
+                                        <CreditCard className="w-3.5 h-3.5 mr-1.5" />
+                                      )}
+                                      <span className="hidden sm:inline">
+                                        {pollingContractId === invoice.id
+                                          ? "Verarbeitet..."
+                                          : "Abo abschließen"}
+                                      </span>
+                                      <span className="sm:hidden">
+                                        {pollingContractId === invoice.id
+                                          ? "Warten..."
+                                          : "Abschließen"}
+                                      </span>
+                                    </Button>
+                                  </div>
                                 </div>
                               </div>
                             ),

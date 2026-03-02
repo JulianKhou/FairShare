@@ -44,7 +44,15 @@ export interface ReactionContract {
   stripe_customer_id?: string; // To link contract to Stripe Customer
   last_reported_view_count?: number; // Last count synced to Stripe (for delta reporting)
   billing_cycle_anchor?: string; // ISO Date of next billing cycle
-  status?: "PENDING" | "PAID" | "FAILED" | "ACTIVE" | "REJECTED"; // Added REJECTED for rejected requests
+  status?:
+    | "PENDING"
+    | "PAID"
+    | "FAILED"
+    | "ACTIVE"
+    | "REJECTED"
+    | "CANCELLED"
+    | "PAYMENT_FAILED"
+    | "EXPIRED";
 
   // File handling
   pdf_storage_path?: string; // Full URL to the license file
