@@ -463,7 +463,7 @@ export const VideoDetails = ({
                 <div className="p-6 border-b border-border/50 space-y-4">
                   <div>
                     <h2 className="text-xl font-bold mb-1">
-                      Lizensiere deine Reaction auf dieses Video
+                      Lizensiere dieses Video
                     </h2>
                     <p className="text-sm text-muted-foreground">
                       Berechne deinen pers\u00f6nlichen Lizenzpreis basierend
@@ -479,7 +479,7 @@ export const VideoDetails = ({
                         }}
                         className="rounded-full font-semibold shadow-lg shadow-primary/10 px-6"
                       >
-                        <ShoppingCart className="h-4 w-4 mr-2" /> Reaction
+                        <ShoppingCart className="h-4 w-4 mr-2" /> Video
                         lizensieren
                       </Button>
                     </div>
@@ -516,12 +516,12 @@ export const VideoDetails = ({
                         )}
                         <div className="flex-1 min-w-0">
                           <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest leading-none mb-1">
-                            Mein Video
+                            Lizenziertes Video
                           </p>
                           <p className="text-sm font-bold truncate">
                             {licensedVideoMetadata?.title ||
                               myExistingLicense.reaction_video_id ||
-                              "Reaction-Video"}
+                              "Video"}
                           </p>
                         </div>
                       </div>
@@ -1049,8 +1049,7 @@ export const VideoDetails = ({
                               Zur kommerziellen Nutzung freigeben
                             </FieldLabel>
                             <FieldDescription>
-                              Andere k\u00f6nnen Reaktionen auf dieses Video
-                              lizenzieren
+                              Andere k\u00f6nnen dieses Video lizenzieren
                             </FieldDescription>
                           </FieldContent>
                           <Switch
@@ -1128,7 +1127,7 @@ export const VideoDetails = ({
                             )}
                             <div className="mt-4 p-3 bg-primary/5 rounded-lg border border-primary/20">
                               <p className="text-sm font-medium mb-2">
-                                Lizenz f\u00fcr deine Reaction erwerben:
+                                Lizenz f\u00fcr dein Video erwerben:
                               </p>
                               <BuyOptions
                                 videoCreator={activeFoundVideo}

@@ -220,7 +220,9 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
 
       {!isDirectLink && (
         <FieldSet className="w-full max-w-xs space-y-1">
-          <FieldLegend variant="label">Select your Reaction Video</FieldLegend>
+          <FieldLegend variant="label">
+            Mein Video f\u00fcr diese Lizenz
+          </FieldLegend>
           {isLoadingVideos ? (
             <FieldDescription>Loading videos...</FieldDescription>
           ) : myVideos.length > 0 ? (
@@ -271,7 +273,7 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
                   <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-48 p-2 bg-popover text-popover-foreground text-xs rounded shadow-lg border border-border opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
                     CPM steht für Cost-per-Mille und bedeutet "Kosten pro 1.000
                     Aufrufe". Dieser Betrag wird vierteljährlich basierend auf
-                    den Views deines Reaction-Videos abgerechnet.
+                    den Views deines Videos abgerechnet.
                   </div>
                 </div>
               </FieldLabel>
