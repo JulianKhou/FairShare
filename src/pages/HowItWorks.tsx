@@ -254,7 +254,7 @@ export default function HowItWorks() {
       {/* Final Section (Simulator & Details) */}
       <section
         id="simulator-section"
-        className="flex flex-col justify-center min-h-[calc(100vh-5rem)] w-full py-16 gap-8"
+        className="flex flex-col justify-center min-h-[calc(100vh-5rem)] h-auto w-full py-20 gap-12"
       >
         <div className="px-4 max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           {/* Left Column: Simulator Content */}

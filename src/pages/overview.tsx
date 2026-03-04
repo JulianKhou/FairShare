@@ -2,58 +2,115 @@ import { useState } from "react";
 import ShowVideoList from "../components/showVideos/showVideoList";
 import CreatorList from "../components/showCreators/CreatorList";
 import { useAuth } from "../hooks/auth/useAuth";
-import { IconVideo, IconUsers } from "@tabler/icons-react";
+import {
+  IconVideo,
+  IconUsers,
+  IconSearch,
+  IconSparkles,
+} from "@tabler/icons-react";
 
 type ViewMode = "videos" | "channels";
 
 function Overview() {
   const { user } = useAuth();
   const [viewMode, setViewMode] = useState<ViewMode>("videos");
+  const [searchQuery, setSearchQuery] = useState("");
 
   return (
-    <div className="flex flex-col items-center pt-10 pb-20 gap-8 w-full">
-      <div className="w-full max-w-7xl px-4 lg:px-8">
-        
-        {/* Toggle Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4 border-b border-border/50 pb-4">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">
-            Übersicht
-          </h1>
+    <div className="flex flex-col w-full">
+      {/* Hero Banner */}
+      <div className="relative w-full overflow-hidden bg-gradient-to-b from-simple-purple/10 via-background to-background py-16 pb-12 px-4">
+        {/* Background blur orbs */}
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-simple-purple/20 blur-[120px] rounded-full pointer-events-none" />
+        <div className="absolute top-0 right-1/4 w-96 h-96 bg-simple-teal/20 blur-[120px] rounded-full pointer-events-none" />
 
-          {/* Segmented toggle */}
-          <div className="flex items-center bg-muted/50 backdrop-blur-sm rounded-full p-1 border border-border/50">
+        <div className="relative z-10 max-w-3xl mx-auto text-center flex flex-col items-center gap-6">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-simple-purple/15 border border-simple-purple/30 text-simple-purple text-sm font-semibold">
+            <IconSparkles size={14} />
+            Lizenzierbare Inhalte
+          </div>
+
+          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-foreground">
+            Entdecke{" "}
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-simple-purple to-simple-teal">
+              lizenzierbare
+            </span>{" "}
+            Videos
+          </h1>
+          <p className="text-muted-foreground text-lg max-w-xl">
+            Stöbere durch tausende Videos von Creatoren, die ihr Content zur
+            Lizenzierung freigegeben haben.
+          </p>
+
+          {/* Search Input */}
+          <div className="relative w-full max-w-xl">
+            <IconSearch
+              size={18}
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground"
+            />
+            <input
+              type="text"
+              placeholder={
+                viewMode === "videos"
+                  ? "Video oder Kanal suchen…"
+                  : "Kanal suchen…"
+              }
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-11 pr-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-simple-purple/50 focus:ring-2 focus:ring-simple-purple/20 transition-all backdrop-blur-md text-sm"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Content Section */}
+      <div className="w-full max-w-7xl mx-auto px-4 lg:px-8 pb-20">
+        {/* Upgraded Toggle */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+          <div className="flex items-center bg-white/5 backdrop-blur-sm rounded-full p-1 border border-white/10 self-start">
             <button
               onClick={() => setViewMode("videos")}
-              className={`flex items-center gap-2 px-5 py-2 rounded-full text-sm font-semibold transition-all duration-300 ${
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold transition-all duration-300 ${
                 viewMode === "videos"
-                  ? "bg-background shadow-sm text-foreground"
+                  ? "bg-gradient-to-r from-simple-purple to-simple-teal text-white shadow-lg shadow-simple-purple/20"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              <IconVideo className="h-4 w-4" /> Öffentliche Videos
+              <IconVideo className="h-4 w-4" />
+              Öffentliche Videos
             </button>
             <button
               onClick={() => setViewMode("channels")}
-              className={`flex items-center gap-2 px-5 py-2 rounded-full text-sm font-semibold transition-all duration-300 ${
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold transition-all duration-300 ${
                 viewMode === "channels"
-                  ? "bg-background shadow-sm text-foreground"
+                  ? "bg-gradient-to-r from-simple-purple to-simple-teal text-white shadow-lg shadow-simple-purple/20"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              <IconUsers className="h-4 w-4" /> Alle Kanäle
+              <IconUsers className="h-4 w-4" />
+              Alle Kanäle
             </button>
           </div>
+
+          {searchQuery && (
+            <p className="text-sm text-muted-foreground">
+              Suche nach:{" "}
+              <span className="font-semibold text-foreground">
+                "{searchQuery}"
+              </span>
+            </p>
+          )}
         </div>
 
         {/* Content */}
         {viewMode === "videos" ? (
-          user ? (
-            <ShowVideoList videoType="licensed" userId={user.id} />
-          ) : (
-            <ShowVideoList videoType="licensed" userId={undefined} />
-          )
+          <ShowVideoList
+            videoType="licensed"
+            userId={user?.id}
+            searchQuery={searchQuery}
+          />
         ) : (
-          <CreatorList />
+          <CreatorList searchQuery={searchQuery} />
         )}
       </div>
     </div>
