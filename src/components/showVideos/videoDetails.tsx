@@ -463,11 +463,11 @@ export const VideoDetails = ({
                 <div className="p-6 border-b border-border/50 space-y-4">
                   <div>
                     <h2 className="text-xl font-bold mb-1">
-                      Lizensiere dieses Video
+                      Lizenz f\u00fcr deine Reaction erwerben
                     </h2>
                     <p className="text-sm text-muted-foreground">
-                      Berechne deinen pers\u00f6nlichen Lizenzpreis basierend
-                      auf deinen Aufrufzahlen.
+                      W\u00e4hle dein Video aus und erhalte sofort ein faires
+                      Angebot f\u00fcr deine Lizenz.
                     </p>
                   </div>
                   {user && !myExistingLicense && (
@@ -479,8 +479,8 @@ export const VideoDetails = ({
                         }}
                         className="rounded-full font-semibold shadow-lg shadow-primary/10 px-6"
                       >
-                        <ShoppingCart className="h-4 w-4 mr-2" /> Video
-                        lizensieren
+                        <ShoppingCart className="h-4 w-4 mr-2" /> Lizenz
+                        f\u00fcr Reaction kaufen
                       </Button>
                     </div>
                   )}
