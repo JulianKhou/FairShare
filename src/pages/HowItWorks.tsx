@@ -4,7 +4,6 @@ import {
   IconChartLine,
   IconScale,
   IconHeartHandshake,
-  IconRepeat,
   IconInfoCircle,
   IconVideo,
   IconBrandYoutube,
@@ -311,30 +310,6 @@ export default function HowItWorks() {
                   wertgeschätzt wird. React-Kanäle wissen, dass sie rechtlich
                   sicher sind. Eine Win-Win-Situation.
                 </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Subscription Pricing Content */}
-        <div className="px-4 max-w-4xl mx-auto w-full">
-          <div className="bg-linear-to-br from-simple-purple/10 to-simple-teal/10 p-10 rounded-[40px] border border-white/10 relative overflow-hidden text-center">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-simple-teal/20 blur-[100px] pointer-events-none"></div>
-            <div className="relative z-10 flex flex-col items-center">
-              <div className="w-16 h-16 bg-foreground/10 text-foreground rounded-2xl flex items-center justify-center mb-6">
-                <IconRepeat size={32} />
-              </div>
-              <h2 className="text-3xl font-bold mb-4">
-                Abo-Alternative für Power-User
-              </h2>
-              <p className="text-muted-foreground text-lg mb-8 max-w-2xl">
-                Anstatt jedes Video einzeln zu lizenzieren, bieten wir für
-                Reaction-Kanäle auch Pakete an. Ein Beispiel: **0,50 € pro 1.000
-                generierte Klicks** im Monat.
-              </p>
-              <div className="inline-flex items-center gap-2 px-6 py-2 bg-foreground/5 rounded-full text-sm font-medium border border-foreground/10">
-                <IconInfoCircle size={16} />
-                <span>Ideal für Kanäle mit hohem Upload-Volumen</span>
               </div>
             </div>
           </div>

@@ -201,16 +201,32 @@ export default function SimpleShareSimulator() {
           <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex flex-col gap-1 w-full md:w-1/2">
               <span className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">
-                Geschätzter Preis (Brutto)
+                Geschätzter Preis (Total)
               </span>
-              <span className="text-4xl font-bold bg-clip-text text-transparent bg-linear-to-r from-simple-purple to-simple-teal">
-                {price.toLocaleString("de-DE", {
-                  style: "currency",
-                  currency: "EUR",
-                })}
-              </span>
-              <span className="text-xs text-muted-foreground mt-1">
-                Für eine unbefristete Nutzungslizenz (Buyout).
+              <div className="flex items-baseline gap-2 flex-wrap">
+                <span className="text-4xl font-bold bg-clip-text text-transparent bg-linear-to-r from-simple-purple to-simple-teal">
+                  {price.toLocaleString("de-DE", {
+                    style: "currency",
+                    currency: "EUR",
+                  })}
+                </span>
+                {viewsReactor > 0 && (
+                  <span className="text-sm font-semibold text-muted-foreground px-2 py-1 bg-white/5 rounded-md border border-white/10">
+                    ≈{" "}
+                    {((price / viewsReactor) * 1000).toLocaleString("de-DE", {
+                      style: "currency",
+                      currency: "EUR",
+                    })}{" "}
+                    CPM
+                  </span>
+                )}
+              </div>
+              <span className="text-xs text-muted-foreground mt-2">
+                Pauschalpreis für{" "}
+                <strong className="text-foreground">
+                  1 Jahr unbegrenzte Nutzung
+                </strong>
+                . Ideal kalkulierbar – keine versehentlichen Abos.
               </span>
             </div>
 
