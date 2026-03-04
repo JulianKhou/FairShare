@@ -106,6 +106,52 @@ export const VideoDetails = ({
     mode,
   );
 
+  // Check for existing license of the current user
+  const myExistingLicense = contracts.find(
+    (c) =>
+      c.licensee_id === user?.id &&
+      ["PAID", "ACTIVE", "PENDING"].includes(c.status || ""),
+  );
+
+  const [licensedVideoMetadata, setLicensedVideoMetadata] = useState<{
+    title: string;
+    thumbnail: string;
+  } | null>(null);
+
+  useEffect(() => {
+    if (myExistingLicense?.reaction_video_id) {
+      // 1. Check local myVideos first
+      const fromMine = myVideos?.find(
+        (v) => v.id === myExistingLicense.reaction_video_id,
+      );
+      if (fromMine) {
+        setLicensedVideoMetadata({
+          title: fromMine.title,
+          thumbnail: fromMine.thumbnail,
+        });
+      } else {
+        // 2. Fetch from database as fallback
+        import("@/services/supabaseCollum/client").then(({ supabase }) => {
+          supabase
+            .from("videos")
+            .select("title, thumbnail")
+            .eq("id", myExistingLicense.reaction_video_id)
+            .maybeSingle()
+            .then(({ data }) => {
+              if (data) {
+                setLicensedVideoMetadata({
+                  title: data.title,
+                  thumbnail: data.thumbnail,
+                });
+              }
+            });
+        });
+      }
+    } else {
+      setLicensedVideoMetadata(null);
+    }
+  }, [myExistingLicense, myVideos]);
+
   const handleAccept = async (contractId: string) => {
     if (processingIds.has(contractId)) return;
     setProcessingIds((prev) => new Set(prev).add(contractId));
@@ -424,7 +470,7 @@ export const VideoDetails = ({
                       auf deinen Aufrufzahlen.
                     </p>
                   </div>
-                  {user && (
+                  {user && !myExistingLicense && (
                     <div className="flex gap-2">
                       <Button
                         onClick={() => {
@@ -436,6 +482,64 @@ export const VideoDetails = ({
                         <ShoppingCart className="h-4 w-4 mr-2" /> Reaction
                         lizensieren
                       </Button>
+                    </div>
+                  )}
+
+                  {/* ALREADY LICENSED UI */}
+                  {user && myExistingLicense && (
+                    <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Check className="h-4 w-4 text-emerald-500" />
+                          <span className="text-sm font-bold text-emerald-600">
+                            Bereits lizenziert
+                          </span>
+                        </div>
+                        <Badge
+                          variant="outline"
+                          className="bg-emerald-500 text-white border-transparent px-2 py-0.5 text-[10px]"
+                        >
+                          {myExistingLicense.status}
+                        </Badge>
+                      </div>
+
+                      <div className="flex items-center gap-3 p-2.5 bg-background rounded-xl border border-emerald-500/10 shadow-sm">
+                        {licensedVideoMetadata?.thumbnail ? (
+                          <img
+                            src={licensedVideoMetadata.thumbnail}
+                            className="w-16 h-10 object-cover rounded-md border border-border/50"
+                          />
+                        ) : (
+                          <div className="w-16 h-10 bg-muted rounded-md flex items-center justify-center">
+                            <Youtube className="h-4 w-4 text-muted-foreground/30" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest leading-none mb-1">
+                            Mein Video
+                          </p>
+                          <p className="text-sm font-bold truncate">
+                            {licensedVideoMetadata?.title ||
+                              myExistingLicense.reaction_video_id ||
+                              "Reaction-Video"}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-4 pt-1">
+                        <p className="text-[10px] text-muted-foreground italic">
+                          Lizenziert am{" "}
+                          {new Date(
+                            myExistingLicense.created_at,
+                          ).toLocaleDateString("de-DE")}
+                        </p>
+                        <button
+                          onClick={() => navigate("/dashboard")}
+                          className="text-xs font-semibold text-primary hover:underline flex items-center gap-1"
+                        >
+                          Zum Dashboard <ArrowRight className="h-3 w-3" />
+                        </button>
+                      </div>
                     </div>
                   )}
                   {/* Checkout Wizard Modal */}
