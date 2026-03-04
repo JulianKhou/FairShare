@@ -179,6 +179,13 @@ export const VideoDetails = ({
     return views.toString();
   };
 
+  const getHighResThumbnail = (video: any) => {
+    if (!video) return "";
+    const videoId = video.yt_id || video.id;
+    if (!videoId || videoId.length > 20) return video.thumbnail; // Fallback if not a standard YT ID
+    return `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+  };
+
   return (
     <>
       {/* Backdrop Overlay */}
@@ -203,50 +210,93 @@ export const VideoDetails = ({
 
           {/* Scrollable Content – hidden scrollbar */}
           <div className="flex-1 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-            {/* ── PUBLIC: Full-Width Hero ── */}
+            {/* ── PUBLIC: Side-by-Side Hero (Optimized) ── */}
             {mode === "public" && (
-              <div className="relative w-full shrink-0">
-                <img
-                  src={video.thumbnail}
-                  alt={video.title}
-                  className="w-full aspect-video object-cover"
-                  referrerPolicy="no-referrer"
-                />
-                <div className="absolute inset-0 bg-linear-to-t from-black/85 via-black/25 to-transparent" />
-                {isLicensed && (
-                  <div className="absolute top-4 right-14">
-                    <Badge className="bg-green-500 text-white border-transparent shadow-lg px-3 py-1 text-xs">
-                      <Shield className="h-3 w-3 mr-1" /> Lizenz verfügbar
-                    </Badge>
-                  </div>
-                )}
-                <div className="absolute bottom-0 left-0 right-0 p-5">
+              <div className="flex flex-col md:flex-row bg-black overflow-hidden border-b border-border/50">
+                {/* Thumbnail Column */}
+                <div className="relative w-full md:w-[60%] lg:w-[65%] aspect-video md:aspect-auto md:h-[400px]">
+                  <img
+                    src={getHighResThumbnail(video)}
+                    alt={video.title}
+                    className="w-full h-full object-cover"
+                    referrerPolicy="no-referrer"
+                    onError={(e) => {
+                      // Fallback if maxresdefault doesn't exist
+                      const target = e.target as HTMLImageElement;
+                      if (!target.src.includes("hqdefault")) {
+                        target.src = target.src.replace(
+                          "maxresdefault",
+                          "hqdefault",
+                        );
+                      }
+                    }}
+                  />
+                  <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent md:hidden" />
+                  {isLicensed && (
+                    <div className="absolute top-4 left-4">
+                      <Badge className="bg-green-500 text-white border-transparent shadow-lg px-3 py-1 text-xs">
+                        <Shield className="h-3 w-3 mr-1" /> Lizenz verfügbar
+                      </Badge>
+                    </div>
+                  )}
+                </div>
+
+                {/* Info Column */}
+                <div className="flex-1 p-6 md:p-8 flex flex-col justify-center bg-card md:bg-black/95">
                   {video.channel_title && (
-                    <p className="text-white/70 text-xs font-medium mb-1">
+                    <p className="text-primary text-xs font-bold uppercase tracking-wider mb-2">
                       {video.channel_title}
                     </p>
                   )}
-                  <h1 className="text-xl md:text-2xl font-bold text-white leading-tight line-clamp-2 mb-3">
+                  <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-foreground md:text-white leading-tight mb-4">
                     {video.title}
                   </h1>
-                  <div className="flex items-center gap-5">
-                    <div className="flex items-center gap-1.5 text-white/80 text-sm">
-                      <Eye className="h-4 w-4" />
-                      <span className="font-semibold">
-                        {formatViews(activeMainVideo.last_view_count || 0)}
-                      </span>
-                      <span className="text-white/60">Views</span>
-                    </div>
-                    {contracts.length > 0 && (
-                      <div className="flex items-center gap-1.5 text-sm">
-                        <Users className="h-4 w-4 text-green-400" />
-                        <span className="font-semibold text-green-400">
-                          {contracts.length}
+
+                  <div className="flex flex-wrap items-center gap-6">
+                    <div className="flex items-center gap-2 text-muted-foreground md:text-white/80 text-sm">
+                      <div className="p-2 rounded-lg bg-primary/10 md:bg-white/10">
+                        <Eye className="h-4 w-4 text-primary md:text-white" />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="font-bold text-foreground md:text-white">
+                          {formatViews(activeMainVideo.last_view_count || 0)}
                         </span>
-                        <span className="text-white/60">Lizenzen vergeben</span>
+                        <span className="text-[10px] uppercase tracking-tighter opacity-70">
+                          Views
+                        </span>
+                      </div>
+                    </div>
+
+                    {contracts.length > 0 && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <div className="p-2 rounded-lg bg-green-500/10 md:bg-green-500/20">
+                          <Users className="h-4 w-4 text-green-500" />
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="font-bold text-green-500">
+                            {contracts.length}
+                          </span>
+                          <span className="text-[10px] uppercase tracking-tighter text-green-500/70">
+                            Lizenzen
+                          </span>
+                        </div>
                       </div>
                     )}
                   </div>
+
+                  {video.yt_link && (
+                    <div className="mt-8 pt-6 border-t border-border/50 md:border-white/10">
+                      <a
+                        href={video.yt_link}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-primary transition-colors"
+                      >
+                        <ExternalLink className="h-3.5 w-3.5" /> Auf YouTube
+                        ansehen
+                      </a>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -383,7 +433,7 @@ export const VideoDetails = ({
                         }}
                         className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-all ${reactionInputMode === "mine" ? "bg-primary text-white border-primary" : "border-border text-muted-foreground hover:border-primary/50"}`}
                       >
-                        Aus meinen Videos w\u00e4hlen
+                        Meine Videos auswählen
                       </button>
                       <button
                         onClick={() => {
