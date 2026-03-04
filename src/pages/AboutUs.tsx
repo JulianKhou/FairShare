@@ -6,6 +6,7 @@ import {
   IconShieldCheck,
   IconUsers,
 } from "@tabler/icons-react";
+import SEO from "../components/common/SEO";
 
 export default function AboutUs() {
   useEffect(() => {
@@ -14,6 +15,10 @@ export default function AboutUs() {
 
   return (
     <div className="min-h-screen bg-background text-foreground pb-20">
+      <SEO
+        title="Über Uns | SimpleShare"
+        description="Lerne die Mission und Vision hinter SimpleShare kennen. Wir revolutionieren den Reaction-Content fair und transparent."
+      />
       {/* Hero Section */}
       <section className="relative pt-24 pb-16 px-4 text-center overflow-hidden">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-5xl h-[500px] bg-simple-purple/10 blur-[120px] rounded-full pointer-events-none"></div>

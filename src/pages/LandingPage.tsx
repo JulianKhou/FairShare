@@ -14,6 +14,7 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/auth/useAuth";
 import { handleLogin } from "../hooks/auth/useHandleAuth";
+import SEO from "../components/common/SEO";
 
 function LandingPage() {
   const navigate = useNavigate();
@@ -21,6 +22,10 @@ function LandingPage() {
 
   return (
     <div className="flex flex-col flex-1 bg-background">
+      <SEO
+        title="SimpleShare | Der Marktplatz für Videolizenzen"
+        description="Damit du endlich den fairen Anteil an deinen Videos bekommst. Sicherer Marktplatz für Lizenzen und Content-Creator."
+      />
       {/* Hero Section */}
       <section className="flex flex-col items-center justify-center px-4 py-20 md:py-32 bg-linear-to-b from-simple-purple/10 to-background">
         <div className="flex items-center gap-4 mb-8 animate-fade-in">

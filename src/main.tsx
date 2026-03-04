@@ -32,6 +32,8 @@ import VideoPage from "./pages/VideoPage.tsx";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 
+import { HelmetProvider } from "react-helmet-async";
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -43,74 +45,76 @@ const queryClient = new QueryClient({
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <AuthProvider>
-          <VideoSyncProvider>
-            <BrowserRouter basename="/">
-              <div className="flex flex-col min-h-screen">
-                <Header />
+    <HelmetProvider>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider>
+          <AuthProvider>
+            <VideoSyncProvider>
+              <BrowserRouter basename="/">
+                <div className="flex flex-col min-h-screen">
+                  <Header />
 
-                <main className="flex-1 pt-20">
-                  <Routes>
-                    <Route path="/" element={<LandingPage />} />
-                    <Route path="/how-it-works" element={<HowItWorks />} />
-                    <Route path="/overview" element={<Overview />} />
-                    <Route
-                      path="/upload"
-                      element={<Navigate to="/overview" replace />}
-                    />
-                    <Route
-                      path="/my-videos"
-                      element={<Navigate to="/overview?view=mine" replace />}
-                    />
-                    <Route path="/dashboard" element={<UserDashboard />} />
-                    <Route path="/profile" element={<UserDashboard />} />
-                    <Route path="/creator/:id" element={<CreatorProfile />} />
-                    <Route path="/video/:videoId" element={<VideoPage />} />
-                    <Route path="/my-channel" element={<MyChannel />} />
-                    <Route path="/settings" element={<SettingsPage />} />
+                  <main className="flex-1 pt-20">
+                    <Routes>
+                      <Route path="/" element={<LandingPage />} />
+                      <Route path="/how-it-works" element={<HowItWorks />} />
+                      <Route path="/overview" element={<Overview />} />
+                      <Route
+                        path="/upload"
+                        element={<Navigate to="/overview" replace />}
+                      />
+                      <Route
+                        path="/my-videos"
+                        element={<Navigate to="/overview?view=mine" replace />}
+                      />
+                      <Route path="/dashboard" element={<UserDashboard />} />
+                      <Route path="/profile" element={<UserDashboard />} />
+                      <Route path="/creator/:id" element={<CreatorProfile />} />
+                      <Route path="/video/:videoId" element={<VideoPage />} />
+                      <Route path="/my-channel" element={<MyChannel />} />
+                      <Route path="/settings" element={<SettingsPage />} />
 
-                    {/* Legal Pages */}
-                    <Route path="/impressum" element={<Impressum />} />
-                    <Route path="/datenschutz" element={<Datenschutz />} />
-                    <Route path="/agb" element={<AGB />} />
-                    <Route path="/about-us" element={<AboutUs />} />
+                      {/* Legal Pages */}
+                      <Route path="/impressum" element={<Impressum />} />
+                      <Route path="/datenschutz" element={<Datenschutz />} />
+                      <Route path="/agb" element={<AGB />} />
+                      <Route path="/about-us" element={<AboutUs />} />
 
-                    {/* Admin Routes */}
-                    <Route element={<AdminProtectedRoute />}>
-                      <Route element={<AdminLayout />}>
-                        <Route path="/admin" element={<AdminDashboard />} />
-                        <Route path="/admin/users" element={<AdminUsers />} />
-                        <Route
-                          path="/admin/contracts"
-                          element={<AdminContracts />}
-                        />
-                        <Route
-                          path="/admin/support"
-                          element={<AdminSupport />}
-                        />
-                        <Route
-                          path="/admin/settings"
-                          element={
-                            <div className="font-bold text-2xl">
-                              System-Relevante Parameter (WIP)
-                            </div>
-                          }
-                        />
+                      {/* Admin Routes */}
+                      <Route element={<AdminProtectedRoute />}>
+                        <Route element={<AdminLayout />}>
+                          <Route path="/admin" element={<AdminDashboard />} />
+                          <Route path="/admin/users" element={<AdminUsers />} />
+                          <Route
+                            path="/admin/contracts"
+                            element={<AdminContracts />}
+                          />
+                          <Route
+                            path="/admin/support"
+                            element={<AdminSupport />}
+                          />
+                          <Route
+                            path="/admin/settings"
+                            element={
+                              <div className="font-bold text-2xl">
+                                System-Relevante Parameter (WIP)
+                              </div>
+                            }
+                          />
+                        </Route>
                       </Route>
-                    </Route>
-                  </Routes>
-                </main>
+                    </Routes>
+                  </main>
 
-                <Footer />
-              </div>
-              <Toaster position="top-right" richColors />
-            </BrowserRouter>
-          </VideoSyncProvider>
-        </AuthProvider>
-      </ThemeProvider>
-      <ReactQueryDevtools initialIsOpen={false} />
-    </QueryClientProvider>
+                  <Footer />
+                </div>
+                <Toaster position="top-right" richColors />
+              </BrowserRouter>
+            </VideoSyncProvider>
+          </AuthProvider>
+        </ThemeProvider>
+        <ReactQueryDevtools initialIsOpen={false} />
+      </QueryClientProvider>
+    </HelmetProvider>
   </React.StrictMode>,
 );
