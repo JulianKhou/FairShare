@@ -140,6 +140,12 @@ export function SearchDropdown() {
   const { data: creators = [] } = useCreators();
   const { videos = [] } = useVideos("licensed", undefined);
 
+  // Detect OS for correct shortcut display
+  const isMac =
+    typeof navigator !== "undefined" &&
+    /Mac|iPhone|iPad|iPod/i.test(navigator.platform);
+  const shortcutLabel = isMac ? "⌘K" : "Strg+K";
+
   // Close on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -299,7 +305,7 @@ export function SearchDropdown() {
             setOpen(true);
           }}
           onFocus={() => setOpen(true)}
-          placeholder="Suche… (Strg+K)"
+          placeholder={`Suche… (${shortcutLabel})`}
           className="bg-transparent outline-none text-sm flex-1 text-foreground placeholder:text-muted-foreground min-w-0"
         />
         {query && (
