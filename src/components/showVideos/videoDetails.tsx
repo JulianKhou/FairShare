@@ -50,6 +50,8 @@ import { usePendingContractsForVideo } from "@/hooks/queries/usePendingContracts
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { getProfile, Profile } from "@/services/supabaseCollum/profiles";
 import { useNavigate } from "react-router-dom";
+import { useVideos } from "../../hooks/youtube/useVideos";
+import { useAuth } from "../../hooks/auth/useAuth";
 
 interface VideoDetailsProps {
   video: any;
@@ -80,6 +82,14 @@ export const VideoDetails = ({
     isLoading: isLoadingReaction,
   } = useFindVideo();
   const [reactionStepDone, setReactionStepDone] = useState(false);
+  const [reactionInputMode, setReactionInputMode] = useState<"mine" | "url">(
+    "mine",
+  );
+  const [selectedMyVideo, setSelectedMyVideo] = useState<any>(null);
+  // Fetch logged-in user's own videos
+  const { user } = useAuth();
+  const { videos: myVideos, isLoading: isLoadingMyVideos } =
+    useVideos("myVideos");
   // Creator profile
   const [creatorProfile, setCreatorProfile] = useState<Profile | null>(null);
   useEffect(() => {
@@ -703,7 +713,7 @@ export const VideoDetails = ({
                         {/* Separator */}
                         <div className="border-t border-border/50" />
 
-                        {/* Step: Reaction Video */}
+                        {/* Step 1: Reaction Video */}
                         <div className="p-4 rounded-xl bg-primary/5 border border-primary/10 space-y-3">
                           <div className="flex items-center gap-2">
                             <div className="w-6 h-6 rounded-full bg-primary/20 text-primary text-xs font-bold flex items-center justify-center">
@@ -714,67 +724,162 @@ export const VideoDetails = ({
                             </h3>
                           </div>
                           <p className="text-xs text-muted-foreground pl-8">
-                            Der Lizenzpreis hängt von deinen eigenen
-                            Aufrufzahlen ab. Füge den YouTube-Link deiner
-                            Reaction ein.
+                            Der Lizenzpreis hängt von deinen Aufrufzahlen ab.
                           </p>
 
-                          <InputGroup className="max-w-full">
-                            <InputGroupInput
-                              placeholder="https://youtube.com/watch?v=..."
-                              value={reactionUrl}
-                              onChange={(e) => {
-                                setReactionUrl(e.target.value);
-                                setReactionStepDone(false);
-                              }}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter" && reactionUrl) {
-                                  findReaction(reactionUrl);
-                                  setReactionStepDone(true);
-                                }
-                              }}
-                            />
-                            <InputGroupAddon>
-                              <Search className="w-4 h-4" />
-                            </InputGroupAddon>
-                          </InputGroup>
+                          {/* Mode toggle */}
+                          {user && (
+                            <div className="pl-8 flex gap-2">
+                              <button
+                                onClick={() => {
+                                  setReactionInputMode("mine");
+                                  setSelectedMyVideo(null);
+                                  setReactionStepDone(false);
+                                }}
+                                className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-all ${
+                                  reactionInputMode === "mine"
+                                    ? "bg-primary text-white border-primary"
+                                    : "border-border text-muted-foreground hover:border-primary/50"
+                                }`}
+                              >
+                                Aus meinen Videos wählen
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setReactionInputMode("url");
+                                  setSelectedMyVideo(null);
+                                  setReactionStepDone(false);
+                                }}
+                                className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-all ${
+                                  reactionInputMode === "url"
+                                    ? "bg-primary text-white border-primary"
+                                    : "border-border text-muted-foreground hover:border-primary/50"
+                                }`}
+                              >
+                                YouTube-Link eingeben
+                              </button>
+                            </div>
+                          )}
 
-                          <Button
-                            className="w-full"
-                            onClick={() => {
-                              if (reactionUrl) {
-                                findReaction(reactionUrl);
-                                setReactionStepDone(true);
-                              }
-                            }}
-                            disabled={isLoadingReaction || !reactionUrl}
-                          >
-                            {isLoadingReaction ? (
-                              <>
-                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                Suche...
-                              </>
-                            ) : (
-                              <>
-                                <Search className="h-4 w-4 mr-2" />
-                                Preis berechnen
-                              </>
-                            )}
-                          </Button>
+                          {/* Mode: Pick from own videos */}
+                          {reactionInputMode === "mine" && user && (
+                            <div className="space-y-2">
+                              {isLoadingMyVideos ? (
+                                <div className="flex items-center gap-2 text-muted-foreground text-xs pl-8">
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />{" "}
+                                  Videos werden geladen…
+                                </div>
+                              ) : myVideos.length === 0 ? (
+                                <p className="text-xs text-muted-foreground pl-8">
+                                  Keine eigenen Videos gefunden. Lade deine
+                                  Videos unter "Meine Videos" hoch.
+                                </p>
+                              ) : (
+                                <div className="max-h-52 overflow-y-auto space-y-1.5 pr-1">
+                                  {myVideos.map((v: any) => (
+                                    <button
+                                      key={v.id}
+                                      onClick={() => {
+                                        setSelectedMyVideo(v);
+                                        setReactionStepDone(true);
+                                      }}
+                                      className={`w-full flex items-center gap-3 p-2.5 rounded-lg border text-left transition-all ${
+                                        selectedMyVideo?.id === v.id
+                                          ? "border-primary bg-primary/5 text-foreground"
+                                          : "border-border/50 hover:border-primary/40 hover:bg-muted/30 text-muted-foreground"
+                                      }`}
+                                    >
+                                      {v.thumbnail && (
+                                        <img
+                                          src={v.thumbnail}
+                                          alt={v.title}
+                                          className="w-14 h-9 object-cover rounded shrink-0"
+                                          referrerPolicy="no-referrer"
+                                        />
+                                      )}
+                                      <div className="flex-1 min-w-0">
+                                        <p className="text-xs font-medium truncate">
+                                          {v.title}
+                                        </p>
+                                        <p className="text-[11px] text-muted-foreground">
+                                          {v.last_view_count
+                                            ? `${(v.last_view_count / 1000).toFixed(1)}K Views`
+                                            : "Keine Aufrufzahlen"}
+                                        </p>
+                                      </div>
+                                      {selectedMyVideo?.id === v.id && (
+                                        <Check className="h-4 w-4 text-primary shrink-0" />
+                                      )}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          )}
 
-                          {reactionVideo && reactionStepDone && (
-                            <div className="mt-1 space-y-2">
-                              <p className="text-xs text-green-500 font-medium flex items-center gap-1">
-                                <Check className="h-3.5 w-3.5" /> Reaction-Video
-                                gefunden
-                              </p>
-                              <VideoItem video={reactionVideo} />
+                          {/* Mode: YouTube URL */}
+                          {(reactionInputMode === "url" || !user) && (
+                            <div className="space-y-2">
+                              <InputGroup className="max-w-full">
+                                <InputGroupInput
+                                  placeholder="https://youtube.com/watch?v=..."
+                                  value={reactionUrl}
+                                  onChange={(e) => {
+                                    setReactionUrl(e.target.value);
+                                    setReactionStepDone(false);
+                                  }}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter" && reactionUrl) {
+                                      findReaction(reactionUrl);
+                                      setReactionStepDone(true);
+                                    }
+                                  }}
+                                />
+                                <InputGroupAddon>
+                                  <Search className="w-4 h-4" />
+                                </InputGroupAddon>
+                              </InputGroup>
+                              <Button
+                                className="w-full"
+                                onClick={() => {
+                                  if (reactionUrl) {
+                                    findReaction(reactionUrl);
+                                    setReactionStepDone(true);
+                                  }
+                                }}
+                                disabled={isLoadingReaction || !reactionUrl}
+                              >
+                                {isLoadingReaction ? (
+                                  <>
+                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                    Suche...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Search className="h-4 w-4 mr-2" />
+                                    Preis berechnen
+                                  </>
+                                )}
+                              </Button>
+                              {reactionVideo && reactionStepDone && (
+                                <div className="mt-1 space-y-2">
+                                  <p className="text-xs text-green-500 font-medium flex items-center gap-1">
+                                    <Check className="h-3.5 w-3.5" />{" "}
+                                    Reaction-Video gefunden
+                                  </p>
+                                  <VideoItem video={reactionVideo} />
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>
 
-                        {/* Step: Buy Options */}
-                        {reactionVideo && reactionStepDone && (
+                        {/* Step 2: Buy Options */}
+                        {((reactionInputMode === "mine" && selectedMyVideo) ||
+                          (reactionInputMode === "url" &&
+                            reactionVideo &&
+                            reactionStepDone) ||
+                          (!user && reactionVideo && reactionStepDone)) && (
                           <div className="p-4 rounded-xl bg-primary/5 border border-primary/20 space-y-3">
                             <div className="flex items-center gap-2">
                               <div className="w-6 h-6 rounded-full bg-primary/20 text-primary text-xs font-bold flex items-center justify-center">
@@ -787,7 +892,7 @@ export const VideoDetails = ({
                             </div>
                             <BuyOptions
                               videoCreator={activeMainVideo}
-                              videoReactor={reactionVideo}
+                              videoReactor={selectedMyVideo || reactionVideo}
                             />
                           </div>
                         )}
