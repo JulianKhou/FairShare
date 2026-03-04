@@ -21,11 +21,11 @@ function LandingPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const scrollToFeatures = () => {
-    const featuresSection = document.getElementById("features-section");
-    if (featuresSection) {
+  const scrollToSection = (sectionId: string) => {
+    const section = document.getElementById(sectionId);
+    if (section) {
       const headerOffset = 80; // Assuming header is around 80px
-      const elementPosition = featuresSection.getBoundingClientRect().top;
+      const elementPosition = section.getBoundingClientRect().top;
       const offsetPosition =
         elementPosition + window.pageYOffset - headerOffset;
 
@@ -101,7 +101,7 @@ function LandingPage() {
         {/* Scroll Indicator */}
         <div
           className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce cursor-pointer text-muted-foreground hover:text-simple-purple transition-colors"
-          onClick={scrollToFeatures}
+          onClick={() => scrollToSection("features-section")}
         >
           <IconChevronDown size={40} />
         </div>
@@ -110,66 +110,79 @@ function LandingPage() {
       {/* Features Section */}
       <section
         id="features-section"
-        className="px-4 py-16 md:py-24 max-w-6xl mx-auto w-full"
+        className="relative px-4 py-16 md:py-24 w-full min-h-[calc(100vh-5rem)] flex flex-col justify-center items-center"
       >
-        <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
-          Warum SimpleShare?
-        </h2>
+        <div className="max-w-6xl w-full">
+          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
+            Warum SimpleShare?
+          </h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Feature 1: Fair Prices */}
-          <Card className="p-8 transition-all hover:shadow-2xl hover:border-simple-purple/50 bg-simple-purple/5 border-simple-purple/10 backdrop-blur-sm group rounded-3xl">
-            <div className="flex justify-center mb-6">
-              <div className="p-5 bg-simple-purple/15 text-simple-purple rounded-2xl group-hover:scale-110 transition-transform">
-                <IconCurrencyDollar size={40} />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* Feature 1: Fair Prices */}
+            <Card className="p-8 transition-all hover:shadow-2xl hover:border-simple-purple/50 bg-simple-purple/5 border-simple-purple/10 backdrop-blur-sm group rounded-3xl">
+              <div className="flex justify-center mb-6">
+                <div className="p-5 bg-simple-purple/15 text-simple-purple rounded-2xl group-hover:scale-110 transition-transform">
+                  <IconCurrencyDollar size={40} />
+                </div>
               </div>
-            </div>
-            <h3 className="text-2xl font-bold text-center mb-3 text-simple-purple">
-              Faire Preise
-            </h3>
-            <p className="text-muted-foreground text-center text-sm leading-relaxed">
-              Transparente Preisgestaltung durch einen fairen Algorithmus.
-              Verkäufer verdienen, was ihre Inhalte wert sind.
-            </p>
-          </Card>
+              <h3 className="text-2xl font-bold text-center mb-3 text-simple-purple">
+                Faire Preise
+              </h3>
+              <p className="text-muted-foreground text-center text-sm leading-relaxed">
+                Transparente Preisgestaltung durch einen fairen Algorithmus.
+                Verkäufer verdienen, was ihre Inhalte wert sind.
+              </p>
+            </Card>
 
-          {/* Feature 2: Easy Processing */}
-          <Card className="p-8 transition-all hover:shadow-2xl hover:border-simple-teal/50 bg-simple-teal/5 border-simple-teal/10 backdrop-blur-sm group rounded-3xl">
-            <div className="flex justify-center mb-6">
-              <div className="p-5 bg-simple-teal/15 text-simple-teal rounded-2xl group-hover:scale-110 transition-transform">
-                <IconBolt size={40} />
+            {/* Feature 2: Easy Processing */}
+            <Card className="p-8 transition-all hover:shadow-2xl hover:border-simple-teal/50 bg-simple-teal/5 border-simple-teal/10 backdrop-blur-sm group rounded-3xl">
+              <div className="flex justify-center mb-6">
+                <div className="p-5 bg-simple-teal/15 text-simple-teal rounded-2xl group-hover:scale-110 transition-transform">
+                  <IconBolt size={40} />
+                </div>
               </div>
-            </div>
-            <h3 className="text-2xl font-bold text-center mb-3 text-simple-teal">
-              Einfache Abwicklung
-            </h3>
-            <p className="text-muted-foreground text-center text-sm leading-relaxed">
-              Schneller und unkomplizierter Kauf- und Verkaufsprozess.
-              Sofortiger Zugriff auf lizenzierte Videos.
-            </p>
-          </Card>
+              <h3 className="text-2xl font-bold text-center mb-3 text-simple-teal">
+                Einfache Abwicklung
+              </h3>
+              <p className="text-muted-foreground text-center text-sm leading-relaxed">
+                Schneller und unkomplizierter Kauf- und Verkaufsprozess.
+                Sofortiger Zugriff auf lizenzierte Videos.
+              </p>
+            </Card>
 
-          {/* Feature 3: Legal Security */}
-          <Card className="p-8 transition-all hover:shadow-2xl hover:border-green-500/50 bg-green-500/5 border-green-500/10 backdrop-blur-sm group rounded-3xl">
-            <div className="flex justify-center mb-6">
-              <div className="p-5 bg-green-500/15 text-green-500 rounded-2xl group-hover:scale-110 transition-transform">
-                <IconShieldCheck size={40} />
+            {/* Feature 3: Legal Security */}
+            <Card className="p-8 transition-all hover:shadow-2xl hover:border-green-500/50 bg-green-500/5 border-green-500/10 backdrop-blur-sm group rounded-3xl">
+              <div className="flex justify-center mb-6">
+                <div className="p-5 bg-green-500/15 text-green-500 rounded-2xl group-hover:scale-110 transition-transform">
+                  <IconShieldCheck size={40} />
+                </div>
               </div>
-            </div>
-            <h3 className="text-2xl font-bold text-center mb-3 text-green-500">
-              Rechtssicherheit
-            </h3>
-            <p className="text-muted-foreground text-center text-sm leading-relaxed">
-              Alle Lizenzen sind rechtlich bindend und dokumentiert. Schutz für
-              Käufer und Verkäufer.
-            </p>
-          </Card>
+              <h3 className="text-2xl font-bold text-center mb-3 text-green-500">
+                Rechtssicherheit
+              </h3>
+              <p className="text-muted-foreground text-center text-sm leading-relaxed">
+                Alle Lizenzen sind rechtlich bindend und dokumentiert. Schutz
+                für Käufer und Verkäufer.
+              </p>
+            </Card>
+          </div>
+        </div>
+
+        {/* Scroll Indicator */}
+        <div
+          className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce cursor-pointer text-muted-foreground hover:text-simple-purple transition-colors"
+          onClick={() => scrollToSection("roadmap-section")}
+        >
+          <IconChevronDown size={40} />
         </div>
       </section>
 
       {/* Roadmap Section */}
-      <section className="px-4 py-16 md:py-24 bg-linear-to-b from-background to-simple-purple/5">
-        <div className="max-w-5xl mx-auto w-full text-center">
+      <section
+        id="roadmap-section"
+        className="relative px-4 py-16 md:py-24 bg-linear-to-b from-background to-simple-purple/5 w-full min-h-[calc(100vh-5rem)] flex flex-col justify-center items-center"
+      >
+        <div className="max-w-5xl w-full text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-16">
             Unsere Roadmap
           </h2>
@@ -280,11 +293,22 @@ function LandingPage() {
             </div>
           </div>
         </div>
+
+        {/* Scroll Indicator */}
+        <div
+          className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce cursor-pointer text-muted-foreground hover:text-simple-purple transition-colors"
+          onClick={() => scrollToSection("cta-section")}
+        >
+          <IconChevronDown size={40} />
+        </div>
       </section>
 
       {/* CTA Section */}
-      <section className="px-4 py-16 md:py-24 bg-linear-to-t from-simple-purple/10 to-background">
-        <div className="max-w-4xl mx-auto text-center">
+      <section
+        id="cta-section"
+        className="px-4 py-16 md:py-24 bg-linear-to-t from-simple-purple/10 to-background min-h-[50vh] flex flex-col justify-center items-center"
+      >
+        <div className="max-w-4xl w-full text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">
             Bereit loszulegen?
           </h2>
