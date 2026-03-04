@@ -45,7 +45,7 @@ export const VideoItem = ({
           )}
 
           {/* Gradient overlay for text readability */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <div className="absolute inset-0 bg-linear-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
           {/* Lizenziert Badge */}
           {userId === video.creator_id && video.islicensed && (
@@ -66,7 +66,7 @@ export const VideoItem = ({
           {/* Price badge on thumbnail */}
           {video.price != null && (
             <div className="absolute bottom-2 right-2">
-              <span className="text-xs font-bold bg-gradient-to-r from-simple-purple to-simple-teal text-white px-2.5 py-1 rounded-full shadow-lg">
+              <span className="text-xs font-bold bg-linear-to-r from-simple-purple to-simple-teal text-white px-2.5 py-1 rounded-full shadow-lg">
                 ab{" "}
                 {Number(video.price).toLocaleString("de-DE", {
                   style: "currency",

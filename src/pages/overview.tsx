@@ -19,7 +19,7 @@ function Overview() {
   return (
     <div className="flex flex-col w-full">
       {/* Hero Banner */}
-      <div className="relative w-full overflow-hidden bg-gradient-to-b from-simple-purple/10 via-background to-background py-16 pb-12 px-4">
+      <div className="relative w-full overflow-hidden bg-linear-to-b from-simple-purple/10 via-background to-background py-16 pb-12 px-4">
         {/* Background blur orbs */}
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-simple-purple/20 blur-[120px] rounded-full pointer-events-none" />
         <div className="absolute top-0 right-1/4 w-96 h-96 bg-simple-teal/20 blur-[120px] rounded-full pointer-events-none" />
@@ -32,7 +32,7 @@ function Overview() {
 
           <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-foreground">
             Entdecke{" "}
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-simple-purple to-simple-teal">
+            <span className="bg-clip-text text-transparent bg-linear-to-r from-simple-purple to-simple-teal">
               lizenzierbare
             </span>{" "}
             Videos
@@ -57,7 +57,7 @@ function Overview() {
               }
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-11 pr-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-simple-purple/50 focus:ring-2 focus:ring-simple-purple/20 transition-all backdrop-blur-md text-sm"
+              className="w-full pl-11 pr-4 py-3 rounded-2xl bg-muted/30 border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-simple-purple/50 focus:ring-2 focus:ring-simple-purple/20 transition-all text-sm"
             />
           </div>
         </div>
@@ -72,7 +72,7 @@ function Overview() {
               onClick={() => setViewMode("videos")}
               className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold transition-all duration-300 ${
                 viewMode === "videos"
-                  ? "bg-gradient-to-r from-simple-purple to-simple-teal text-white shadow-lg shadow-simple-purple/20"
+                  ? "bg-linear-to-r from-simple-purple to-simple-teal text-white shadow-lg shadow-simple-purple/20"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
@@ -83,7 +83,7 @@ function Overview() {
               onClick={() => setViewMode("channels")}
               className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold transition-all duration-300 ${
                 viewMode === "channels"
-                  ? "bg-gradient-to-r from-simple-purple to-simple-teal text-white shadow-lg shadow-simple-purple/20"
+                  ? "bg-linear-to-r from-simple-purple to-simple-teal text-white shadow-lg shadow-simple-purple/20"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >

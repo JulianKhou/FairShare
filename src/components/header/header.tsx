@@ -1,5 +1,4 @@
 import { SimpleShareLogo } from "../ui/simpleShareLogo.tsx";
-import lupe from "../../assets/lupeIcon.svg";
 import ProfileIcon from "./profileIcon";
 import { UserMenu } from "./profileMenu";
 import { useToggle } from "../../hooks/useToggle.ts";
@@ -7,8 +6,16 @@ import { useAuth } from "../../hooks/auth/useAuth";
 import { NavLink } from "react-router-dom";
 import { Switch } from "../ui/switch";
 import { useToggleDarkmode } from "../../lib/useToggleDarkmode.ts";
-import { IconMoon, IconSun, IconX, IconMenu2 } from "@tabler/icons-react";
+import {
+  IconMoon,
+  IconSun,
+  IconX,
+  IconMenu2,
+  IconSearch,
+  IconCommand,
+} from "@tabler/icons-react";
 import { NotificationBell } from "./NotificationBell";
+import { CommandPalette } from "./CommandPalette";
 import {
   getProfile,
   isProfileComplete,
@@ -26,6 +33,19 @@ function Header() {
   const [isWarningVisible, setIsWarningVisible] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+
+  // Global Ctrl+K / Cmd+K shortcut
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+        e.preventDefault();
+        setIsCommandPaletteOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   useEffect(() => {
     if (user) {
@@ -153,17 +173,17 @@ function Header() {
         )}
       </nav>
 
-      {/* Suche - Desktop */}
-      <div className="hidden md:flex gap-2 items-center bg-white/5 rounded-full px-4 py-1 border border-white/10 focus-within:border-simple-teal/50 transition-all">
-        <input
-          type="text"
-          placeholder="Search..."
-          className="bg-transparent outline-none text-sm w-48 lg:w-64 h-8"
-        />
-        <button className="opacity-70 hover:opacity-100 transition-opacity">
-          <img src={lupe} alt="search" className="w-5 h-5" />
-        </button>
-      </div>
+      {/* Search trigger - Desktop */}
+      <button
+        onClick={() => setIsCommandPaletteOpen(true)}
+        className="hidden md:flex gap-3 items-center bg-muted/50 rounded-full px-4 py-2 border border-border hover:border-simple-purple/40 transition-all text-muted-foreground hover:text-foreground group"
+      >
+        <IconSearch size={15} />
+        <span className="text-sm w-36 lg:w-52 text-left">Suche…</span>
+        <span className="flex items-center gap-0.5 border border-border/50 px-1.5 py-0.5 rounded text-xs">
+          <IconCommand size={10} />K
+        </span>
+      </button>
 
       {/* Profil Bereich & Mobile Toggle */}
       <div className="relative flex gap-1 md:gap-2 items-center">
@@ -265,11 +285,16 @@ function Header() {
           onOpenChange={setShowOnboarding}
           userId={user.id}
           onComplete={() => {
-            // Re-fetch profile to update local state after onboarding
             getProfile(user.id).then(setUserProfile);
           }}
         />
       )}
+
+      {/* Command Palette */}
+      <CommandPalette
+        isOpen={isCommandPaletteOpen}
+        onClose={() => setIsCommandPaletteOpen(false)}
+      />
     </header>
   );
 }

@@ -13,7 +13,7 @@ export function CreatorCard({ profile }: CreatorCardProps) {
       className="group flex flex-col items-center justify-center p-6 bg-card rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-border/50 hover:border-simple-purple/40 text-center gap-4 relative overflow-hidden"
     >
       {/* Background hover gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-simple-purple/0 to-simple-teal/0 group-hover:from-simple-purple/5 group-hover:to-simple-teal/5 transition-all duration-500 rounded-2xl" />
+      <div className="absolute inset-0 bg-linear-to-br from-simple-purple/0 to-simple-teal/0 group-hover:from-simple-purple/5 group-hover:to-simple-teal/5 transition-all duration-500 rounded-2xl" />
 
       <div className="relative z-10 flex flex-col items-center gap-4 w-full">
         {/* Avatar */}
