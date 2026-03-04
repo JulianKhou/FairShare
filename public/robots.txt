@@ -4,4 +4,4 @@ Disallow: /admin
 Disallow: /settings
 Disallow: /dashboard
 
-Sitemap: https://simpleshare.de/sitemap.xml
+Sitemap: https://simpleshare.eu/sitemap.xml
