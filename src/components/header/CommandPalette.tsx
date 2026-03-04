@@ -63,7 +63,7 @@ const STATIC_ITEMS = [
     id: "page-overview",
     type: "page" as const,
     label: "Übersicht",
-    description: "Alle lizenzierbaren Videos",
+    description: "Alle lizenzierten Videos",
     path: "/overview",
     icon: IconVideo,
   },

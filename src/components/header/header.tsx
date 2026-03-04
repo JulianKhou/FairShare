@@ -6,16 +6,9 @@ import { useAuth } from "../../hooks/auth/useAuth";
 import { NavLink } from "react-router-dom";
 import { Switch } from "../ui/switch";
 import { useToggleDarkmode } from "../../lib/useToggleDarkmode.ts";
-import {
-  IconMoon,
-  IconSun,
-  IconX,
-  IconMenu2,
-  IconSearch,
-  IconCommand,
-} from "@tabler/icons-react";
+import { IconMoon, IconSun, IconX, IconMenu2 } from "@tabler/icons-react";
 import { NotificationBell } from "./NotificationBell";
-import { CommandPalette } from "./CommandPalette";
+import { SearchDropdown } from "./SearchDropdown";
 import {
   getProfile,
   isProfileComplete,
@@ -33,19 +26,6 @@ function Header() {
   const [isWarningVisible, setIsWarningVisible] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
-
-  // Global Ctrl+K / Cmd+K shortcut
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
-        e.preventDefault();
-        setIsCommandPaletteOpen((prev) => !prev);
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
 
   useEffect(() => {
     if (user) {
@@ -173,17 +153,8 @@ function Header() {
         )}
       </nav>
 
-      {/* Search trigger - Desktop */}
-      <button
-        onClick={() => setIsCommandPaletteOpen(true)}
-        className="hidden md:flex gap-3 items-center bg-muted/50 rounded-full px-4 py-2 border border-border hover:border-simple-purple/40 transition-all text-muted-foreground hover:text-foreground group"
-      >
-        <IconSearch size={15} />
-        <span className="text-sm w-36 lg:w-52 text-left">Suche…</span>
-        <span className="flex items-center gap-0.5 border border-border/50 px-1.5 py-0.5 rounded text-xs">
-          <IconCommand size={10} />K
-        </span>
-      </button>
+      {/* Search - Desktop */}
+      <SearchDropdown />
 
       {/* Profil Bereich & Mobile Toggle */}
       <div className="relative flex gap-1 md:gap-2 items-center">
@@ -289,12 +260,6 @@ function Header() {
           }}
         />
       )}
-
-      {/* Command Palette */}
-      <CommandPalette
-        isOpen={isCommandPaletteOpen}
-        onClose={() => setIsCommandPaletteOpen(false)}
-      />
     </header>
   );
 }

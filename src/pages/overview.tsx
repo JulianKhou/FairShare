@@ -27,15 +27,15 @@ function Overview() {
         <div className="relative z-10 max-w-3xl mx-auto text-center flex flex-col items-center gap-6">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-simple-purple/15 border border-simple-purple/30 text-simple-purple text-sm font-semibold">
             <IconSparkles size={14} />
-            Lizenzierbare Inhalte
+            Verfügbare Lizenzen
           </div>
 
           <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-foreground">
-            Entdecke{" "}
+            Hol dir{" "}
             <span className="bg-clip-text text-transparent bg-linear-to-r from-simple-purple to-simple-teal">
-              lizenzierbare
+              offizielle Lizenzen
             </span>{" "}
-            Videos
+            für deine Reactions
           </h1>
           <p className="text-muted-foreground text-lg max-w-xl">
             Stöbere durch tausende Videos von Creatoren, die ihr Content zur
