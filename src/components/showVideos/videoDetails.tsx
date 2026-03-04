@@ -25,9 +25,13 @@ import {
   Link2,
   ShoppingCart,
   ExternalLink,
+  Youtube,
+  ArrowRight,
+  TrendingUp,
+  BadgeCheck,
 } from "lucide-react";
 import { useFindVideo } from "@/hooks/videoDetails/useFindVideo";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { VideoItem } from "./videoItem";
 import { BuyOptions } from "./buyOptions";
 import { useAdmin } from "@/hooks/auth/useAdmin";
@@ -44,6 +48,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useContractsForVideo } from "@/hooks/queries/useContractsForVideo";
 import { usePendingContractsForVideo } from "@/hooks/queries/usePendingContractsForVideo";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { getProfile, Profile } from "@/services/supabaseCollum/profiles";
+import { useNavigate } from "react-router-dom";
 
 interface VideoDetailsProps {
   video: any;
@@ -59,12 +65,28 @@ export const VideoDetails = ({
   mode,
 }: VideoDetailsProps) => {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [videoUrl, setVideoUrl] = useState("");
   const { isLicensed, toggleLicense } = useVideoDetails(video);
   const { video: foundVideo, findVideo, isLoading } = useFindVideo();
   const [activeTab, setActiveTab] = useState<"details" | "pending">("details");
   const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  // Public view: reaction video step
+  const [reactionUrl, setReactionUrl] = useState("");
+  const {
+    video: reactionVideo,
+    findVideo: findReaction,
+    isLoading: isLoadingReaction,
+  } = useFindVideo();
+  const [reactionStepDone, setReactionStepDone] = useState(false);
+  // Creator profile
+  const [creatorProfile, setCreatorProfile] = useState<Profile | null>(null);
+  useEffect(() => {
+    if (video?.creator_id) {
+      getProfile(video.creator_id).then(setCreatorProfile);
+    }
+  }, [video?.creator_id]);
 
   const { data: contracts = [] } = useContractsForVideo(video?.id, isOpen);
   const { data: pendingContracts = [] } = usePendingContractsForVideo(
@@ -546,17 +568,229 @@ export const VideoDetails = ({
                       </>
                     )}
 
-                    {/* Public: Buy Options */}
+                    {/* Public: Full Info + Reaction Step + Buy Options */}
                     {mode === "public" && (
-                      <div className="p-4 rounded-xl bg-primary/5 border border-primary/10">
-                        <h3 className="text-sm font-semibold mb-4 flex items-center gap-2">
-                          <ShoppingCart className="h-4 w-4 text-primary" />
-                          Lizenz erwerben
-                        </h3>
-                        <BuyOptions
-                          videoCreator={activeMainVideo}
-                          videoReactor={activeMainVideo}
-                        />
+                      <div className="space-y-5">
+                        {/* Creator Block */}
+                        <div className="p-4 rounded-xl border border-border/50 bg-muted/20 flex items-center gap-4">
+                          {creatorProfile?.youtube_channel_avatar ? (
+                            <img
+                              src={creatorProfile.youtube_channel_avatar}
+                              alt={
+                                creatorProfile.youtube_channel_title ||
+                                "Creator"
+                              }
+                              className="w-14 h-14 rounded-full object-cover border-2 border-simple-purple/30 shrink-0"
+                              referrerPolicy="no-referrer"
+                            />
+                          ) : (
+                            <div className="w-14 h-14 rounded-full bg-simple-purple/10 text-simple-purple flex items-center justify-center text-xl font-bold shrink-0">
+                              {(video.channel_title?.[0] || "C").toUpperCase()}
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5 mb-0.5">
+                              <p className="font-semibold text-sm truncate">
+                                {creatorProfile?.youtube_channel_title ||
+                                  video.channel_title ||
+                                  "Unbekannter Creator"}
+                              </p>
+                              <BadgeCheck className="h-4 w-4 text-simple-purple shrink-0" />
+                            </div>
+                            {creatorProfile?.subscriber_count != null && (
+                              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                <Users className="h-3 w-3" />
+                                {creatorProfile.subscriber_count.toLocaleString(
+                                  "de-DE",
+                                )}{" "}
+                                Abonnenten
+                              </p>
+                            )}
+                            <div className="flex gap-3 mt-2">
+                              {creatorProfile?.youtube_channel_id && (
+                                <a
+                                  href={`https://www.youtube.com/channel/${creatorProfile.youtube_channel_id}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="flex items-center gap-1 text-xs text-red-500 hover:underline"
+                                >
+                                  <Youtube className="h-3.5 w-3.5" /> Kanal
+                                  ansehen
+                                </a>
+                              )}
+                              {creatorProfile?.id && (
+                                <button
+                                  onClick={() => {
+                                    navigate(`/creator/${creatorProfile.id}`);
+                                    onClose();
+                                  }}
+                                  className="flex items-center gap-1 text-xs text-simple-purple hover:underline"
+                                >
+                                  <ArrowRight className="h-3.5 w-3.5" />{" "}
+                                  SimpleShare-Profil
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Video Stats */}
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="p-3 rounded-xl bg-muted/20 border border-border/50 flex items-center gap-3">
+                            <div className="p-2 rounded-lg bg-blue-500/10 text-blue-500">
+                              <Eye className="h-4 w-4" />
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground">
+                                Aufrufe
+                              </p>
+                              <p className="font-semibold text-sm">
+                                {formatViews(video.last_view_count || 0)}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="p-3 rounded-xl bg-muted/20 border border-border/50 flex items-center gap-3">
+                            <div className="p-2 rounded-lg bg-green-500/10 text-green-500">
+                              <TrendingUp className="h-4 w-4" />
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground">
+                                Lizenzen vergeben
+                              </p>
+                              <p className="font-semibold text-sm">
+                                {contracts.length}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* YouTube Links */}
+                        <div className="p-4 rounded-xl border border-border/50 bg-muted/20 space-y-2">
+                          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                            Links
+                          </h3>
+                          {video.yt_link && (
+                            <a
+                              href={video.yt_link}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="flex items-center gap-2.5 p-2.5 rounded-lg bg-red-500/5 border border-red-500/20 hover:bg-red-500/10 transition-colors text-sm"
+                            >
+                              <Youtube className="h-4 w-4 text-red-500 shrink-0" />
+                              <span className="flex-1 truncate font-medium">
+                                Video auf YouTube ansehen
+                              </span>
+                              <ExternalLink className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                            </a>
+                          )}
+                          {creatorProfile?.youtube_channel_id && (
+                            <a
+                              href={`https://www.youtube.com/channel/${creatorProfile.youtube_channel_id}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="flex items-center gap-2.5 p-2.5 rounded-lg bg-muted/30 border border-border/50 hover:bg-muted/50 transition-colors text-sm"
+                            >
+                              <Users className="h-4 w-4 text-muted-foreground shrink-0" />
+                              <span className="flex-1 truncate font-medium">
+                                {creatorProfile.youtube_channel_title ||
+                                  "YouTube-Kanal"}
+                              </span>
+                              <ExternalLink className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                            </a>
+                          )}
+                        </div>
+
+                        {/* Separator */}
+                        <div className="border-t border-border/50" />
+
+                        {/* Step: Reaction Video */}
+                        <div className="p-4 rounded-xl bg-primary/5 border border-primary/10 space-y-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-full bg-primary/20 text-primary text-xs font-bold flex items-center justify-center">
+                              1
+                            </div>
+                            <h3 className="text-sm font-semibold">
+                              Welches deiner Videos ist die Reaction?
+                            </h3>
+                          </div>
+                          <p className="text-xs text-muted-foreground pl-8">
+                            Der Lizenzpreis hängt von deinen eigenen
+                            Aufrufzahlen ab. Füge den YouTube-Link deiner
+                            Reaction ein.
+                          </p>
+
+                          <InputGroup className="max-w-full">
+                            <InputGroupInput
+                              placeholder="https://youtube.com/watch?v=..."
+                              value={reactionUrl}
+                              onChange={(e) => {
+                                setReactionUrl(e.target.value);
+                                setReactionStepDone(false);
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" && reactionUrl) {
+                                  findReaction(reactionUrl);
+                                  setReactionStepDone(true);
+                                }
+                              }}
+                            />
+                            <InputGroupAddon>
+                              <Search className="w-4 h-4" />
+                            </InputGroupAddon>
+                          </InputGroup>
+
+                          <Button
+                            className="w-full"
+                            onClick={() => {
+                              if (reactionUrl) {
+                                findReaction(reactionUrl);
+                                setReactionStepDone(true);
+                              }
+                            }}
+                            disabled={isLoadingReaction || !reactionUrl}
+                          >
+                            {isLoadingReaction ? (
+                              <>
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                Suche...
+                              </>
+                            ) : (
+                              <>
+                                <Search className="h-4 w-4 mr-2" />
+                                Preis berechnen
+                              </>
+                            )}
+                          </Button>
+
+                          {reactionVideo && reactionStepDone && (
+                            <div className="mt-1 space-y-2">
+                              <p className="text-xs text-green-500 font-medium flex items-center gap-1">
+                                <Check className="h-3.5 w-3.5" /> Reaction-Video
+                                gefunden
+                              </p>
+                              <VideoItem video={reactionVideo} />
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Step: Buy Options */}
+                        {reactionVideo && reactionStepDone && (
+                          <div className="p-4 rounded-xl bg-primary/5 border border-primary/20 space-y-3">
+                            <div className="flex items-center gap-2">
+                              <div className="w-6 h-6 rounded-full bg-primary/20 text-primary text-xs font-bold flex items-center justify-center">
+                                2
+                              </div>
+                              <h3 className="text-sm font-semibold flex items-center gap-2">
+                                <ShoppingCart className="h-4 w-4 text-primary" />
+                                Lizenz erwerben
+                              </h3>
+                            </div>
+                            <BuyOptions
+                              videoCreator={activeMainVideo}
+                              videoReactor={reactionVideo}
+                            />
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
