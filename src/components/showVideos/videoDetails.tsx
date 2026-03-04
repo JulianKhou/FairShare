@@ -86,6 +86,7 @@ export const VideoDetails = ({
     "mine",
   );
   const [selectedMyVideo, setSelectedMyVideo] = useState<any>(null);
+  const [isVideoPickerOpen, setIsVideoPickerOpen] = useState(false);
   // Fetch logged-in user's own videos
   const { user } = useAuth();
   const { videos: myVideos, isLoading: isLoadingMyVideos } =
@@ -428,8 +429,7 @@ export const VideoDetails = ({
                       <button
                         onClick={() => {
                           setReactionInputMode("mine");
-                          setSelectedMyVideo(null);
-                          setReactionStepDone(false);
+                          setIsVideoPickerOpen(true);
                         }}
                         className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-all ${reactionInputMode === "mine" ? "bg-primary text-white border-primary" : "border-border text-muted-foreground hover:border-primary/50"}`}
                       >
@@ -447,54 +447,97 @@ export const VideoDetails = ({
                       </button>
                     </div>
                   )}
-                  {reactionInputMode === "mine" &&
-                    user &&
-                    (isLoadingMyVideos ? (
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" /> Videos
-                        werden geladen\u2026
-                      </div>
-                    ) : myVideos.length === 0 ? (
-                      <p className="text-xs text-muted-foreground">
-                        Keine eigenen Videos gefunden. Lade Videos unter "Meine
-                        Videos" hoch.
-                      </p>
-                    ) : (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-52 overflow-y-auto pr-1">
-                        {myVideos.map((v: any) => (
-                          <button
-                            key={v.id}
-                            onClick={() => {
-                              setSelectedMyVideo(v);
-                              setReactionStepDone(true);
-                            }}
-                            className={`flex items-center gap-2.5 p-2.5 rounded-lg border text-left transition-all ${selectedMyVideo?.id === v.id ? "border-primary bg-primary/5 text-foreground" : "border-border/50 hover:border-primary/40 hover:bg-muted/30 text-muted-foreground"}`}
-                          >
-                            {v.thumbnail && (
-                              <img
-                                src={v.thumbnail}
-                                alt={v.title}
-                                className="w-12 h-8 object-cover rounded shrink-0"
-                                referrerPolicy="no-referrer"
-                              />
-                            )}
-                            <div className="flex-1 min-w-0">
-                              <p className="text-xs font-medium truncate text-foreground">
-                                {v.title}
-                              </p>
-                              <p className="text-[11px] text-muted-foreground">
-                                {v.last_view_count
-                                  ? `${(v.last_view_count / 1000).toFixed(1)}K Views`
-                                  : "\u2014"}
-                              </p>
+                  {reactionInputMode === "mine" && user && (
+                    <div className="space-y-2">
+                      {/* Picker Modal */}
+                      {isVideoPickerOpen && (
+                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                          <div
+                            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+                            onClick={() => setIsVideoPickerOpen(false)}
+                          />
+                          <div className="relative w-full max-w-lg bg-card border border-border rounded-2xl shadow-2xl flex flex-col max-h-[85vh] overflow-hidden animate-in fade-in zoom-in duration-200">
+                            <div className="p-4 border-b border-border/50 flex items-center justify-between">
+                              <h3 className="font-bold">
+                                Meine Videos auswählen
+                              </h3>
+                              <button
+                                onClick={() => setIsVideoPickerOpen(false)}
+                                className="p-1.5 hover:bg-muted rounded-full transition-colors"
+                              >
+                                <X className="h-4 w-4" />
+                              </button>
                             </div>
-                            {selectedMyVideo?.id === v.id && (
-                              <Check className="h-4 w-4 text-primary shrink-0" />
-                            )}
-                          </button>
-                        ))}
-                      </div>
-                    ))}
+                            <div className="flex-1 overflow-y-auto p-4 space-y-2">
+                              {isLoadingMyVideos ? (
+                                <div className="flex flex-col items-center justify-center py-12 gap-3 text-muted-foreground">
+                                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                  <p className="text-sm">
+                                    Videos werden geladen...
+                                  </p>
+                                </div>
+                              ) : myVideos.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center py-12 text-center gap-3">
+                                  <div className="p-4 rounded-full bg-muted">
+                                    <ExternalLink className="h-8 w-8 text-muted-foreground opacity-20" />
+                                  </div>
+                                  <p className="text-sm text-muted-foreground max-w-[250px]">
+                                    Keine eigenen Videos gefunden. Lade Videos
+                                    unter "Meine Videos" hoch.
+                                  </p>
+                                </div>
+                              ) : (
+                                <div className="grid grid-cols-1 gap-2">
+                                  {myVideos.map((v: any) => (
+                                    <button
+                                      key={v.id}
+                                      onClick={() => {
+                                        setSelectedMyVideo(v);
+                                        setReactionStepDone(true);
+                                        setIsVideoPickerOpen(false);
+                                      }}
+                                      className={`flex items-center gap-3 p-3 rounded-xl border text-left transition-all ${selectedMyVideo?.id === v.id ? "border-primary bg-primary/5" : "border-border/50 hover:border-primary/40 hover:bg-muted"}`}
+                                    >
+                                      {v.thumbnail && (
+                                        <img
+                                          src={v.thumbnail}
+                                          alt={v.title}
+                                          className="w-16 h-10 object-cover rounded-md shrink-0 border border-border/50"
+                                          referrerPolicy="no-referrer"
+                                        />
+                                      )}
+                                      <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-semibold truncate text-foreground">
+                                          {v.title}
+                                        </p>
+                                        <p className="text-xs text-muted-foreground">
+                                          {v.last_view_count
+                                            ? `${(v.last_view_count / 1000).toFixed(1)}K Aufrufe`
+                                            : "0 Aufrufe"}
+                                        </p>
+                                      </div>
+                                      {selectedMyVideo?.id === v.id && (
+                                        <Check className="h-5 w-5 text-primary shrink-0" />
+                                      )}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                            <div className="p-4 border-t border-border/50 bg-muted/20">
+                              <Button
+                                variant="outline"
+                                className="w-full"
+                                onClick={() => setIsVideoPickerOpen(false)}
+                              >
+                                Abbrechen
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                   {(reactionInputMode === "url" || !user) && (
                     <div className="space-y-2">
                       <div className="flex gap-2">
