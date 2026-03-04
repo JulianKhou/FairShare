@@ -203,79 +203,128 @@ export const VideoDetails = ({
 
           {/* Scrollable Content – hidden scrollbar */}
           <div className="flex-1 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-            {/* Compact Header: Thumbnail + Info side-by-side */}
-            <div className="p-6 flex flex-col sm:flex-row gap-5">
-              {/* Thumbnail */}
-              <div className="shrink-0 w-full sm:w-64 md:w-80">
+            {/* ── PUBLIC: Full-Width Hero ── */}
+            {mode === "public" && (
+              <div className="relative w-full shrink-0">
                 <img
                   src={video.thumbnail}
                   alt={video.title}
-                  className="w-full aspect-video object-cover rounded-xl shadow-md"
+                  className="w-full aspect-video object-cover"
                   referrerPolicy="no-referrer"
                 />
-              </div>
-
-              {/* Title & Badges */}
-              <div className="flex flex-col justify-center min-w-0">
-                <div className="flex flex-wrap items-center gap-2 mb-2">
-                  {isLicensed && (
-                    <Badge className="bg-green-500 text-white border-transparent text-xs px-2 py-0.5">
+                <div className="absolute inset-0 bg-linear-to-t from-black/85 via-black/25 to-transparent" />
+                {isLicensed && (
+                  <div className="absolute top-4 right-14">
+                    <Badge className="bg-green-500 text-white border-transparent shadow-lg px-3 py-1 text-xs">
                       <Shield className="h-3 w-3 mr-1" /> Lizenz verfügbar
                     </Badge>
-                  )}
-                  {video.channel_title && (
-                    <Badge variant="outline" className="text-xs">
-                      {video.channel_title}
-                    </Badge>
-                  )}
-                </div>
-                <h1 className="text-xl md:text-2xl font-bold leading-tight line-clamp-2">
-                  {video.title}
-                </h1>
-                {video.yt_link && (
-                  <a
-                    href={video.yt_link}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center gap-1.5 text-sm text-primary hover:underline mt-2 w-fit"
-                  >
-                    <ExternalLink className="h-3.5 w-3.5" />
-                    Auf YouTube ansehen
-                  </a>
-                )}
-              </div>
-            </div>
-
-            {/* Stats Bar */}
-            <div className="px-6 py-4 border-b border-border/50 bg-muted/20">
-              <div className="flex flex-wrap gap-4 md:gap-6">
-                <div className="flex items-center gap-2 text-sm">
-                  <Eye className="h-4 w-4 text-primary" />
-                  <span className="font-semibold">
-                    {formatViews(activeMainVideo.last_view_count || 0)}
-                  </span>
-                  <span className="text-muted-foreground">Views</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <Users className="h-4 w-4 text-primary" />
-                  <span className="font-semibold">{contracts.length}</span>
-                  <span className="text-muted-foreground">
-                    Lizenzen verkauft
-                  </span>
-                </div>
-                {mode === "owner" && pendingContracts.length > 0 && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <Clock className="h-4 w-4 text-yellow-500" />
-                    <span className="font-semibold text-yellow-500">
-                      {pendingContracts.length}
-                    </span>
-                    <span className="text-muted-foreground">
-                      Offene Anfragen
-                    </span>
                   </div>
                 )}
+                <div className="absolute bottom-0 left-0 right-0 p-5">
+                  {video.channel_title && (
+                    <p className="text-white/70 text-xs font-medium mb-1">
+                      {video.channel_title}
+                    </p>
+                  )}
+                  <h1 className="text-xl md:text-2xl font-bold text-white leading-tight line-clamp-2 mb-3">
+                    {video.title}
+                  </h1>
+                  <div className="flex items-center gap-5">
+                    <div className="flex items-center gap-1.5 text-white/80 text-sm">
+                      <Eye className="h-4 w-4" />
+                      <span className="font-semibold">
+                        {formatViews(activeMainVideo.last_view_count || 0)}
+                      </span>
+                      <span className="text-white/60">Views</span>
+                    </div>
+                    {contracts.length > 0 && (
+                      <div className="flex items-center gap-1.5 text-sm">
+                        <Users className="h-4 w-4 text-green-400" />
+                        <span className="font-semibold text-green-400">
+                          {contracts.length}
+                        </span>
+                        <span className="text-white/60">Lizenzen vergeben</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
+
+            {/* ── OWNER: Compact Header ── */}
+            {mode !== "public" && (
+              <div className="p-6 flex flex-col sm:flex-row gap-5">
+                <div className="shrink-0 w-full sm:w-64 md:w-80">
+                  <img
+                    src={video.thumbnail}
+                    alt={video.title}
+                    className="w-full aspect-video object-cover rounded-xl shadow-md"
+                    referrerPolicy="no-referrer"
+                  />
+                </div>
+                <div className="flex flex-col justify-center min-w-0">
+                  <div className="flex flex-wrap items-center gap-2 mb-2">
+                    {isLicensed && (
+                      <Badge className="bg-green-500 text-white border-transparent text-xs px-2 py-0.5">
+                        <Shield className="h-3 w-3 mr-1" /> Lizenz verfügbar
+                      </Badge>
+                    )}
+                    {video.channel_title && (
+                      <Badge variant="outline" className="text-xs">
+                        {video.channel_title}
+                      </Badge>
+                    )}
+                  </div>
+                  <h1 className="text-xl md:text-2xl font-bold leading-tight line-clamp-2">
+                    {video.title}
+                  </h1>
+                  {video.yt_link && (
+                    <a
+                      href={video.yt_link}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center gap-1.5 text-sm text-primary hover:underline mt-2 w-fit"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" /> Auf YouTube
+                      ansehen
+                    </a>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Stats Bar – Owner only */}
+            {mode !== "public" && (
+              <div className="px-6 py-4 border-b border-border/50 bg-muted/20">
+                <div className="flex flex-wrap gap-4 md:gap-6">
+                  <div className="flex items-center gap-2 text-sm">
+                    <Eye className="h-4 w-4 text-primary" />
+                    <span className="font-semibold">
+                      {formatViews(activeMainVideo.last_view_count || 0)}
+                    </span>
+                    <span className="text-muted-foreground">Views</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <Users className="h-4 w-4 text-primary" />
+                    <span className="font-semibold">{contracts.length}</span>
+                    <span className="text-muted-foreground">
+                      Lizenzen verkauft
+                    </span>
+                  </div>
+                  {mode === "owner" && pendingContracts.length > 0 && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Clock className="h-4 w-4 text-yellow-500" />
+                      <span className="font-semibold text-yellow-500">
+                        {pendingContracts.length}
+                      </span>
+                      <span className="text-muted-foreground">
+                        Offene Anfragen
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Tab Navigation (Owner only) */}
             {mode === "owner" && (
@@ -310,98 +359,373 @@ export const VideoDetails = ({
               </div>
             )}
 
-            {/* Main Content */}
-            <div className="p-6">
-              {/* ─── PENDING REQUESTS TAB ─── */}
-              {mode === "owner" && activeTab === "pending" && (
-                <div className="space-y-3">
-                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">
-                    Offene Lizenzanfragen
-                  </h3>
-                  {pendingContracts.length > 0 ? (
-                    pendingContracts.map((contract) => (
-                      <div
-                        key={contract.id}
-                        className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 bg-muted/30 rounded-xl border border-border/50 hover:border-yellow-500/30 transition-colors"
+            {/* PUBLIC MODE: Conversion-Optimized Layout */}
+            {mode === "public" && (
+              <div className="flex flex-col">
+                {/* CONVERSION ZONE */}
+                <div className="p-6 border-b border-border/50 space-y-4">
+                  <div>
+                    <h2 className="text-xl font-bold mb-1">
+                      Lizensiere deine Reaction auf dieses Video
+                    </h2>
+                    <p className="text-sm text-muted-foreground">
+                      Berechne deinen pers\u00f6nlichen Lizenzpreis basierend
+                      auf deinen Aufrufzahlen.
+                    </p>
+                  </div>
+                  {user && (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          setReactionInputMode("mine");
+                          setSelectedMyVideo(null);
+                          setReactionStepDone(false);
+                        }}
+                        className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-all ${reactionInputMode === "mine" ? "bg-primary text-white border-primary" : "border-border text-muted-foreground hover:border-primary/50"}`}
                       >
-                        <div className="flex items-center gap-3 min-w-0">
-                          {/* Avatar circle */}
-                          <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm shrink-0">
-                            {(contract.licensee_name?.[0] || "?").toUpperCase()}
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-sm font-medium truncate">
-                              {contract.licensee_name || "Unbekannt"}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {contract.pricing_value}{" "}
-                              {contract.pricing_currency} ·{" "}
-                              {contract.pricing_model_type === 1
-                                ? "Fixpreis"
-                                : contract.pricing_model_type === 2
-                                  ? "Pro View"
-                                  : "CPM"}
-                            </p>
-                            <p className="text-xs text-muted-foreground/60">
-                              {new Date(contract.created_at).toLocaleDateString(
-                                "de-DE",
-                                {
-                                  day: "2-digit",
-                                  month: "short",
-                                  year: "numeric",
-                                },
-                              )}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex gap-2 w-full sm:w-auto">
-                          {processingIds.has(contract.id) ? (
-                            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                          ) : (
-                            <>
-                              <Button
-                                size="sm"
-                                className="flex-1 sm:flex-none bg-green-600 hover:bg-green-700 text-white"
-                                onClick={() => handleAccept(contract.id)}
-                              >
-                                <Check className="h-4 w-4 mr-1" /> Annehmen
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="flex-1 sm:flex-none border-red-500/50 text-red-500 hover:bg-red-500/10"
-                                onClick={() => handleDelete(contract.id)}
-                              >
-                                <X className="h-4 w-4 mr-1" /> Ablehnen
-                              </Button>
-                            </>
-                          )}
-                        </div>
+                        Aus meinen Videos w\u00e4hlen
+                      </button>
+                      <button
+                        onClick={() => {
+                          setReactionInputMode("url");
+                          setSelectedMyVideo(null);
+                          setReactionStepDone(false);
+                        }}
+                        className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-all ${reactionInputMode === "url" ? "bg-primary text-white border-primary" : "border-border text-muted-foreground hover:border-primary/50"}`}
+                      >
+                        YouTube-Link eingeben
+                      </button>
+                    </div>
+                  )}
+                  {reactionInputMode === "mine" &&
+                    user &&
+                    (isLoadingMyVideos ? (
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" /> Videos
+                        werden geladen\u2026
                       </div>
-                    ))
-                  ) : (
-                    <div className="text-center py-12 text-muted-foreground">
-                      <Clock className="h-10 w-10 mx-auto mb-3 opacity-30" />
-                      <p className="text-sm">Keine offenen Anfragen</p>
+                    ) : myVideos.length === 0 ? (
+                      <p className="text-xs text-muted-foreground">
+                        Keine eigenen Videos gefunden. Lade Videos unter "Meine
+                        Videos" hoch.
+                      </p>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-52 overflow-y-auto pr-1">
+                        {myVideos.map((v: any) => (
+                          <button
+                            key={v.id}
+                            onClick={() => {
+                              setSelectedMyVideo(v);
+                              setReactionStepDone(true);
+                            }}
+                            className={`flex items-center gap-2.5 p-2.5 rounded-lg border text-left transition-all ${selectedMyVideo?.id === v.id ? "border-primary bg-primary/5 text-foreground" : "border-border/50 hover:border-primary/40 hover:bg-muted/30 text-muted-foreground"}`}
+                          >
+                            {v.thumbnail && (
+                              <img
+                                src={v.thumbnail}
+                                alt={v.title}
+                                className="w-12 h-8 object-cover rounded shrink-0"
+                                referrerPolicy="no-referrer"
+                              />
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-medium truncate text-foreground">
+                                {v.title}
+                              </p>
+                              <p className="text-[11px] text-muted-foreground">
+                                {v.last_view_count
+                                  ? `${(v.last_view_count / 1000).toFixed(1)}K Views`
+                                  : "\u2014"}
+                              </p>
+                            </div>
+                            {selectedMyVideo?.id === v.id && (
+                              <Check className="h-4 w-4 text-primary shrink-0" />
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    ))}
+                  {(reactionInputMode === "url" || !user) && (
+                    <div className="space-y-2">
+                      <div className="flex gap-2">
+                        <div className="flex-1">
+                          <InputGroup>
+                            <InputGroupInput
+                              placeholder="https://youtube.com/watch?v=..."
+                              value={reactionUrl}
+                              onChange={(e) => {
+                                setReactionUrl(e.target.value);
+                                setReactionStepDone(false);
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" && reactionUrl) {
+                                  findReaction(reactionUrl);
+                                  setReactionStepDone(true);
+                                }
+                              }}
+                            />
+                            <InputGroupAddon>
+                              <Search className="w-4 h-4" />
+                            </InputGroupAddon>
+                          </InputGroup>
+                        </div>
+                        <Button
+                          size="lg"
+                          className="shrink-0 px-6 font-semibold"
+                          onClick={() => {
+                            if (reactionUrl) {
+                              findReaction(reactionUrl);
+                              setReactionStepDone(true);
+                            }
+                          }}
+                          disabled={isLoadingReaction || !reactionUrl}
+                        >
+                          {isLoadingReaction ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            "Preis berechnen"
+                          )}
+                        </Button>
+                      </div>
+                      {reactionVideo && reactionStepDone && (
+                        <div className="mt-1">
+                          <VideoItem video={reactionVideo} />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {selectedMyVideo && reactionInputMode === "mine" && (
+                    <div className="p-3 bg-green-500/5 border border-green-500/20 rounded-lg flex items-center gap-3">
+                      {selectedMyVideo.thumbnail && (
+                        <img
+                          src={selectedMyVideo.thumbnail}
+                          alt={selectedMyVideo.title}
+                          className="w-14 h-9 object-cover rounded shrink-0"
+                          referrerPolicy="no-referrer"
+                        />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-green-500 font-medium flex items-center gap-1">
+                          <Check className="h-3.5 w-3.5" /> Ausgew\u00e4hlt
+                        </p>
+                        <p className="text-xs font-semibold truncate">
+                          {selectedMyVideo.title}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  {((reactionInputMode === "mine" && selectedMyVideo) ||
+                    (reactionInputMode === "url" &&
+                      reactionVideo &&
+                      reactionStepDone) ||
+                    (!user && reactionVideo && reactionStepDone)) && (
+                    <div className="p-5 rounded-xl bg-primary/5 border border-primary/20">
+                      <p className="text-sm font-semibold mb-4 flex items-center gap-2">
+                        <ShoppingCart className="h-4 w-4 text-primary" /> Dein
+                        pers\u00f6nlicher Lizenzpreis
+                      </p>
+                      <BuyOptions
+                        videoCreator={activeMainVideo}
+                        videoReactor={selectedMyVideo || reactionVideo}
+                      />
                     </div>
                   )}
                 </div>
-              )}
 
-              {/* ─── DETAILS TAB ─── */}
-              {(activeTab === "details" || mode !== "owner") && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Left Column – Info */}
-                  <div className="space-y-5">
-                    {/* License Details */}
-                    <div className="p-4 rounded-xl bg-muted/20 border border-border/50">
-                      <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
-                        <Shield className="h-4 w-4" />
-                        Lizenz Details
-                      </h3>
-                      {mode === "owner" ? (
-                        contracts.length > 0 ? (
+                {/* INFO GRID */}
+                <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4 border-b border-border/50">
+                  <div className="p-4 rounded-xl border border-border/50 bg-muted/20 flex items-center gap-4">
+                    {creatorProfile?.youtube_channel_avatar ? (
+                      <img
+                        src={creatorProfile.youtube_channel_avatar}
+                        alt={creatorProfile.youtube_channel_title || "Creator"}
+                        className="w-14 h-14 rounded-full object-cover border-2 border-simple-purple/30 shrink-0"
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <div className="w-14 h-14 rounded-full bg-simple-purple/10 text-simple-purple flex items-center justify-center text-xl font-bold shrink-0">
+                        {(video.channel_title?.[0] || "C").toUpperCase()}
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 mb-0.5">
+                        <p className="font-semibold text-sm truncate">
+                          {creatorProfile?.youtube_channel_title ||
+                            video.channel_title ||
+                            "\u2014"}
+                        </p>
+                        <BadgeCheck className="h-4 w-4 text-simple-purple shrink-0" />
+                      </div>
+                      {creatorProfile?.subscriber_count != null && (
+                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Users className="h-3 w-3" />
+                          {creatorProfile.subscriber_count.toLocaleString(
+                            "de-DE",
+                          )}{" "}
+                          Abonnenten
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="p-4 rounded-xl border border-border/50 bg-muted/20">
+                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                      <Shield className="h-3.5 w-3.5" /> Lizenz-Details
+                    </h3>
+                    <div className="space-y-2.5">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Status</span>
+                        <Badge
+                          className={
+                            isLicensed
+                              ? "bg-green-500 text-white border-transparent text-xs"
+                              : "text-xs"
+                          }
+                        >
+                          {isLicensed
+                            ? "\u2713 Verf\u00fcgbar"
+                            : "Nicht verf\u00fcgbar"}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">
+                          Lizenzen vergeben
+                        </span>
+                        <span className="font-semibold">
+                          {contracts.length}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Aufrufe</span>
+                        <span className="font-semibold">
+                          {formatViews(video.last_view_count || 0)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* SECONDARY LINKS */}
+                <div className="px-6 py-4 flex flex-wrap gap-4">
+                  {video.yt_link && (
+                    <a
+                      href={video.yt_link}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-red-500 transition-colors"
+                    >
+                      <Youtube className="h-3.5 w-3.5" /> Video auf YouTube
+                    </a>
+                  )}
+                  {creatorProfile?.youtube_channel_id && (
+                    <a
+                      href={`https://www.youtube.com/channel/${creatorProfile.youtube_channel_id}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-red-500 transition-colors"
+                    >
+                      <Users className="h-3.5 w-3.5" /> YouTube-Kanal
+                    </a>
+                  )}
+                  {creatorProfile?.id && (
+                    <button
+                      onClick={() => {
+                        navigate(`/creator/${creatorProfile.id}`);
+                        onClose();
+                      }}
+                      className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-simple-purple transition-colors"
+                    >
+                      <ArrowRight className="h-3.5 w-3.5" /> SimpleShare-Profil
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* OWNER MODE: Tabs + Grid */}
+            {mode !== "public" && (
+              <div className="p-6">
+                {mode === "owner" && activeTab === "pending" && (
+                  <div className="space-y-3">
+                    <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">
+                      Offene Lizenzanfragen
+                    </h3>
+                    {pendingContracts.length > 0 ? (
+                      pendingContracts.map((contract) => (
+                        <div
+                          key={contract.id}
+                          className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 bg-muted/30 rounded-xl border border-border/50 hover:border-yellow-500/30 transition-colors"
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm shrink-0">
+                              {(
+                                contract.licensee_name?.[0] || "?"
+                              ).toUpperCase()}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium truncate">
+                                {contract.licensee_name || "Unbekannt"}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {contract.pricing_value}{" "}
+                                {contract.pricing_currency} ·{" "}
+                                {contract.pricing_model_type === 1
+                                  ? "Fixpreis"
+                                  : contract.pricing_model_type === 2
+                                    ? "Pro View"
+                                    : "CPM"}
+                              </p>
+                              <p className="text-xs text-muted-foreground/60">
+                                {new Date(
+                                  contract.created_at,
+                                ).toLocaleDateString("de-DE", {
+                                  day: "2-digit",
+                                  month: "short",
+                                  year: "numeric",
+                                })}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex gap-2 w-full sm:w-auto">
+                            {processingIds.has(contract.id) ? (
+                              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                            ) : (
+                              <>
+                                <Button
+                                  size="sm"
+                                  className="flex-1 sm:flex-none bg-green-600 hover:bg-green-700 text-white"
+                                  onClick={() => handleAccept(contract.id)}
+                                >
+                                  <Check className="h-4 w-4 mr-1" /> Annehmen
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="flex-1 sm:flex-none border-red-500/50 text-red-500 hover:bg-red-500/10"
+                                  onClick={() => handleDelete(contract.id)}
+                                >
+                                  <X className="h-4 w-4 mr-1" /> Ablehnen
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-12 text-muted-foreground">
+                        <Clock className="h-10 w-10 mx-auto mb-3 opacity-30" />
+                        <p className="text-sm">Keine offenen Anfragen</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+                {activeTab === "details" && (
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="space-y-5">
+                      <div className="p-4 rounded-xl bg-muted/20 border border-border/50">
+                        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
+                          <Shield className="h-4 w-4" /> Lizenz Details
+                        </h3>
+                        {contracts.length > 0 ? (
                           <div className="space-y-2">
                             <p className="text-xs text-muted-foreground mb-2">
                               Lizenziert von:
@@ -433,475 +757,122 @@ export const VideoDetails = ({
                           <p className="text-sm text-muted-foreground">
                             Noch keine Lizenzen verkauft.
                           </p>
-                        )
-                      ) : (
-                        <div className="space-y-2">
-                          <p className="text-sm">
-                            Creator:{" "}
-                            <span className="font-medium">
-                              {video.channel_title || "Unbekannt"}
-                            </span>
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {contracts.length} Lizenzen vergeben
-                          </p>
-                        </div>
+                        )}
+                      </div>
+                      {showDebugTools && simulatedMainVideo && (
+                        <ChangeVideoSettings
+                          video={simulatedMainVideo}
+                          handleViewsChange={handleMainViewsChange}
+                          setMockViews={setMainMockViews}
+                        />
                       )}
                     </div>
-
-                    {/* Debug Tools */}
-                    {showDebugTools && simulatedMainVideo && (
-                      <ChangeVideoSettings
-                        video={simulatedMainVideo}
-                        handleViewsChange={handleMainViewsChange}
-                        setMockViews={setMainMockViews}
-                      />
-                    )}
-                  </div>
-
-                  {/* Right Column – Actions */}
-                  <div className="space-y-5">
-                    {/* Owner: License Toggle + Link Video */}
-                    {mode === "owner" && (
-                      <>
-                        {/* License Toggle */}
-                        <div className="p-4 rounded-xl bg-primary/5 border border-primary/10">
-                          <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                            <Shield className="h-4 w-4 text-primary" />
-                            Video lizenzieren
-                          </h3>
-                          <Field orientation="horizontal" className="max-w-sm">
-                            <FieldContent>
-                              <FieldLabel htmlFor="switch-focus-mode">
-                                Zur kommerziellen Nutzung freigeben
-                              </FieldLabel>
-                              <FieldDescription>
-                                Andere können Reaktionen auf dieses Video
-                                lizenzieren
-                              </FieldDescription>
-                            </FieldContent>
-                            <Switch
-                              onCheckedChange={(checked) => {
-                                if (!checked) {
-                                  // Video is currently licensed, user wants to unlicense -> show confirm
-                                  setIsConfirmOpen(true);
-                                } else {
-                                  // Video is not licensed, user wants to license -> just do it
-                                  toggleLicense();
-                                }
-                              }}
-                              checked={isLicensed}
-                            />
-
-                            <ConfirmDialog
-                              isOpen={isConfirmOpen}
-                              onClose={() => setIsConfirmOpen(false)}
-                              onConfirm={() => {
+                    <div className="space-y-5">
+                      <div className="p-4 rounded-xl bg-primary/5 border border-primary/10">
+                        <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                          <Shield className="h-4 w-4 text-primary" /> Video
+                          lizenzieren
+                        </h3>
+                        <Field orientation="horizontal" className="max-w-sm">
+                          <FieldContent>
+                            <FieldLabel htmlFor="switch-focus-mode">
+                              Zur kommerziellen Nutzung freigeben
+                            </FieldLabel>
+                            <FieldDescription>
+                              Andere k\u00f6nnen Reaktionen auf dieses Video
+                              lizenzieren
+                            </FieldDescription>
+                          </FieldContent>
+                          <Switch
+                            onCheckedChange={(checked) => {
+                              if (!checked) {
+                                setIsConfirmOpen(true);
+                              } else {
                                 toggleLicense();
-                              }}
-                              title="Lizenzierung widerrufen"
-                              description="Bist du sicher, dass du dieses Video nicht mehr zur Lizenzierung anbieten möchtest? Bestehende (bereits gekaufte) Lizenzen behalten ihre Gültigkeit."
-                              isDestructive={true}
-                              confirmLabel="Entlizenzieren"
-                            />
-                          </Field>
-                        </div>
-
-                        {/* Link Video */}
-                        <div className="p-4 rounded-xl bg-muted/20 border border-border/50">
-                          <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                            <Link2 className="h-4 w-4 text-primary" />
-                            Original-Video verlinken
-                          </h3>
-                          <p className="text-xs text-muted-foreground mb-4">
-                            Hast du auf ein Video reagiert? Suche nach dem
-                            Original-Video, um zu prüfen, ob eine Lizenz
-                            verfügbar ist, und erwerbe diese direkt für deine
-                            Reaction.
-                          </p>
-
-                          <InputGroup className="max-w-full">
-                            <InputGroupInput
-                              placeholder="YouTube URL des Originals einfügen..."
-                              value={videoUrl}
-                              onChange={(e) => setVideoUrl(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter") handleSearch();
-                              }}
-                            />
-                            <InputGroupAddon>
-                              <Search className="w-4 h-4" />
-                            </InputGroupAddon>
-                          </InputGroup>
-
-                          <Button
-                            className="w-full mt-3"
-                            onClick={handleSearch}
-                            disabled={isLoading || !videoUrl}
-                          >
-                            {isLoading ? (
-                              <>
-                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                Suche...
-                              </>
-                            ) : (
-                              <>
-                                <Search className="h-4 w-4 mr-2" />
-                                Video suchen
-                              </>
-                            )}
-                          </Button>
-
-                          {foundVideo && (
-                            <div className="mt-4 space-y-3">
-                              <VideoItem video={foundVideo} />
-                              {showDebugTools && simulatedFoundVideo && (
-                                <ChangeVideoSettings
-                                  video={simulatedFoundVideo}
-                                  handleViewsChange={handleFoundViewsChange}
-                                  setMockViews={setFoundMockViews}
-                                />
-                              )}
-
-                              <div className="mt-4 p-3 bg-primary/5 rounded-lg border border-primary/20">
-                                <p className="text-sm font-medium mb-2">
-                                  Lizenz für deine Reaction erwerben:
-                                </p>
-                                <BuyOptions
-                                  videoCreator={activeFoundVideo}
-                                  videoReactor={activeMainVideo}
-                                />
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </>
-                    )}
-
-                    {/* Public: Full Info + Reaction Step + Buy Options */}
-                    {mode === "public" && (
-                      <div className="space-y-5">
-                        {/* Creator Block */}
-                        <div className="p-4 rounded-xl border border-border/50 bg-muted/20 flex items-center gap-4">
-                          {creatorProfile?.youtube_channel_avatar ? (
-                            <img
-                              src={creatorProfile.youtube_channel_avatar}
-                              alt={
-                                creatorProfile.youtube_channel_title ||
-                                "Creator"
                               }
-                              className="w-14 h-14 rounded-full object-cover border-2 border-simple-purple/30 shrink-0"
-                              referrerPolicy="no-referrer"
-                            />
+                            }}
+                            checked={isLicensed}
+                          />
+                          <ConfirmDialog
+                            isOpen={isConfirmOpen}
+                            onClose={() => setIsConfirmOpen(false)}
+                            onConfirm={() => {
+                              toggleLicense();
+                            }}
+                            title="Lizenzierung widerrufen"
+                            description="Bist du sicher, dass du dieses Video nicht mehr zur Lizenzierung anbieten m\u00f6chtest? Bestehende (bereits gekaufte) Lizenzen behalten ihre G\u00fcltigkeit."
+                            isDestructive={true}
+                            confirmLabel="Entlizenzieren"
+                          />
+                        </Field>
+                      </div>
+                      <div className="p-4 rounded-xl bg-muted/20 border border-border/50">
+                        <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                          <Link2 className="h-4 w-4 text-primary" />{" "}
+                          Original-Video verlinken
+                        </h3>
+                        <p className="text-xs text-muted-foreground mb-4">
+                          Hast du auf ein Video reagiert? Suche nach dem
+                          Original-Video, um zu pr\u00fcfen, ob eine Lizenz
+                          verf\u00fcgbar ist.
+                        </p>
+                        <InputGroup className="max-w-full">
+                          <InputGroupInput
+                            placeholder="YouTube URL des Originals einf\u00fcgen..."
+                            value={videoUrl}
+                            onChange={(e) => setVideoUrl(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") handleSearch();
+                            }}
+                          />
+                          <InputGroupAddon>
+                            <Search className="w-4 h-4" />
+                          </InputGroupAddon>
+                        </InputGroup>
+                        <Button
+                          className="w-full mt-3"
+                          onClick={handleSearch}
+                          disabled={isLoading || !videoUrl}
+                        >
+                          {isLoading ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Suche...
+                            </>
                           ) : (
-                            <div className="w-14 h-14 rounded-full bg-simple-purple/10 text-simple-purple flex items-center justify-center text-xl font-bold shrink-0">
-                              {(video.channel_title?.[0] || "C").toUpperCase()}
-                            </div>
+                            <>
+                              <Search className="h-4 w-4 mr-2" />
+                              Video suchen
+                            </>
                           )}
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-1.5 mb-0.5">
-                              <p className="font-semibold text-sm truncate">
-                                {creatorProfile?.youtube_channel_title ||
-                                  video.channel_title ||
-                                  "Unbekannter Creator"}
-                              </p>
-                              <BadgeCheck className="h-4 w-4 text-simple-purple shrink-0" />
-                            </div>
-                            {creatorProfile?.subscriber_count != null && (
-                              <p className="text-xs text-muted-foreground flex items-center gap-1">
-                                <Users className="h-3 w-3" />
-                                {creatorProfile.subscriber_count.toLocaleString(
-                                  "de-DE",
-                                )}{" "}
-                                Abonnenten
-                              </p>
+                        </Button>
+                        {foundVideo && (
+                          <div className="mt-4 space-y-3">
+                            <VideoItem video={foundVideo} />
+                            {showDebugTools && simulatedFoundVideo && (
+                              <ChangeVideoSettings
+                                video={simulatedFoundVideo}
+                                handleViewsChange={handleFoundViewsChange}
+                                setMockViews={setFoundMockViews}
+                              />
                             )}
-                            <div className="flex gap-3 mt-2">
-                              {creatorProfile?.youtube_channel_id && (
-                                <a
-                                  href={`https://www.youtube.com/channel/${creatorProfile.youtube_channel_id}`}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="flex items-center gap-1 text-xs text-red-500 hover:underline"
-                                >
-                                  <Youtube className="h-3.5 w-3.5" /> Kanal
-                                  ansehen
-                                </a>
-                              )}
-                              {creatorProfile?.id && (
-                                <button
-                                  onClick={() => {
-                                    navigate(`/creator/${creatorProfile.id}`);
-                                    onClose();
-                                  }}
-                                  className="flex items-center gap-1 text-xs text-simple-purple hover:underline"
-                                >
-                                  <ArrowRight className="h-3.5 w-3.5" />{" "}
-                                  SimpleShare-Profil
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Video Stats */}
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="p-3 rounded-xl bg-muted/20 border border-border/50 flex items-center gap-3">
-                            <div className="p-2 rounded-lg bg-blue-500/10 text-blue-500">
-                              <Eye className="h-4 w-4" />
-                            </div>
-                            <div>
-                              <p className="text-xs text-muted-foreground">
-                                Aufrufe
+                            <div className="mt-4 p-3 bg-primary/5 rounded-lg border border-primary/20">
+                              <p className="text-sm font-medium mb-2">
+                                Lizenz f\u00fcr deine Reaction erwerben:
                               </p>
-                              <p className="font-semibold text-sm">
-                                {formatViews(video.last_view_count || 0)}
-                              </p>
+                              <BuyOptions
+                                videoCreator={activeFoundVideo}
+                                videoReactor={activeMainVideo}
+                              />
                             </div>
-                          </div>
-                          <div className="p-3 rounded-xl bg-muted/20 border border-border/50 flex items-center gap-3">
-                            <div className="p-2 rounded-lg bg-green-500/10 text-green-500">
-                              <TrendingUp className="h-4 w-4" />
-                            </div>
-                            <div>
-                              <p className="text-xs text-muted-foreground">
-                                Lizenzen vergeben
-                              </p>
-                              <p className="font-semibold text-sm">
-                                {contracts.length}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* YouTube Links */}
-                        <div className="p-4 rounded-xl border border-border/50 bg-muted/20 space-y-2">
-                          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                            Links
-                          </h3>
-                          {video.yt_link && (
-                            <a
-                              href={video.yt_link}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="flex items-center gap-2.5 p-2.5 rounded-lg bg-red-500/5 border border-red-500/20 hover:bg-red-500/10 transition-colors text-sm"
-                            >
-                              <Youtube className="h-4 w-4 text-red-500 shrink-0" />
-                              <span className="flex-1 truncate font-medium">
-                                Video auf YouTube ansehen
-                              </span>
-                              <ExternalLink className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                            </a>
-                          )}
-                          {creatorProfile?.youtube_channel_id && (
-                            <a
-                              href={`https://www.youtube.com/channel/${creatorProfile.youtube_channel_id}`}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="flex items-center gap-2.5 p-2.5 rounded-lg bg-muted/30 border border-border/50 hover:bg-muted/50 transition-colors text-sm"
-                            >
-                              <Users className="h-4 w-4 text-muted-foreground shrink-0" />
-                              <span className="flex-1 truncate font-medium">
-                                {creatorProfile.youtube_channel_title ||
-                                  "YouTube-Kanal"}
-                              </span>
-                              <ExternalLink className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                            </a>
-                          )}
-                        </div>
-
-                        {/* Separator */}
-                        <div className="border-t border-border/50" />
-
-                        {/* Step 1: Reaction Video */}
-                        <div className="p-4 rounded-xl bg-primary/5 border border-primary/10 space-y-3">
-                          <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 rounded-full bg-primary/20 text-primary text-xs font-bold flex items-center justify-center">
-                              1
-                            </div>
-                            <h3 className="text-sm font-semibold">
-                              Welches deiner Videos ist die Reaction?
-                            </h3>
-                          </div>
-                          <p className="text-xs text-muted-foreground pl-8">
-                            Der Lizenzpreis hängt von deinen Aufrufzahlen ab.
-                          </p>
-
-                          {/* Mode toggle */}
-                          {user && (
-                            <div className="pl-8 flex gap-2">
-                              <button
-                                onClick={() => {
-                                  setReactionInputMode("mine");
-                                  setSelectedMyVideo(null);
-                                  setReactionStepDone(false);
-                                }}
-                                className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-all ${
-                                  reactionInputMode === "mine"
-                                    ? "bg-primary text-white border-primary"
-                                    : "border-border text-muted-foreground hover:border-primary/50"
-                                }`}
-                              >
-                                Aus meinen Videos wählen
-                              </button>
-                              <button
-                                onClick={() => {
-                                  setReactionInputMode("url");
-                                  setSelectedMyVideo(null);
-                                  setReactionStepDone(false);
-                                }}
-                                className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-all ${
-                                  reactionInputMode === "url"
-                                    ? "bg-primary text-white border-primary"
-                                    : "border-border text-muted-foreground hover:border-primary/50"
-                                }`}
-                              >
-                                YouTube-Link eingeben
-                              </button>
-                            </div>
-                          )}
-
-                          {/* Mode: Pick from own videos */}
-                          {reactionInputMode === "mine" && user && (
-                            <div className="space-y-2">
-                              {isLoadingMyVideos ? (
-                                <div className="flex items-center gap-2 text-muted-foreground text-xs pl-8">
-                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />{" "}
-                                  Videos werden geladen…
-                                </div>
-                              ) : myVideos.length === 0 ? (
-                                <p className="text-xs text-muted-foreground pl-8">
-                                  Keine eigenen Videos gefunden. Lade deine
-                                  Videos unter "Meine Videos" hoch.
-                                </p>
-                              ) : (
-                                <div className="max-h-52 overflow-y-auto space-y-1.5 pr-1">
-                                  {myVideos.map((v: any) => (
-                                    <button
-                                      key={v.id}
-                                      onClick={() => {
-                                        setSelectedMyVideo(v);
-                                        setReactionStepDone(true);
-                                      }}
-                                      className={`w-full flex items-center gap-3 p-2.5 rounded-lg border text-left transition-all ${
-                                        selectedMyVideo?.id === v.id
-                                          ? "border-primary bg-primary/5 text-foreground"
-                                          : "border-border/50 hover:border-primary/40 hover:bg-muted/30 text-muted-foreground"
-                                      }`}
-                                    >
-                                      {v.thumbnail && (
-                                        <img
-                                          src={v.thumbnail}
-                                          alt={v.title}
-                                          className="w-14 h-9 object-cover rounded shrink-0"
-                                          referrerPolicy="no-referrer"
-                                        />
-                                      )}
-                                      <div className="flex-1 min-w-0">
-                                        <p className="text-xs font-medium truncate">
-                                          {v.title}
-                                        </p>
-                                        <p className="text-[11px] text-muted-foreground">
-                                          {v.last_view_count
-                                            ? `${(v.last_view_count / 1000).toFixed(1)}K Views`
-                                            : "Keine Aufrufzahlen"}
-                                        </p>
-                                      </div>
-                                      {selectedMyVideo?.id === v.id && (
-                                        <Check className="h-4 w-4 text-primary shrink-0" />
-                                      )}
-                                    </button>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          )}
-
-                          {/* Mode: YouTube URL */}
-                          {(reactionInputMode === "url" || !user) && (
-                            <div className="space-y-2">
-                              <InputGroup className="max-w-full">
-                                <InputGroupInput
-                                  placeholder="https://youtube.com/watch?v=..."
-                                  value={reactionUrl}
-                                  onChange={(e) => {
-                                    setReactionUrl(e.target.value);
-                                    setReactionStepDone(false);
-                                  }}
-                                  onKeyDown={(e) => {
-                                    if (e.key === "Enter" && reactionUrl) {
-                                      findReaction(reactionUrl);
-                                      setReactionStepDone(true);
-                                    }
-                                  }}
-                                />
-                                <InputGroupAddon>
-                                  <Search className="w-4 h-4" />
-                                </InputGroupAddon>
-                              </InputGroup>
-                              <Button
-                                className="w-full"
-                                onClick={() => {
-                                  if (reactionUrl) {
-                                    findReaction(reactionUrl);
-                                    setReactionStepDone(true);
-                                  }
-                                }}
-                                disabled={isLoadingReaction || !reactionUrl}
-                              >
-                                {isLoadingReaction ? (
-                                  <>
-                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                    Suche...
-                                  </>
-                                ) : (
-                                  <>
-                                    <Search className="h-4 w-4 mr-2" />
-                                    Preis berechnen
-                                  </>
-                                )}
-                              </Button>
-                              {reactionVideo && reactionStepDone && (
-                                <div className="mt-1 space-y-2">
-                                  <p className="text-xs text-green-500 font-medium flex items-center gap-1">
-                                    <Check className="h-3.5 w-3.5" />{" "}
-                                    Reaction-Video gefunden
-                                  </p>
-                                  <VideoItem video={reactionVideo} />
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Step 2: Buy Options */}
-                        {((reactionInputMode === "mine" && selectedMyVideo) ||
-                          (reactionInputMode === "url" &&
-                            reactionVideo &&
-                            reactionStepDone) ||
-                          (!user && reactionVideo && reactionStepDone)) && (
-                          <div className="p-4 rounded-xl bg-primary/5 border border-primary/20 space-y-3">
-                            <div className="flex items-center gap-2">
-                              <div className="w-6 h-6 rounded-full bg-primary/20 text-primary text-xs font-bold flex items-center justify-center">
-                                2
-                              </div>
-                              <h3 className="text-sm font-semibold flex items-center gap-2">
-                                <ShoppingCart className="h-4 w-4 text-primary" />
-                                Lizenz erwerben
-                              </h3>
-                            </div>
-                            <BuyOptions
-                              videoCreator={activeMainVideo}
-                              videoReactor={selectedMyVideo || reactionVideo}
-                            />
                           </div>
                         )}
                       </div>
-                    )}
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
