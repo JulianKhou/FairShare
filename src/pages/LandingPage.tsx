@@ -10,6 +10,7 @@ import {
   IconConfetti,
   IconBrandYoutube,
   IconWorld,
+  IconChevronDown,
 } from "@tabler/icons-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/auth/useAuth";
@@ -20,6 +21,21 @@ function LandingPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
+  const scrollToFeatures = () => {
+    const featuresSection = document.getElementById("features-section");
+    if (featuresSection) {
+      const headerOffset = 80; // Assuming header is around 80px
+      const elementPosition = featuresSection.getBoundingClientRect().top;
+      const offsetPosition =
+        elementPosition + window.pageYOffset - headerOffset;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: "smooth",
+      });
+    }
+  };
+
   return (
     <div className="flex flex-col flex-1 bg-background">
       <SEO
@@ -27,62 +43,75 @@ function LandingPage() {
         description="Damit du endlich den fairen Anteil an deinen Videos bekommst. Sicherer Marktplatz für Lizenzen und Content-Creator."
       />
       {/* Hero Section */}
-      <section className="flex flex-col items-center justify-center px-4 py-20 md:py-32 bg-linear-to-b from-simple-purple/10 to-background">
-        <div className="flex items-center gap-4 mb-8 animate-fade-in">
-          <SimpleShareLogo size={80} />
-        </div>
-
-        <h1 className="text-4xl md:text-6xl font-bold text-center mb-6 tracking-tight animate-fade-in">
-          Simple<span className="text-simple-purple">Share</span>
-        </h1>
-
-        <p className="text-xl md:text-2xl text-center mb-4 text-muted-foreground max-w-2xl animate-fade-in">
-          Der Marktplatz für Videolizenzen
-        </p>
-
-        <p className="text-base md:text-lg text-center mb-8 text-muted-foreground max-w-3xl animate-fade-in">
-          Verkaufe deine Videos oder kaufe Lizenzen um Creator zu unterstützen.
-          Fair, transparent und rechtssicher.
-        </p>
-
-        <div className="flex flex-col items-center gap-6 animate-fade-in">
-          <div className="flex gap-4 items-center">
-            <Button
-              asChild
-              size="lg"
-              className="text-lg px-8 py-6 hover:scale-105 transition-transform shadow-lg shadow-simple-purple/20"
-            >
-              <Link to="/how-it-works">So funktioniert's</Link>
-            </Button>
-            <Button
-              onClick={user ? () => navigate("/overview") : handleLogin}
-              size="lg"
-              variant="outline"
-              className="text-lg px-8 py-6 hover:scale-105 transition-transform bg-background/50 backdrop-blur-md border-simple-purple/50 text-foreground hover:bg-simple-purple/20"
-            >
-              {user ? "Zur Plattform" : "Anmelden"}
-            </Button>
+      <section className="relative flex flex-col items-center justify-center px-4 min-h-[calc(100vh-5rem)] bg-linear-to-b from-simple-purple/10 to-background">
+        <div className="flex flex-col items-center justify-center flex-1 w-full max-w-4xl max-h-[800px] mt-[-5rem]">
+          <div className="flex items-center gap-4 mb-8 animate-fade-in">
+            <SimpleShareLogo size={80} />
           </div>
 
-          <p className="text-xs text-muted-foreground/60 max-w-md text-center">
-            Mit der Anmeldung stimmst du unseren{" "}
-            <Link to="/agb" className="underline hover:text-simple-purple">
-              AGB
-            </Link>{" "}
-            und unserer{" "}
-            <Link
-              to="/datenschutz"
-              className="underline hover:text-simple-purple font-medium"
-            >
-              Datenschutzerklärung
-            </Link>{" "}
-            zu.
+          <h1 className="text-4xl md:text-6xl font-bold text-center mb-6 tracking-tight animate-fade-in">
+            Simple<span className="text-simple-purple">Share</span>
+          </h1>
+
+          <p className="text-xl md:text-2xl text-center mb-4 text-muted-foreground max-w-2xl animate-fade-in">
+            Der Marktplatz für Videolizenzen
           </p>
+
+          <p className="text-base md:text-lg text-center mb-8 text-muted-foreground max-w-3xl animate-fade-in">
+            Verkaufe deine Videos oder kaufe Lizenzen um Creator zu
+            unterstützen. Fair, transparent und rechtssicher.
+          </p>
+
+          <div className="flex flex-col items-center gap-6 animate-fade-in">
+            <div className="flex gap-4 items-center">
+              <Button
+                asChild
+                size="lg"
+                className="text-lg px-8 py-6 hover:scale-105 transition-transform shadow-lg shadow-simple-purple/20"
+              >
+                <Link to="/how-it-works">So funktioniert's</Link>
+              </Button>
+              <Button
+                onClick={user ? () => navigate("/overview") : handleLogin}
+                size="lg"
+                variant="outline"
+                className="text-lg px-8 py-6 hover:scale-105 transition-transform bg-background/50 backdrop-blur-md border-simple-purple/50 text-foreground hover:bg-simple-purple/20"
+              >
+                {user ? "Zur Plattform" : "Anmelden"}
+              </Button>
+            </div>
+
+            <p className="text-xs text-muted-foreground/60 max-w-md text-center">
+              Mit der Anmeldung stimmst du unseren{" "}
+              <Link to="/agb" className="underline hover:text-simple-purple">
+                AGB
+              </Link>{" "}
+              und unserer{" "}
+              <Link
+                to="/datenschutz"
+                className="underline hover:text-simple-purple font-medium"
+              >
+                Datenschutzerklärung
+              </Link>{" "}
+              zu.
+            </p>
+          </div>
+        </div>
+
+        {/* Scroll Indicator */}
+        <div
+          className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce cursor-pointer text-muted-foreground hover:text-simple-purple transition-colors"
+          onClick={scrollToFeatures}
+        >
+          <IconChevronDown size={40} />
         </div>
       </section>
 
       {/* Features Section */}
-      <section className="px-4 py-16 md:py-24 max-w-6xl mx-auto w-full">
+      <section
+        id="features-section"
+        className="px-4 py-16 md:py-24 max-w-6xl mx-auto w-full"
+      >
         <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
           Warum SimpleShare?
         </h2>

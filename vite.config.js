@@ -4,31 +4,16 @@ import tailwindcss from "@tailwindcss/vite";
 import path from "path";
 import { fileURLToPath } from "url";
 
-import prerender from "vite-plugin-prerender";
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // https://vite.dev/config/
 export default defineConfig({
   base: "/",
-  plugins: [
-    react(),
-    tailwindcss({ optimize: false }),
-    prerender({
-      // The path to the dist folder
-      staticDir: path.join(__dirname, "dist"),
-      // The routes to prerender
-      routes: [
-        "/",
-        "/about-us",
-        "/how-it-works",
-        "/impressum",
-        "/datenschutz",
-        "/agb",
-      ],
-    }),
-  ],
+  plugins: [react(), tailwindcss({ optimize: false })],
+  build: {
+    target: "es2015",
+  },
   server: {
     host: "127.0.0.1",
     allowedHosts: ["unshadily-bashful-aaden.ngrok-free.dev"],
