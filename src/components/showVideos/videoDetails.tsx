@@ -463,11 +463,11 @@ export const VideoDetails = ({
                 <div className="p-6 border-b border-border/50 space-y-4">
                   <div>
                     <h2 className="text-xl font-bold mb-1">
-                      Lizenz f\u00fcr deine Reaction erwerben
+                      Lizenz für deine Reaction erwerben
                     </h2>
                     <p className="text-sm text-muted-foreground">
-                      W\u00e4hle dein Video aus und erhalte sofort ein faires
-                      Angebot f\u00fcr deine Lizenz.
+                      Wähle dein Video aus und erhalte sofort ein faires Angebot
+                      für deine Lizenz.
                     </p>
                   </div>
                   {user && !myExistingLicense && (
@@ -479,8 +479,8 @@ export const VideoDetails = ({
                         }}
                         className="rounded-full font-semibold shadow-lg shadow-primary/10 px-6"
                       >
-                        <ShoppingCart className="h-4 w-4 mr-2" /> Lizenz
-                        f\u00fcr Reaction kaufen
+                        <ShoppingCart className="h-4 w-4 mr-2" /> Lizenz für
+                        Reaction kaufen
                       </Button>
                     </div>
                   )}
@@ -822,7 +822,7 @@ export const VideoDetails = ({
                         <p className="font-semibold text-sm truncate">
                           {creatorProfile?.youtube_channel_title ||
                             video.channel_title ||
-                            "\u2014"}
+                            "—"}
                         </p>
                         <BadgeCheck className="h-4 w-4 text-simple-purple shrink-0" />
                       </div>
@@ -851,9 +851,7 @@ export const VideoDetails = ({
                               : "text-xs"
                           }
                         >
-                          {isLicensed
-                            ? "\u2713 Verf\u00fcgbar"
-                            : "Nicht verf\u00fcgbar"}
+                          {isLicensed ? "✓ Verfügbar" : "Nicht verfügbar"}
                         </Badge>
                       </div>
                       <div className="flex items-center justify-between text-sm">
@@ -1049,7 +1047,7 @@ export const VideoDetails = ({
                               Zur kommerziellen Nutzung freigeben
                             </FieldLabel>
                             <FieldDescription>
-                              Andere k\u00f6nnen dieses Video lizenzieren
+                              Berechne deinen persönlichen Lizenzpreis
                             </FieldDescription>
                           </FieldContent>
                           <Switch
@@ -1069,7 +1067,7 @@ export const VideoDetails = ({
                               toggleLicense();
                             }}
                             title="Lizenzierung widerrufen"
-                            description="Bist du sicher, dass du dieses Video nicht mehr zur Lizenzierung anbieten m\u00f6chtest? Bestehende (bereits gekaufte) Lizenzen behalten ihre G\u00fcltigkeit."
+                            description="Bist du sicher, dass du dieses Video nicht mehr zur Lizenzierung anbieten möchtest? Bestehende (bereits gekaufte) Lizenzen behalten ihre Gültigkeit."
                             isDestructive={true}
                             confirmLabel="Entlizenzieren"
                           />
@@ -1082,12 +1080,12 @@ export const VideoDetails = ({
                         </h3>
                         <p className="text-xs text-muted-foreground mb-4">
                           Hast du auf ein Video reagiert? Suche nach dem
-                          Original-Video, um zu pr\u00fcfen, ob eine Lizenz
-                          verf\u00fcgbar ist.
+                          Original-Video, um zu prüfen, ob eine Lizenz verfügbar
+                          ist.
                         </p>
                         <InputGroup className="max-w-full">
                           <InputGroupInput
-                            placeholder="YouTube URL des Originals einf\u00fcgen..."
+                            placeholder="YouTube URL des Originals einfügen..."
                             value={videoUrl}
                             onChange={(e) => setVideoUrl(e.target.value)}
                             onKeyDown={(e) => {
@@ -1127,7 +1125,7 @@ export const VideoDetails = ({
                             )}
                             <div className="mt-4 p-3 bg-primary/5 rounded-lg border border-primary/20">
                               <p className="text-sm font-medium mb-2">
-                                Lizenz f\u00fcr dein Video erwerben:
+                                Lizenz für dein Video erwerben:
                               </p>
                               <BuyOptions
                                 videoCreator={activeFoundVideo}

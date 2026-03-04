@@ -220,9 +220,7 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
 
       {!isDirectLink && (
         <FieldSet className="w-full max-w-xs space-y-1">
-          <FieldLegend variant="label">
-            Mein Video f\u00fcr diese Lizenz
-          </FieldLegend>
+          <FieldLegend variant="label">Mein Video für diese Lizenz</FieldLegend>
           {isLoadingVideos ? (
             <FieldDescription>Loading videos...</FieldDescription>
           ) : myVideos.length > 0 ? (
