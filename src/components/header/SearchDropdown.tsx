@@ -190,7 +190,7 @@ export function SearchDropdown() {
       const { data } = await supabase
         .from("videos")
         .select("*")
-        .eq("youtube_video_id", videoId)
+        .eq("id", videoId)
         .maybeSingle();
       setYtState(
         data ? { status: "found", video: data } : { status: "not_found" },
@@ -447,3 +447,4 @@ export function SearchDropdown() {
     </div>
   );
 }
+

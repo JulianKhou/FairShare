@@ -1,111 +1,105 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import Stripe from "https://esm.sh/stripe@14.14.0";
-import { corsHeaders } from "../_shared/cors.ts";
+import { getCorsHeaders, isOriginAllowed } from "../_shared/cors.ts";
+import {
+  createAdminClient,
+  getUserFromRequest,
+  hasServiceRoleToken,
+} from "../_shared/auth.ts";
 
 console.log("Create Checkout Session Function Invoked");
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
+
   if (req.method === "OPTIONS") {
+    if (!isOriginAllowed(req.headers.get("origin"))) {
+      return new Response("Origin not allowed", {
+        status: 403,
+        headers: corsHeaders,
+      });
+    }
     return new Response("ok", { headers: corsHeaders });
   }
 
   try {
     const { contractId } = await req.json();
-    console.log("Received contractId:", contractId);
-
     if (!contractId) {
       throw new Error("Missing contractId");
     }
 
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SERVICE_ROLE_KEY") ?? "",
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false,
-        },
-      },
-    );
+    const isInternalCall = hasServiceRoleToken(req);
+    const callerUser = isInternalCall ? null : await getUserFromRequest(req);
 
-    // 1. Fetch Contract Details
-    console.log("Fetching contract with ID:", contractId);
+    if (!isInternalCall && !callerUser) {
+      throw new Error("UNAUTHORIZED: Missing or invalid user session");
+    }
+
+    const supabaseClient = createAdminClient();
+
+    // 1) Fetch contract details
     const { data: contract, error: contractError } = await supabaseClient
       .from("reaction_contracts")
       .select("*")
       .eq("id", contractId)
       .single();
 
-    if (contractError) {
-      console.error("Contract Fetch Error:", contractError);
-      throw new Error(
-        `Contract Fetch Failed: ${JSON.stringify(contractError)}`,
-      );
-    }
-
-    if (!contract) {
-      console.error("No contract returned for ID:", contractId);
+    if (contractError || !contract) {
       throw new Error(`Contract not found (ID: ${contractId})`);
     }
 
-    console.log("Contract found:", contract.id);
-    console.log("Licensor ID:", contract.licensor_id);
+    // 2) Authorization: only the licensee may start checkout (unless internal service call)
+    if (!isInternalCall && callerUser!.id !== contract.licensee_id) {
+      throw new Error("FORBIDDEN: You are not allowed to pay this contract");
+    }
 
-    // 2. Fetch Licensor's Connect ID
+    // 3) Contract state validation
+    if (!contract.accepted_by_licensor || contract.status !== "PENDING") {
+      throw new Error(
+        "Contract is not ready for checkout. It must be accepted and pending.",
+      );
+    }
+
+    // 4) Fetch licensor's Stripe Connect ID
     const { data: licensorProfile, error: licensorError } = await supabaseClient
       .from("profiles")
       .select("stripe_connect_id")
       .eq("id", contract.licensor_id)
       .single();
 
-    if (licensorError) {
-      console.error("Licensor Fetch Error:", licensorError);
-    }
-
-    if (!licensorProfile?.stripe_connect_id) {
-      console.error("Licensor has no Stripe Connect ID");
+    if (licensorError || !licensorProfile?.stripe_connect_id) {
       throw new Error("Licensor has not connected Stripe account");
     }
 
     const stripeConnectId = licensorProfile.stripe_connect_id;
 
-    // Resolve Origin safely
-    let origin = req.headers.get("origin");
-    if (!origin) {
-      // Fallback if browser extensions stripped the Origin header
-      // Depending on environment, we might use a predefined env var
-      origin = Deno.env.get("PUBLIC_APP_URL") || "https://example.com";
-      console.warn("Origin header missing, falling back to:", origin);
-    }
+    // Resolve app URL
+    const origin = req.headers.get("origin");
+    const appBaseUrl =
+      Deno.env.get("PUBLIC_APP_URL") || origin || "https://simpleshare.eu";
 
-    // 3. Calculate Amounts & Determine Mode
-    // Assuming pricing_value is in EUR currency unit (e.g. 50.00)
-    // Stripe expects amounts in cents.
+    // 5) Calculate amounts & determine mode
     const amount = Math.round(contract.pricing_value * 100);
-    const APP_FEE_PERCENTAGE = 0.1; // 10%
-    // Application fee is per-transaction. For subscriptions, it applies to invoices?
-    // Stripe Connect subscriptions fees are handled differently (on the subscription object or invoice).
-    // For now, we will set it on the session context if possible, or application_fee_percent.
+    const APP_FEE_PERCENTAGE = 0.1;
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") ?? "", {
       httpClient: Stripe.createFetchHttpClient(),
     });
 
-    let sessionParams: any = {
+    const sessionParams: any = {
       payment_method_types: ["card"],
       line_items: [],
       mode: "payment",
       metadata: {
         contractId: contract.id,
       },
-      success_url: `https://simpleshare.eu/dashboard?success=true&contractId=${contract.id}&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `https://simpleshare.eu/dashboard?canceled=true&contractId=${contract.id}`,
+      success_url: `${appBaseUrl}/dashboard?success=true&contractId=${contract.id}&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${appBaseUrl}/dashboard?canceled=true&contractId=${contract.id}`,
       allow_promotion_codes: true,
     };
 
     if (contract.pricing_model_type === 1) {
-      // --- FIXED PRICE (One-Time) ---
+      // Fixed one-time payment
       const applicationFeeAmount = Math.round(amount * APP_FEE_PERCENTAGE);
       sessionParams.line_items = [
         {
@@ -127,25 +121,20 @@ serve(async (req) => {
         },
       };
     } else if (contract.pricing_model_type === 2) {
-      // --- USAGE BASED (Subscription) ---
-      // Model 2: Pay per 1000 Views (metered billing, quarterly invoicing)
+      // Usage-based subscription (quarterly billing)
       sessionParams.mode = "subscription";
 
-      // We MUST create/get a Customer for subscriptions
-      // 1. Check if we already have a customer_id in profile (ideal) or search by email
       const { data: licenseeProfile } = await supabaseClient
         .from("profiles")
-        .select("stripe_customer_id, email, full_name") // Assuming profile has these
+        .select("stripe_customer_id")
         .eq("id", contract.licensee_id)
         .single();
 
       let customerId = licenseeProfile?.stripe_customer_id;
 
       if (!customerId) {
-        // Create new Customer
-        // Note: In production, save this ID back to profile!
         const customer = await stripe.customers.create({
-          email: `user-${contract.licensee_id}@example.com`, // Fallback if no email
+          email: `user-${contract.licensee_id}@example.com`,
           name: contract.licensee_name || "SimpleShare User",
           metadata: {
             supabase_id: contract.licensee_id,
@@ -153,30 +142,24 @@ serve(async (req) => {
         });
         customerId = customer.id;
 
-        // Save stripe_customer_id back to this user's profile
         await supabaseClient
           .from("profiles")
           .update({ stripe_customer_id: customerId })
           .eq("id", contract.licensee_id);
-
-        console.log("Created and saved Stripe Customer:", customerId);
       }
 
       sessionParams.customer = customerId;
 
-      // Hole die Product-ID aus den Umgebungsvariablen (Live) oder nutze die Test-ID als Fallback
       const USAGE_PRODUCT_ID =
         Deno.env.get("STRIPE_USAGE_PRODUCT_ID") || "prod_TyiT0TPODEVOFx";
 
-      // Create a Price for this specific contract/amount because price_data
-      // in Checkout does not support 'usage_type' or 'aggregate_usage'
       const price = await stripe.prices.create({
         currency: contract.pricing_currency || "eur",
         product: USAGE_PRODUCT_ID,
         unit_amount: amount,
         recurring: {
           interval: "month",
-          interval_count: 1, // Change from 3 (Quarterly) to 1 (Monthly) to fix confusing Checkout UI
+          interval_count: 3,
           usage_type: "metered",
           aggregate_usage: "sum",
         },
@@ -189,7 +172,7 @@ serve(async (req) => {
       ];
 
       sessionParams.subscription_data = {
-        application_fee_percent: APP_FEE_PERCENTAGE * 100, // 10%
+        application_fee_percent: APP_FEE_PERCENTAGE * 100,
         transfer_data: {
           destination: stripeConnectId,
         },
@@ -199,10 +182,10 @@ serve(async (req) => {
       };
     }
 
-    // 4. Create Checkout Session
+    // 6) Create checkout session
     const session = await stripe.checkout.sessions.create(sessionParams);
 
-    // 5. Update Contract with Session ID
+    // 7) Persist session ID
     const { error: updateError } = await supabaseClient
       .from("reaction_contracts")
       .update({ stripe_session_id: session.id })
@@ -210,7 +193,6 @@ serve(async (req) => {
 
     if (updateError) {
       console.error("Failed to update contract with session ID", updateError);
-      // We don't throw here to avoid blocking the user redirect, but it is bad.
     }
 
     return new Response(JSON.stringify({ url: session.url }), {
@@ -218,10 +200,19 @@ serve(async (req) => {
       status: 200,
     });
   } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    const normalizedMessage = message.replace(/^(UNAUTHORIZED|FORBIDDEN):\s*/, "");
+    const status = message.startsWith("UNAUTHORIZED:")
+      ? 401
+      : message.startsWith("FORBIDDEN:")
+        ? 403
+        : 400;
+
     console.error("Error in create-checkout-session:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: normalizedMessage }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 400,
+      status,
     });
   }
 });
+

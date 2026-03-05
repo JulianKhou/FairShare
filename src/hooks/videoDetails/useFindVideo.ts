@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { getIDsFromLink } from "@/lib/getIDsFromLinkt";
-import { getLicensedVideosFromSupabase } from "@/services/supabaseCollum/database";
+import { getVideoFromSupabaseById } from "@/services/supabaseCollum/database";
+
 export const useFindVideo = () => {
   const [video, setVideo] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -9,28 +10,30 @@ export const useFindVideo = () => {
   const findVideo = async (videoUrl: string) => {
     setIsLoading(true);
     setError(null);
+
     try {
-      console.log("Video URL:", getIDsFromLink({ videoUrl }));
       const { videoId } = getIDsFromLink({ videoUrl });
-      console.log("Extracted Video ID:", videoId);
-
-      const videos = await getLicensedVideosFromSupabase();
-
-      for (const video of videos) {
-        if (video.id === videoId) {
-          setVideo(video);
-          console.log("Found video:", video);
-          break;
-        } else {
-          // Optional: clear video if not found or set specific error
-          setVideo(null);
-        }
+      if (!videoId) {
+        setVideo(null);
+        setError("Ungültiger YouTube-Link.");
+        return;
       }
-    } catch (error) {
-      setError(error as string);
+
+      const data = await getVideoFromSupabaseById(videoId);
+      const found = data?.[0];
+
+      if (found?.islicensed) {
+        setVideo(found);
+      } else {
+        setVideo(null);
+      }
+    } catch {
+      setError("Fehler bei der Videosuche.");
+      setVideo(null);
     } finally {
       setIsLoading(false);
     }
   };
+
   return { video, isLoading, error, findVideo };
 };

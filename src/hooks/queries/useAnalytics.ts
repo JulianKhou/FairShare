@@ -55,7 +55,7 @@ export const useAnalytics = (userId: string | undefined) => {
           .from("videos")
           .select("id")
           .eq("creator_id", userId)
-          .eq("is_licensed", true),
+          .eq("islicensed", true),
       ]);
 
       const allLicensor = (licensorContracts || []) as ReactionContract[];
@@ -176,3 +176,4 @@ export const useAnalytics = (userId: string | undefined) => {
     enabled: !!userId,
   });
 };
+

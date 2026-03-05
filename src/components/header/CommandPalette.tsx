@@ -176,7 +176,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
       const { data, error } = await supabase
         .from("videos")
         .select("*")
-        .eq("youtube_video_id", videoId)
+        .eq("id", videoId)
         .maybeSingle();
 
       if (error || !data) {
@@ -499,3 +499,4 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
     document.body,
   );
 }
+

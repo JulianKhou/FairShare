@@ -14,7 +14,6 @@ export const useOpenInvoices = (userId: string | undefined) => {
         .eq("licensee_id", userId)
         .eq("accepted_by_licensor", true)
         .eq("status", "PENDING")
-        .is("stripe_subscription_id", null)
         .order("created_at", { ascending: false });
 
       if (error) {
@@ -26,3 +25,4 @@ export const useOpenInvoices = (userId: string | undefined) => {
     enabled: !!userId,
   });
 };
+

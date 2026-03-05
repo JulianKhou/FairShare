@@ -1,12 +1,20 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import Stripe from "https://esm.sh/stripe@14.14.0";
-import { corsHeaders } from "../_shared/cors.ts";
+import { getCorsHeaders, isOriginAllowed } from "../_shared/cors.ts";
 
 console.log("Create Connect Account Function Invoked");
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
+
   if (req.method === "OPTIONS") {
+    if (!isOriginAllowed(req.headers.get("origin"))) {
+      return new Response("Origin not allowed", {
+        status: 403,
+        headers: corsHeaders,
+      });
+    }
     return new Response("ok", { headers: corsHeaders });
   }
 
@@ -129,3 +137,4 @@ serve(async (req) => {
     );
   }
 });
+
