@@ -10,8 +10,41 @@ entrypoint = "./functions/generate-license-pdf/index.ts"
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/generate-license-pdf/*.html" ]
 
+# supabase/config.toml
+
+[functions.create-connect-account]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/create-connect-account/index.ts"
+
+[functions.create-checkout-session]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/create-checkout-session/index.ts"
+
+[functions.cancel-subscription]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/cancel-subscription/index.ts"
+
+[functions.sync-subscription-status]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/sync-subscription-status/index.ts"
+
+[functions.generate-license-pdf]
+enabled = true
+verify_jwt = false
+import_map = "./functions/generate-license-pdf/deno.json"
+entrypoint = "./functions/generate-license-pdf/index.ts"
+
 [functions.report-usage]
 enabled = true
 verify_jwt = false
 import_map = "./functions/report-usage/deno.json"
 entrypoint = "./functions/report-usage/index.ts"
+
+[functions.stripe-webhook]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/stripe-webhook/index.ts"
