@@ -1,7 +1,14 @@
-﻿import type { PriceResult } from "@/hooks/videoDetails/getPrices";
+import type { PriceResult } from "@/hooks/videoDetails/getPrices";
 import type { ResolvedAlgorithmSettings } from "@/types/algorithmSettings";
 
 const ALGORITHM_BASE_VERSION = "simpleshare-v1";
+const BILLING_DURATION_MONTHS_SUBSCRIPTION = 12;
+const FIXED_USAGE_POLICY = {
+  platform_scope: "youtube_only",
+  usage_mode: "reaction_only",
+  exclusivity: false,
+  license_duration: "unlimited",
+} as const;
 
 interface BuildAlgorithmInputSnapshotParams {
   videoCreator: any;
@@ -23,6 +30,26 @@ interface BuildAlgorithmInputSnapshotParams {
 const pickNumberish = (value: unknown): number | null => {
   if (typeof value !== "number") return null;
   return Number.isFinite(value) ? value : null;
+};
+
+const pickBooleanish = (value: unknown): boolean | null => {
+  if (typeof value === "boolean") return value;
+
+  if (typeof value === "number") {
+    if (value === 1) return true;
+    if (value === 0) return false;
+    return null;
+  }
+
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (["true", "yes", "1", "monetized"].includes(normalized)) return true;
+    if (["false", "no", "0", "not_monetized", "demonetized"].includes(normalized)) {
+      return false;
+    }
+  }
+
+  return null;
 };
 
 const toVideoInputSnapshot = (video: any) => ({
@@ -60,8 +87,17 @@ export const buildAlgorithmInputSnapshot = ({
   prices,
   algorithmSettings,
 }: BuildAlgorithmInputSnapshotParams): Record<string, unknown> => {
+  const monetizedHint = pickBooleanish(
+    videoReactor?.is_monetized ??
+      videoReactor?.monetized ??
+      videoReactor?.isMonetized ??
+      videoReactor?.monetization_enabled ??
+      videoReactor?.monetization,
+  );
+  const isSubscriptionModel = pricingModelType !== 1;
+
   return {
-    schema_version: 1,
+    schema_version: 2,
     captured_at: new Date().toISOString(),
     settings_reference: {
       settings_id: algorithmSettings?.id ?? "default",
@@ -70,12 +106,22 @@ export const buildAlgorithmInputSnapshot = ({
       pricing_config: algorithmSettings?.pricingConfig ?? null,
       niche_rpm_overrides: algorithmSettings?.nicheRpmOverrides ?? null,
     },
-    contract_selection: {
+    usage_policy: {
+      ...FIXED_USAGE_POLICY,
+      billing_duration_months: isSubscriptionModel
+        ? BILLING_DURATION_MONTHS_SUBSCRIPTION
+        : null,
+      billing_cap_rule: isSubscriptionModel
+        ? "max_12_months_billing"
+        : "one_time_payment",
+    },
+    variable_inputs_used_for_pricing: {
       selected_plan: selectedPlan,
       pricing_model_type: pricingModelType,
       selected_price: selectedPrice,
       creator_min_price: creatorMinPrice,
       selected_reaction_video_id: selectedReactionVideoId,
+      reactor_monetization_hint: monetizedHint,
     },
     video_inputs: {
       creator_video: toVideoInputSnapshot(videoCreator),
