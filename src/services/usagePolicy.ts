@@ -69,7 +69,7 @@ export const validateUsageSelection = (
       typeof selection.billing_duration_months !== "number" ||
       !Number.isFinite(selection.billing_duration_months)
     ) {
-      errors.push("Abo-Modell benoetigt eine gueltige Billing-Dauer in Monaten.");
+      errors.push("Abo-Modell benötigt eine gültige Billing-Dauer in Monaten.");
     } else {
       const billingMonths = Math.round(selection.billing_duration_months);
       if (billingMonths < 1) {

@@ -144,7 +144,7 @@ export default function SimpleShareSimulator() {
               </div>
             </div>
             <div className="mt-3 text-xs text-muted-foreground">
-              Aktiver RPM fuer diese Branche:{" "}
+              Aktiver RPM für diese Branche:{" "}
               <strong className="text-foreground">
                 {effectiveRpm.toLocaleString("de-DE", {
                   style: "currency",
@@ -185,7 +185,7 @@ export default function SimpleShareSimulator() {
               className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-simple-teal"
             />
             <div className="text-xs text-muted-foreground text-right mt-1">
-              Geschaetzte AdSense-Einnahmen: ~
+              Geschätzte AdSense-Einnahmen: ~
               {creatorRevenue.toLocaleString("de-DE", {
                 style: "currency",
                 currency: "EUR",
@@ -221,7 +221,7 @@ export default function SimpleShareSimulator() {
               className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-simple-purple"
             />
             <div className="text-xs text-muted-foreground text-right mt-1">
-              Geschaetzte AdSense-Einnahmen: ~
+              Geschätzte AdSense-Einnahmen: ~
               {reactorRevenue.toLocaleString("de-DE", {
                 style: "currency",
                 currency: "EUR",
@@ -236,7 +236,7 @@ export default function SimpleShareSimulator() {
           <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex flex-col gap-1 w-full md:w-1/2">
               <span className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">
-                Geschaetzter Preis (Total)
+                Geschätzter Preis (Total)
               </span>
               <div className="flex items-baseline gap-2 flex-wrap">
                 <span className="text-4xl font-bold bg-clip-text text-transparent bg-linear-to-r from-simple-purple to-simple-teal">
@@ -257,7 +257,7 @@ export default function SimpleShareSimulator() {
                 )}
               </div>
               <span className="text-xs text-muted-foreground mt-2">
-                Pauschalpreis fuer{" "}
+                Pauschalpreis für{" "}
                 <strong className="text-foreground">1 Jahr Nutzung</strong>.
               </span>
             </div>
@@ -279,14 +279,14 @@ export default function SimpleShareSimulator() {
               </div>
               <div className="flex justify-between text-xs text-muted-foreground">
                 <span>{(sharePercent * 100).toFixed(1)}% berechnet</span>
-                <span>Fuer Fremd-Nutzung</span>
+                <span>Für Fremd-Nutzung</span>
               </div>
             </div>
           </div>
 
           <div className="relative z-10 pt-6 border-t border-white/10 space-y-3">
             <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
-              Transparente Gebuehren-Aufteilung
+              Transparente Gebühren-Aufteilung
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="p-3 rounded-xl bg-white/5 border border-white/5">
@@ -302,7 +302,7 @@ export default function SimpleShareSimulator() {
               </div>
               <div className="p-3 rounded-xl bg-white/5 border border-white/5">
                 <div className="text-[10px] text-muted-foreground uppercase font-bold mb-1 flex items-center gap-1">
-                  Stripe Gebuehren
+                  Stripe Gebühren
                   <div className="group/stripe relative">
                     <IconInfoCircle
                       size={12}

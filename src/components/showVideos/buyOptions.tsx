@@ -100,12 +100,12 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
     }
 
     if (!selectedReactionVideoId) {
-      toast.error("Bitte waehle ein Video fuer die Lizenz aus.");
+      toast.error("Bitte wähle ein Video für die Lizenz aus.");
       return;
     }
 
     if (!usageConsentAccepted) {
-      toast.error("Bitte bestaetige zuerst die Zustimmung zur Nutzung dieses Videos.");
+      toast.error("Bitte bestätige zuerst die Zustimmung zur Nutzung dieses Videos.");
       return;
     }
 
@@ -230,7 +230,7 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
 
   const handleWithdraw = async () => {
     if (!existingContract?.id) return;
-    if (!confirm("Moechtest du diese Anfrage wirklich zurueckziehen?")) return;
+    if (!confirm("Möchtest du diese Anfrage wirklich zurückziehen?")) return;
 
     setLoading(true);
     try {
@@ -248,7 +248,7 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
       toast.error(
         error instanceof Error
           ? error.message
-          : "Fehler beim Zurueckziehen der Anfrage.",
+          : "Fehler beim Zurückziehen der Anfrage.",
       );
     } finally {
       setLoading(false);
@@ -264,10 +264,10 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
             <div className="rounded-md border border-border/50 bg-background/80 px-2.5 py-2">
-              1) Reaktionsvideo waehlen
+              1) Reaktionsvideo wählen
             </div>
             <div className="rounded-md border border-border/50 bg-background/80 px-2.5 py-2">
-              2) Modell & Preis bestaetigen
+              2) Modell & Preis bestätigen
             </div>
             <div className="rounded-md border border-border/50 bg-background/80 px-2.5 py-2">
               3) Zustimmung & Checkout
@@ -282,7 +282,7 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
           <div className="flex flex-col">
             <span className="font-semibold">Lizenz bereits vorhanden</span>
             <span className="text-sm mt-1 opacity-90">
-              Du hast fuer dieses Grundvideo bereits eine aktive Lizenz.
+              Du hast für dieses Grundvideo bereits eine aktive Lizenz.
             </span>
           </div>
         </div>
@@ -300,7 +300,7 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
               onChange={(e) => setSelectedReactionVideoId(e.target.value)}
             >
               <option value="" disabled>
-                Video auswaehlen...
+                Video auswählen...
               </option>
               {myVideos.map((video) => (
                 <option key={video.id} value={video.id}>
@@ -339,7 +339,7 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
                 <span className="group relative inline-flex">
                   <HelpCircle className="w-3.5 h-3.5 text-muted-foreground cursor-help" />
                   <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-52 p-2 bg-popover text-popover-foreground text-xs rounded shadow-lg border border-border opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
-                    Abrechnung pro 1.000 Aufrufe, regelmaessig synchronisiert.
+                    Abrechnung pro 1.000 Aufrufe, regelmäßig synchronisiert.
                   </span>
                 </span>
               </FieldLabel>
@@ -372,7 +372,7 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
 
           {checkingLicense ? (
             <Button disabled className="w-full">
-              Status wird geprueft...
+              Status wird geprüft...
             </Button>
           ) : isPaid ? (
             <div className="flex items-center gap-2 p-3 bg-green-500/10 text-green-600 rounded-md border border-green-500/20">
@@ -384,7 +384,7 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
               <div className="flex items-center gap-2 p-3 bg-yellow-500/10 text-yellow-700 rounded-md border border-yellow-500/20">
                 <AlertCircle className="h-5 w-5" />
                 <span className="font-medium">
-                  Anfrage gesendet. Warte auf Bestaetigung.
+                  Anfrage gesendet. Warte auf Bestätigung.
                 </span>
               </div>
               <Button
@@ -393,7 +393,7 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
                 onClick={handleWithdraw}
                 disabled={loading}
               >
-                {loading ? "Wird zurueckgezogen..." : "Anfrage zurueckziehen"}
+                {loading ? "Wird zurückgezogen..." : "Anfrage zurückziehen"}
               </Button>
             </div>
           ) : isAwaitingPayment ? (
@@ -401,13 +401,13 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
               <div className="flex items-center gap-2 p-3 bg-green-500/10 text-green-600 rounded-md border border-green-500/20">
                 <CheckCircle2 className="h-5 w-5" />
                 <span className="font-medium">
-                  Anfrage akzeptiert. Bitte Zahlung abschliessen.
+                  Anfrage akzeptiert. Bitte Zahlung abschließen.
                 </span>
               </div>
               <Button
                 onClick={async () => {
                   if (!usageConsentAccepted) {
-                    toast.error("Bitte bestaetige zuerst die Zustimmung zur Nutzung dieses Videos.");
+                    toast.error("Bitte bestätige zuerst die Zustimmung zur Nutzung dieses Videos.");
                     return;
                   }
                   setLoading(true);
@@ -439,7 +439,7 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
               <div>
                 <span className="font-bold block">Anfrage abgelehnt</span>
                 <span className="text-xs opacity-90">
-                  Fuer dieses Video ist keine weitere Anfrage moeglich.
+                  Für dieses Video ist keine weitere Anfrage möglich.
                 </span>
               </div>
             </div>

@@ -283,7 +283,7 @@ export const VideoDetails = ({
                   {isLicensed && (
                     <div className="absolute top-4 left-4">
                       <Badge className="bg-green-500 text-white border-transparent shadow-lg px-3 py-1 text-xs">
-                        <Shield className="h-3 w-3 mr-1" /> Lizenz verfuegbar
+                        <Shield className="h-3 w-3 mr-1" /> Lizenz verfügbar
                       </Badge>
                     </div>
                   )}
@@ -368,7 +368,7 @@ export const VideoDetails = ({
                       </Badge>
                       {isLicensed && (
                         <Badge className="bg-green-500 text-white border-transparent text-xs px-2 py-0.5">
-                          <Shield className="h-3 w-3 mr-1" /> Lizenz verfuegbar
+                          <Shield className="h-3 w-3 mr-1" /> Lizenz verfügbar
                         </Badge>
                       )}
                       {video.channel_title && (
@@ -483,19 +483,19 @@ export const VideoDetails = ({
                 <div className="p-6 border-b border-border/50 space-y-4">
                   <div className="space-y-3">
                     <div className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-primary">
-                      Gefuehrter Lizenz-Flow
+                      Geführter Lizenz-Flow
                     </div>
                     <div>
                       <h2 className="text-xl md:text-2xl font-bold mb-1">
-                        Lizenz fuer deine Reaction starten
+                        Lizenz für deine Reaction starten
                       </h2>
                       <p className="text-sm text-muted-foreground">
-                        Klar in 3 Schritten: Reaktionsvideo waehlen, Modell festlegen, Zustimmung bestaetigen.
+                        Klar in 3 Schritten: Reaktionsvideo wählen, Modell festlegen, Zustimmung bestätigen.
                       </p>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
                       <div className="rounded-md border border-border/50 bg-background/70 px-2.5 py-2">
-                        1) Video waehlen
+                        1) Video wählen
                       </div>
                       <div className="rounded-md border border-border/50 bg-background/70 px-2.5 py-2">
                         2) Preis-Modell
@@ -601,7 +601,7 @@ export const VideoDetails = ({
                             <h3 className="font-bold shrink-0">
                               {reactionStepDone
                                 ? "Preisvorschau"
-                                : "Video auswaehlen"}
+                                : "Video auswählen"}
                             </h3>
                           </div>
 
@@ -674,7 +674,7 @@ export const VideoDetails = ({
                                       </div>
                                       <p className="text-sm text-muted-foreground max-w-[250px]">
                                         {videoSearchQuery
-                                          ? `Keine Videos fuer "${videoSearchQuery}" gefunden.`
+                                          ? `Keine Videos für "${videoSearchQuery}" gefunden.`
                                           : "Keine eigenen Videos gefunden."}
                                       </p>
                                     </div>
@@ -730,7 +730,7 @@ export const VideoDetails = ({
                                     <div className="flex gap-2">
                                       <InputGroup className="flex-1">
                                         <InputGroupInput
-                                          placeholder="YouTube Video-URL einfuegen..."
+                                          placeholder="YouTube Video-URL einfügen..."
                                           value={reactionUrl}
                                           onChange={(e) =>
                                             setReactionUrl(e.target.value)
@@ -775,7 +775,7 @@ export const VideoDetails = ({
                                 )}
                                 <div className="flex-1 min-w-0">
                                   <p className="text-[10px] uppercase font-bold text-primary tracking-tighter">
-                                    Ausgewaehltes Video
+                                    Ausgewähltes Video
                                   </p>
                                   <p className="text-sm font-bold truncate">
                                     {selectedMyVideo?.title ||
@@ -786,7 +786,7 @@ export const VideoDetails = ({
                                   onClick={() => setReactionStepDone(false)}
                                   className="text-xs text-primary hover:underline font-medium"
                                 >
-                                  Aendern
+                                  Ändern
                                 </button>
                               </div>
 
@@ -823,7 +823,7 @@ export const VideoDetails = ({
                     <div className="flex-1">
                       <p className="text-sm font-bold">Schneller 3-Schritt-Flow</p>
                       <p className="text-xs text-muted-foreground">
-                        Starte oben mit "Lizenz starten" und folge dem Wizard fuer eine klare Checkout-Strecke.
+                        Starte oben mit "Lizenz starten" und folge dem Wizard für eine klare Checkout-Strecke.
                       </p>
                     </div>
                     <Badge
@@ -883,7 +883,7 @@ export const VideoDetails = ({
                               : "text-xs"
                           }
                         >
-                          {isLicensed ? "Verfuegbar" : "Nicht verfuegbar"}
+                          {isLicensed ? "Verfügbar" : "Nicht verfügbar"}
                         </Badge>
                       </div>
                       <div className="flex items-center justify-between text-sm">
@@ -1096,7 +1096,7 @@ export const VideoDetails = ({
                               Zur kommerziellen Nutzung freigeben
                             </FieldLabel>
                             <FieldDescription>
-                              Berechne deinen persoenlichen Lizenzpreis
+                              Berechne deinen persönlichen Lizenzpreis
                             </FieldDescription>
                           </FieldContent>
                           <Switch
@@ -1116,7 +1116,7 @@ export const VideoDetails = ({
                               toggleLicense();
                             }}
                             title="Lizenzierung widerrufen"
-                            description="Bist du sicher, dass du dieses Video nicht mehr zur Lizenzierung anbieten moechtest? Bestehende (bereits gekaufte) Lizenzen behalten ihre Gueltigkeit."
+                            description="Bist du sicher, dass du dieses Video nicht mehr zur Lizenzierung anbieten möchtest? Bestehende (bereits gekaufte) Lizenzen behalten ihre Gültigkeit."
                             isDestructive={true}
                             confirmLabel="Entlizenzieren"
                           />
@@ -1129,12 +1129,12 @@ export const VideoDetails = ({
                         </h3>
                         <p className="text-xs text-muted-foreground mb-4">
                           Hast du auf ein Video reagiert? Suche nach dem
-                          Original-Video, um zu pruefen, ob eine Lizenz verfuegbar
+                          Original-Video, um zu prüfen, ob eine Lizenz verfügbar
                           ist.
                         </p>
                         <InputGroup className="max-w-full">
                           <InputGroupInput
-                            placeholder="YouTube URL des Originals einfuegen..."
+                            placeholder="YouTube URL des Originals einfügen..."
                             value={videoUrl}
                             onChange={(e) => setVideoUrl(e.target.value)}
                             onKeyDown={(e) => {
@@ -1174,7 +1174,7 @@ export const VideoDetails = ({
                             )}
                             <div className="mt-4 p-3 bg-primary/5 rounded-lg border border-primary/20">
                               <p className="text-sm font-medium mb-2">
-                                Lizenz fuer dein Video erwerben:
+                                Lizenz für dein Video erwerben:
                               </p>
                               <BuyOptions
                                 videoCreator={activeFoundVideo}

@@ -159,7 +159,7 @@ export default function AdminSettings() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Algorithmus Einstellungen</h1>
         <p className="text-muted-foreground mt-1">
-          Feintuning fuer FairShare-Score, Preislogik, Branchen-CPM und Nutzungs-Policy.
+          Feintuning für FairShare-Score, Preislogik, Branchen-CPM und Nutzungs-Policy.
         </p>
       </div>
 
@@ -187,7 +187,7 @@ export default function AdminSettings() {
                 <Field>
                   <FieldContent>
                     <FieldLabel>BASE_SHARE</FieldLabel>
-                    <FieldDescription>Basisanteil fuer den Content-Score.</FieldDescription>
+                    <FieldDescription>Basisanteil für den Content-Score.</FieldDescription>
                   </FieldContent>
                   <Input
                     type="number"
@@ -202,7 +202,7 @@ export default function AdminSettings() {
                 <Field>
                   <FieldContent>
                     <FieldLabel>HYPE_FACTOR</FieldLabel>
-                    <FieldDescription>Aufschlag fuer sehr neue Original-Videos.</FieldDescription>
+                    <FieldDescription>Aufschlag für sehr neue Original-Videos.</FieldDescription>
                   </FieldContent>
                   <Input
                     type="number"
@@ -217,7 +217,7 @@ export default function AdminSettings() {
                 <Field>
                   <FieldContent>
                     <FieldLabel>HYPE_DECAY_DAYS</FieldLabel>
-                    <FieldDescription>Tage bis der Hype-Aufschlag auslaeuft.</FieldDescription>
+                    <FieldDescription>Tage bis der Hype-Aufschlag ausläuft.</FieldDescription>
                   </FieldContent>
                   <Input
                     type="number"
@@ -247,7 +247,7 @@ export default function AdminSettings() {
                 <Field>
                   <FieldContent>
                     <FieldLabel>EVERGREEN_FACTOR</FieldLabel>
-                    <FieldDescription>Multiplikator fuer aeltere Original-Videos.</FieldDescription>
+                    <FieldDescription>Multiplikator für ältere Original-Videos.</FieldDescription>
                   </FieldContent>
                   <Input
                     type="number"
@@ -271,7 +271,7 @@ export default function AdminSettings() {
                 <Field>
                   <FieldContent>
                     <FieldLabel>min_one_time_price</FieldLabel>
-                    <FieldDescription>Absolute Untergrenze fuer Einmalzahlung.</FieldDescription>
+                    <FieldDescription>Absolute Untergrenze für Einmalzahlung.</FieldDescription>
                   </FieldContent>
                   <Input
                     type="number"
@@ -286,7 +286,7 @@ export default function AdminSettings() {
                 <Field>
                   <FieldContent>
                     <FieldLabel>default_base_views</FieldLabel>
-                    <FieldDescription>Fallback Views fuer Buyout-Berechnung.</FieldDescription>
+                    <FieldDescription>Fallback Views für Buyout-Berechnung.</FieldDescription>
                   </FieldContent>
                   <Input
                     type="number"
@@ -316,7 +316,7 @@ export default function AdminSettings() {
                 <Field>
                   <FieldContent>
                     <FieldLabel>assumed_percent_shown</FieldLabel>
-                    <FieldDescription>Baseline fuer Anteil des gezeigten Originals.</FieldDescription>
+                    <FieldDescription>Baseline für Anteil des gezeigten Originals.</FieldDescription>
                   </FieldContent>
                   <Input
                     type="number"
@@ -331,7 +331,7 @@ export default function AdminSettings() {
                 <Field>
                   <FieldContent>
                     <FieldLabel>min_percent_shown</FieldLabel>
-                    <FieldDescription>Untere Grenze fuer den Nutzungsanteil.</FieldDescription>
+                    <FieldDescription>Untere Grenze für den Nutzungsanteil.</FieldDescription>
                   </FieldContent>
                   <Input
                     type="number"
@@ -346,7 +346,7 @@ export default function AdminSettings() {
                 <Field>
                   <FieldContent>
                     <FieldLabel>max_percent_shown</FieldLabel>
-                    <FieldDescription>Obere Grenze fuer den Nutzungsanteil.</FieldDescription>
+                    <FieldDescription>Obere Grenze für den Nutzungsanteil.</FieldDescription>
                   </FieldContent>
                   <Input
                     type="number"
@@ -476,7 +476,7 @@ export default function AdminSettings() {
                   <FieldContent>
                     <FieldLabel>allow_exclusive</FieldLabel>
                     <FieldDescription>
-                      Wenn aktiviert, sind exklusive Lizenz-Optionen zulaessig.
+                      Wenn aktiviert, sind exklusive Lizenz-Optionen zulässig.
                     </FieldDescription>
                   </FieldContent>
                   <label className="inline-flex items-center gap-2 text-sm">
