@@ -24,6 +24,10 @@ import { useExistingLicense } from "@/hooks/queries/useExistingLicense";
 import { useAnyExistingLicense } from "@/hooks/queries/useAnyExistingLicense";
 import { useCreatorMinPrice } from "@/hooks/queries/useCreatorMinPrice";
 import { useAlgorithmSettings } from "@/hooks/queries/useAlgorithmSettings";
+import {
+  buildAlgorithmInputSnapshot,
+  buildAlgorithmVersion,
+} from "@/services/algorithmAudit";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -119,6 +123,20 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
         price = prices.oneTime;
       }
 
+      const algorithmVersion = buildAlgorithmVersion(algorithmSettings);
+      const algorithmInputSnapshot = buildAlgorithmInputSnapshot({
+        videoCreator,
+        videoReactor: selectedVideo,
+        selectedReactionVideoId,
+        selectedPlan,
+        pricingModelType: modelType,
+        selectedPrice: price,
+        creatorMinPrice,
+        rawPrices,
+        prices,
+        algorithmSettings,
+      });
+
       const newContract: ReactionContract = {
         id: generateUUID(),
         created_at: new Date().toISOString(),
@@ -140,6 +158,8 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
           schoepferische_leistung: rawPrices.schoepferischeLeistungScore,
           parameter_dokumentation_url: "https://simpleshare.eu/how-it-works",
         },
+        algorithm_version: algorithmVersion,
+        algorithm_input_snapshot: algorithmInputSnapshot,
         accepted_by_licensor: autoAccept,
         accepted_by_licensee: usageConsentAccepted,
         licensee_accepted_at: usageConsentAccepted

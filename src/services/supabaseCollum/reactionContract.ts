@@ -29,6 +29,8 @@ export interface ReactionContract {
     schoepferische_leistung: number; // [cite: 343]
     parameter_dokumentation_url: string; // Link zur Algorithmus-Doku [cite: 345]
   };
+  algorithm_version?: string;
+  algorithm_input_snapshot?: Record<string, unknown>;
 
   // Rechtsgültigkeit [cite: 481, 483, 485]
   accepted_by_licensor: boolean;

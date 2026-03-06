@@ -8,7 +8,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   adminDeleteReactionContract,
   ReactionContract,
@@ -45,6 +45,16 @@ export default function AdminContracts() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+
+  const algorithmSnapshotJson = useMemo(() => {
+    if (!selectedContract?.algorithm_input_snapshot) return "{}";
+
+    try {
+      return JSON.stringify(selectedContract.algorithm_input_snapshot, null, 2);
+    } catch {
+      return "{}";
+    }
+  }, [selectedContract]);
 
   const handleRowClick = (contract: ReactionContract) => {
     setSelectedContract(contract);
@@ -272,7 +282,13 @@ export default function AdminContracts() {
                   </span>
                 )}
                 <span className="ml-auto">
-                  <strong className="text-foreground">Version:</strong>{" "}
+                  <strong className="text-foreground">Algo:</strong>{" "}
+                  <code className="bg-muted px-1.5 py-0.5 rounded">
+                    {selectedContract.algorithm_version || "simpleshare-v1@default"}
+                  </code>
+                </span>
+                <span>
+                  <strong className="text-foreground">Vertrag:</strong>{" "}
                   <code className="bg-muted px-1.5 py-0.5 rounded">
                     {selectedContract.contract_version}
                   </code>
@@ -448,6 +464,23 @@ export default function AdminContracts() {
                   </div>
                 )}
               </div>
+              <div className="border rounded-lg p-4 space-y-3">
+                <h3 className="text-sm font-semibold text-muted-foreground">
+                  Algorithmus-Audit
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Snapshot der Preis-Inputs und Einstellungen zum Zeitpunkt der Vertragserstellung.
+                </p>
+                <details className="rounded-md border bg-muted/20 p-3">
+                  <summary className="cursor-pointer text-xs font-semibold text-foreground">
+                    Snapshot anzeigen
+                  </summary>
+                  <pre className="mt-3 max-h-72 overflow-auto rounded-md bg-background p-3 text-[11px] leading-5 text-muted-foreground whitespace-pre-wrap break-words">
+                    {algorithmSnapshotJson}
+                  </pre>
+                </details>
+              </div>
+
 
               {/* Abo-Laufzeit — only for active subscriptions */}
               {(selectedContract.status === "ACTIVE" ||
