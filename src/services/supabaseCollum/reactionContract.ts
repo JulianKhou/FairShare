@@ -216,23 +216,26 @@ export const checkExistingLicense = async (
   // Check if there is already a PAID or PENDING contract for this combination
   const { data, error } = await supabase
     .from("reaction_contracts")
-    .select("id, status, accepted_by_licensor")
+    .select("id, status, accepted_by_licensor, created_at")
     .eq("licensee_id", licenseeId)
     .eq("original_video_id", originalVideoId)
     .eq("reaction_video_id", reactionVideoId)
-    .maybeSingle();
+    .order("created_at", { ascending: false })
+    .limit(1);
 
   if (error) {
     console.error("Error checking existing license:", error);
     return null;
   }
 
-  // Return the status and id
-  return data
+  const first = data?.[0];
+
+  // Return the newest status and id
+  return first
     ? {
-        status: data.status,
-        id: data.id,
-        accepted_by_licensor: data.accepted_by_licensor,
+        status: first.status,
+        id: first.id,
+        accepted_by_licensor: first.accepted_by_licensor,
       }
     : null;
 };
