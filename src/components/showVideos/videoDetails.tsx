@@ -351,49 +351,68 @@ export const VideoDetails = ({
 
             {/* OWNER: Compact Header */}
             {mode !== "public" && (
-              <div className="p-6 flex flex-col sm:flex-row gap-5">
-                <div className="shrink-0 w-full sm:w-64 md:w-80">
-                  <img
-                    src={video.thumbnail}
-                    alt={video.title}
-                    className="w-full aspect-video object-cover rounded-xl shadow-md"
-                    referrerPolicy="no-referrer"
-                  />
-                </div>
-                <div className="flex flex-col justify-center min-w-0">
-                  <div className="flex flex-wrap items-center gap-2 mb-2">
-                    {isLicensed && (
-                      <Badge className="bg-green-500 text-white border-transparent text-xs px-2 py-0.5">
-                        <Shield className="h-3 w-3 mr-1" /> Lizenz verfuegbar
+              <div className="p-6 border-b border-border/50 bg-gradient-to-b from-muted/20 to-background">
+                <div className="flex flex-col sm:flex-row gap-5">
+                  <div className="shrink-0 w-full sm:w-64 md:w-80">
+                    <img
+                      src={video.thumbnail}
+                      alt={video.title}
+                      className="w-full aspect-video object-cover rounded-xl shadow-md border border-border/40"
+                      referrerPolicy="no-referrer"
+                    />
+                  </div>
+                  <div className="flex flex-col justify-center min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 mb-2">
+                      <Badge variant="outline" className="text-[10px] uppercase tracking-wider">
+                        Creator Ansicht
                       </Badge>
-                    )}
-                    {video.channel_title && (
-                      <Badge variant="outline" className="text-xs">
-                        {video.channel_title}
-                      </Badge>
+                      {isLicensed && (
+                        <Badge className="bg-green-500 text-white border-transparent text-xs px-2 py-0.5">
+                          <Shield className="h-3 w-3 mr-1" /> Lizenz verfuegbar
+                        </Badge>
+                      )}
+                      {video.channel_title && (
+                        <Badge variant="outline" className="text-xs">
+                          {video.channel_title}
+                        </Badge>
+                      )}
+                    </div>
+                    <h1 className="text-xl md:text-2xl font-bold leading-tight line-clamp-2">
+                      {video.title}
+                    </h1>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Verwalte hier Lizenzstatus, Vertragsanfragen und die Verlinkung zum Originalvideo.
+                    </p>
+                    <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                      <span className="rounded-md border border-border/50 bg-background px-2 py-1">
+                        {formatViews(activeMainVideo.last_view_count || 0)} Views
+                      </span>
+                      <span className="rounded-md border border-border/50 bg-background px-2 py-1">
+                        {activeContracts.length} aktive Lizenzen
+                      </span>
+                      {mode === "owner" && pendingContracts.length > 0 && (
+                        <span className="rounded-md border border-yellow-500/30 bg-yellow-500/10 px-2 py-1 text-yellow-700">
+                          {pendingContracts.length} offene Anfragen
+                        </span>
+                      )}
+                    </div>
+                    {video.yt_link && (
+                      <a
+                        href={video.yt_link}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-1.5 text-sm text-primary hover:underline mt-3 w-fit"
+                      >
+                        <ExternalLink className="h-3.5 w-3.5" /> Auf YouTube ansehen
+                      </a>
                     )}
                   </div>
-                  <h1 className="text-xl md:text-2xl font-bold leading-tight line-clamp-2">
-                    {video.title}
-                  </h1>
-                  {video.yt_link && (
-                    <a
-                      href={video.yt_link}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex items-center gap-1.5 text-sm text-primary hover:underline mt-2 w-fit"
-                    >
-                      <ExternalLink className="h-3.5 w-3.5" /> Auf YouTube
-                      ansehen
-                    </a>
-                  )}
                 </div>
               </div>
             )}
-
             {/* Stats Bar - Owner only */}
             {mode !== "public" && (
-              <div className="px-6 py-4 border-b border-border/50 bg-muted/20">
+              <div className="px-6 py-4 border-b border-border/50 bg-muted/10">
                 <div className="flex flex-wrap gap-4 md:gap-6">
                   <div className="flex items-center gap-2 text-sm">
                     <Eye className="h-4 w-4 text-primary" />
@@ -1000,11 +1019,28 @@ export const VideoDetails = ({
                   </div>
                 )}
                 {activeTab === "details" && (
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="space-y-6">
+                    <div className="rounded-xl border border-border/50 bg-muted/20 p-4">
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                        Lizenz-Management
+                      </p>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                        <div className="rounded-md border border-border/50 bg-background/80 px-2.5 py-2">
+                          1) Freigabe aktivieren
+                        </div>
+                        <div className="rounded-md border border-border/50 bg-background/80 px-2.5 py-2">
+                          2) Original verlinken
+                        </div>
+                        <div className="rounded-md border border-border/50 bg-background/80 px-2.5 py-2">
+                          3) Anfragen bearbeiten
+                        </div>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div className="space-y-5">
                       <div className="p-4 rounded-xl bg-muted/20 border border-border/50">
                         <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
-                          <Shield className="h-4 w-4" /> Lizenz Details
+                          <Shield className="h-4 w-4" /> Aktive Lizenznehmer
                         </h3>
                         {activeContracts.length > 0 ? (
                           <div className="space-y-2">
@@ -1049,7 +1085,7 @@ export const VideoDetails = ({
                       )}
                     </div>
                     <div className="space-y-5">
-                      <div className="p-4 rounded-xl bg-primary/5 border border-primary/10">
+                      <div className="p-4 rounded-xl bg-primary/5 border border-primary/15">
                         <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
                           <Shield className="h-4 w-4 text-primary" /> Video
                           lizenzieren
@@ -1150,6 +1186,7 @@ export const VideoDetails = ({
                       </div>
                     </div>
                   </div>
+                  </div>
                 )}
               </div>
             )}
@@ -1159,4 +1196,3 @@ export const VideoDetails = ({
     </>
   );
 };
-
