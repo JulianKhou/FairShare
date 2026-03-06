@@ -18,7 +18,7 @@ import { getProfile } from "@/services/supabaseCollum/profiles";
 import { useState } from "react";
 import { generateUUID } from "@/lib/utils";
 import { useVideos } from "@/hooks/youtube/useVideos";
-import { AlertCircle, CheckCircle2, XCircle, HelpCircle } from "lucide-react";
+import { AlertCircle, CheckCircle2, HelpCircle, XCircle } from "lucide-react";
 import { createStripeCheckoutSession } from "@/services/stripeFunctions";
 import { useExistingLicense } from "@/hooks/queries/useExistingLicense";
 import { useAnyExistingLicense } from "@/hooks/queries/useAnyExistingLicense";
@@ -38,7 +38,6 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
   const [loading, setLoading] = useState(false);
   const [usageConsentAccepted, setUsageConsentAccepted] = useState(false);
 
-  // Fetch user's videos for selection
   const { videos: myVideos, isLoading: isLoadingVideos } = useVideos(
     "myVideos",
     user?.id,
@@ -60,17 +59,29 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
     videoCreator?.creator_id || videoCreator?.id,
   );
 
-  // Determine which video is selected
   const selectedVideo =
     myVideos.find((v) => v.id === selectedReactionVideoId) || videoReactor;
 
-  // Recalculate prices based on the selected video, applying creator min price
   const rawPrices = getPrices(selectedVideo, videoCreator);
   const prices = {
     ...rawPrices,
     oneTime: Math.max(rawPrices.oneTime, creatorMinPrice),
-    payPerViews: rawPrices.payPerViews, // Views-based stays algorithm-driven
+    payPerViews: rawPrices.payPerViews,
   };
+
+  const isPaid =
+    existingContract?.status === "PAID" ||
+    existingContract?.status === "ACTIVE";
+  const isPending =
+    existingContract?.status === "PENDING" &&
+    !existingContract?.accepted_by_licensor;
+  const isRejected = existingContract?.status === "REJECTED";
+  const isAwaitingPayment =
+    existingContract?.status === "PENDING" &&
+    existingContract?.accepted_by_licensor;
+
+  const showPlanStep = !isPaid && !isPending && !isRejected;
+  const requiresConsent = showPlanStep || isAwaitingPayment;
 
   const handleBuy = async () => {
     if (!user) {
@@ -90,21 +101,19 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
 
     setLoading(true);
     try {
-      // 1. Check Creator's Auto-Accept Setting
       const creatorProfile = await getProfile(
         videoCreator.creator_id || videoCreator.id,
       );
       const autoAccept = creatorProfile?.auto_accept_reactions ?? false;
 
-      // Map selection to model type and price
       let modelType: 1 | 2 = 1;
       let price = prices.oneTime;
 
       if (selectedPlan === "views") {
-        modelType = 2; // PayPerView / 1000 Views (metered billing)
+        modelType = 2;
         price = prices.payPerViews;
       } else {
-        modelType = 1; // Fixed one-time payment
+        modelType = 1;
         price = prices.oneTime;
       }
 
@@ -123,26 +132,26 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
         pricing_model_type: modelType,
         pricing_value: price,
         pricing_currency: "EUR",
-        fairshare_score: 0.5, // Mock default
+        fairshare_score: 0.5,
         fairshare_metadata: {
           marktmacht_score: 0,
           schoepferische_leistung: 0,
           parameter_dokumentation_url: "",
         },
-        accepted_by_licensor: autoAccept, // Set based on profile
+        accepted_by_licensor: autoAccept,
         accepted_by_licensee: usageConsentAccepted,
-        licensee_accepted_at: usageConsentAccepted ? new Date().toISOString() : undefined,
+        licensee_accepted_at: usageConsentAccepted
+          ? new Date().toISOString()
+          : undefined,
         contract_version: "1.0",
         status: "PENDING",
         reaction_video_id: selectedReactionVideoId,
       };
 
-      // 2. Create Contract in DB
       const customContract = await createReactionContract(newContract);
       const contractId = customContract?.id || newContract.id;
 
       if (!autoAccept) {
-        // If NOT auto-accepted, invalidate query to show Pending UI
         queryClient.invalidateQueries({
           queryKey: [
             "existingLicense",
@@ -154,7 +163,6 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
         return;
       }
 
-      // 3. If Auto-Accepted, Proceed to Stripe
       const { url } = await createStripeCheckoutSession(contractId);
 
       if (url) {
@@ -176,7 +184,7 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
 
   const handleWithdraw = async () => {
     if (!existingContract?.id) return;
-    if (!confirm("Möchtest du diese Anfrage wirklich zurückziehen?")) return;
+    if (!confirm("Moechtest du diese Anfrage wirklich zurueckziehen?")) return;
 
     setLoading(true);
     try {
@@ -188,48 +196,57 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
           videoCreator?.id,
           selectedReactionVideoId,
         ],
-      }); // Clear pending state
+      });
     } catch (error) {
       console.error("Withdraw failed", error);
       toast.error(
         error instanceof Error
           ? error.message
-          : "Fehler beim Zurückziehen der Anfrage.",
+          : "Fehler beim Zurueckziehen der Anfrage.",
       );
     } finally {
       setLoading(false);
     }
   };
 
-  // Determine Button State & Text
-  const isPaid =
-    existingContract?.status === "PAID" ||
-    existingContract?.status === "ACTIVE";
-  const isPending =
-    existingContract?.status === "PENDING" &&
-    !existingContract?.accepted_by_licensor;
-  const isRejected = existingContract?.status === "REJECTED";
-
   return (
     <div className="video-details-right flex flex-col w-full gap-3">
+      {!hasAnyLicense && (
+        <div className="rounded-xl border border-border/60 bg-muted/20 p-3">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+            Ablauf
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+            <div className="rounded-md border border-border/50 bg-background/80 px-2.5 py-2">
+              1) Reaktionsvideo waehlen
+            </div>
+            <div className="rounded-md border border-border/50 bg-background/80 px-2.5 py-2">
+              2) Modell & Preis bestaetigen
+            </div>
+            <div className="rounded-md border border-border/50 bg-background/80 px-2.5 py-2">
+              3) Zustimmung & Checkout
+            </div>
+          </div>
+        </div>
+      )}
+
       {hasAnyLicense && (
         <div className="flex items-start gap-2 p-3 bg-green-500/10 text-green-700 dark:text-green-400 rounded-lg border border-green-500/20 shadow-sm">
           <CheckCircle2 className="h-5 w-5 mt-0.5 shrink-0" />
           <div className="flex flex-col">
             <span className="font-semibold">Lizenz bereits vorhanden</span>
             <span className="text-sm mt-1 opacity-90">
-              Du hast für dieses Video bereits eine aktive Lizenz erworben. Pro
-              Grundvideo ist nur eine Lizenz möglich.
+              Du hast fuer dieses Grundvideo bereits eine aktive Lizenz.
             </span>
           </div>
         </div>
       )}
 
       {!isDirectLink && (
-        <FieldSet className="w-full max-w-xs space-y-1">
-          <FieldLegend variant="label">Mein Video für diese Lizenz</FieldLegend>
+        <FieldSet className="w-full space-y-1">
+          <FieldLegend variant="label">Schritt 1: Mein Reaktionsvideo</FieldLegend>
           {isLoadingVideos ? (
-            <FieldDescription>Loading videos...</FieldDescription>
+            <FieldDescription>Videos werden geladen...</FieldDescription>
           ) : myVideos.length > 0 ? (
             <select
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
@@ -237,7 +254,7 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
               onChange={(e) => setSelectedReactionVideoId(e.target.value)}
             >
               <option value="" disabled>
-                Select a video...
+                Video auswaehlen...
               </option>
               {myVideos.map((video) => (
                 <option key={video.id} value={video.id}>
@@ -247,15 +264,15 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
             </select>
           ) : (
             <FieldDescription className="text-destructive">
-              You have no uploaded videos to link.
+              Keine eigenen Videos gefunden.
             </FieldDescription>
           )}
         </FieldSet>
       )}
 
-      {!isPaid && !isPending && !isRejected && (
-        <FieldSet className="w-full max-w-xs space-y-2">
-          <FieldLegend variant="label">Preismodell</FieldLegend>
+      {showPlanStep && (
+        <FieldSet className="w-full space-y-2">
+          <FieldLegend variant="label">Schritt 2: Preismodell</FieldLegend>
           <RadioGroup
             value={selectedPlan}
             onValueChange={(val: "fixed" | "views") => setSelectedPlan(val)}
@@ -263,7 +280,7 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
             <Field orientation="horizontal">
               <RadioGroupItem value="fixed" id="plan-fixed" />
               <FieldLabel htmlFor="plan-fixed" className="font-normal">
-                Einmalzahlung {prices.oneTime.toFixed(2)} €
+                Einmalzahlung {prices.oneTime.toFixed(2)} EUR
               </FieldLabel>
             </Field>
             <Field orientation="horizontal">
@@ -272,32 +289,26 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
                 htmlFor="plan-views"
                 className="font-normal flex items-center gap-1"
               >
-                CPM {prices.payPerViews.toFixed(2)} €
-                <div className="group relative">
+                CPM {prices.payPerViews.toFixed(2)} EUR
+                <span className="group relative inline-flex">
                   <HelpCircle className="w-3.5 h-3.5 text-muted-foreground cursor-help" />
-                  <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-48 p-2 bg-popover text-popover-foreground text-xs rounded shadow-lg border border-border opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
-                    CPM steht für Cost-per-Mille und bedeutet "Kosten pro 1.000
-                    Aufrufe". Dieser Betrag wird vierteljährlich basierend auf
-                    den Views deines Videos abgerechnet.
-                  </div>
-                </div>
+                  <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-52 p-2 bg-popover text-popover-foreground text-xs rounded shadow-lg border border-border opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                    Abrechnung pro 1.000 Aufrufe, regelmaessig synchronisiert.
+                  </span>
+                </span>
               </FieldLabel>
             </Field>
           </RadioGroup>
-          {selectedPlan === "views" && (
-            <p className="text-xs text-muted-foreground italic mt-1">
-              💡 Views werden täglich automatisch erfasst und quartalsweise
-              abgerechnet.
-            </p>
-          )}
         </FieldSet>
       )}
 
-      {/* Main Action Area — hidden if already licensed for this base video */}
       {!hasAnyLicense && (
-        <div className="mt-2">
-          {!checkingLicense && !isPaid && !isPending && !isRejected && (
-            <div className="mb-3 p-3 rounded-md border border-border/60 bg-muted/20">
+        <div className="mt-1 space-y-3">
+          {requiresConsent && (
+            <div className="p-3 rounded-md border border-border/60 bg-muted/20">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                Schritt 3: Zustimmung
+              </p>
               <label className="flex items-start gap-2 text-sm">
                 <input
                   type="checkbox"
@@ -306,7 +317,8 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
                   onChange={(e) => setUsageConsentAccepted(e.target.checked)}
                 />
                 <span>
-                  Ich bestaetige, dass ich der Nutzung dieses Videos im Rahmen dieses Lizenzvertrags zustimme.
+                  Ich stimme der Nutzung meines Reaktionsvideos im Rahmen dieses
+                  Lizenzvertrags zu.
                 </span>
               </label>
             </div>
@@ -314,7 +326,7 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
 
           {checkingLicense ? (
             <Button disabled className="w-full">
-              Checking Status...
+              Status wird geprueft...
             </Button>
           ) : isPaid ? (
             <div className="flex items-center gap-2 p-3 bg-green-500/10 text-green-600 rounded-md border border-green-500/20">
@@ -323,10 +335,10 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
             </div>
           ) : isPending ? (
             <div className="space-y-3">
-              <div className="flex items-center gap-2 p-3 bg-yellow-500/10 text-yellow-600 rounded-md border border-yellow-500/20">
+              <div className="flex items-center gap-2 p-3 bg-yellow-500/10 text-yellow-700 rounded-md border border-yellow-500/20">
                 <AlertCircle className="h-5 w-5" />
                 <span className="font-medium">
-                  Anfrage gesendet. Warte auf Bestätigung.
+                  Anfrage gesendet. Warte auf Bestaetigung.
                 </span>
               </div>
               <Button
@@ -335,16 +347,15 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
                 onClick={handleWithdraw}
                 disabled={loading}
               >
-                {loading ? "Wird zurückgezogen..." : "Anfrage zurückziehen"}
+                {loading ? "Wird zurueckgezogen..." : "Anfrage zurueckziehen"}
               </Button>
             </div>
-          ) : existingContract?.status === "PENDING" &&
-            existingContract?.accepted_by_licensor ? (
+          ) : isAwaitingPayment ? (
             <div className="space-y-3">
               <div className="flex items-center gap-2 p-3 bg-green-500/10 text-green-600 rounded-md border border-green-500/20">
                 <CheckCircle2 className="h-5 w-5" />
                 <span className="font-medium">
-                  Anfrage akzeptiert! Bitte bezahlen.
+                  Anfrage akzeptiert. Bitte Zahlung abschliessen.
                 </span>
               </div>
               <Button
@@ -382,7 +393,7 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
               <div>
                 <span className="font-bold block">Anfrage abgelehnt</span>
                 <span className="text-xs opacity-90">
-                  Für dieses Video ist keine weitere Anfrage möglich.
+                  Fuer dieses Video ist keine weitere Anfrage moeglich.
                 </span>
               </div>
             </div>
@@ -393,12 +404,20 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
                 loading ||
                 isLoadingVideos ||
                 !selectedReactionVideoId ||
-                checkingLicense || !usageConsentAccepted
+                checkingLicense ||
+                !usageConsentAccepted
               }
               className="w-full"
             >
               {loading ? "Verarbeite..." : "Kaufen / Anfrage senden"}
             </Button>
+          )}
+
+          {showPlanStep && (
+            <p className="text-xs text-muted-foreground">
+              Mit Klick auf den Kaufbutton wird der Lizenzvertrag erstellt. Details
+              findest du in den AGB.
+            </p>
           )}
         </div>
       )}
