@@ -1,60 +1,90 @@
-import { useState, useEffect } from "react";
-import { NICHE_DATA, getSeasonalityFactor } from "../../data/NicheData";
-import {
-  calculateSimpleShare,
-  SimpleShareParams,
-} from "../../services/simpleShareAlgo";
+import { useMemo, useState } from "react";
 import { IconInfoCircle, IconSettings } from "@tabler/icons-react";
 
+import {
+  DEFAULT_NICHE_DATA,
+  NICHE_DATA,
+  getSeasonalityFactor,
+} from "@/data/NicheData";
+import { useAlgorithmSettings } from "@/hooks/queries/useAlgorithmSettings";
+import { getPrices } from "@/hooks/videoDetails/getPrices";
+
+const STRIPE_PERCENT = 0.029;
+const STRIPE_FIXED = 0.25;
+const MS_PER_DAY = 1000 * 60 * 60 * 24;
+
 export default function SimpleShareSimulator() {
+  const { data: algorithmSettings } = useAlgorithmSettings();
+
   const [viewsCreator, setViewsCreator] = useState(100000);
   const [viewsReactor, setViewsReactor] = useState(50000);
-
-  const [price, setPrice] = useState(0);
-  const [sharePercent, setSharePercent] = useState(0);
+  const [daysSinceUpload, setDaysSinceUpload] = useState(15);
+  const [selectedNicheId, setSelectedNicheId] = useState(
+    NICHE_DATA[0]?.id ?? "default",
+  );
   const [showSettings, setShowSettings] = useState(false);
 
-  // Default RPM based on NICHE_DATA
-  const defaultRpm = NICHE_DATA[0].rpm * getSeasonalityFactor();
+  const selectedNiche = useMemo(
+    () =>
+      NICHE_DATA.find((niche) => niche.id === selectedNicheId) ??
+      DEFAULT_NICHE_DATA,
+    [selectedNicheId],
+  );
 
-  const [customRpm, setCustomRpm] = useState(defaultRpm);
-  const [daysSinceUpload, setDaysSinceUpload] = useState(15);
+  const publishedAt = useMemo(
+    () => new Date(Date.now() - daysSinceUpload * MS_PER_DAY).toISOString(),
+    [daysSinceUpload],
+  );
 
-  const creatorRevenue = (viewsCreator * customRpm) / 1000;
-  const reactorRevenue = (viewsReactor * customRpm) / 1000;
+  const categoryId = selectedNiche.youtubeCategoryIds[0] ?? -1;
 
-  // Fee Constants
-  const STRIPE_PERCENT = 0.029;
-  const STRIPE_FIXED = 0.25;
-  const PLATFORM_PERCENT = 0.1;
+  const videoCreator = useMemo(
+    () => ({
+      averageViewsPerCategory: viewsCreator,
+      last_view_count: viewsCreator,
+      duration_seconds: 600,
+      category_id: categoryId,
+      published_at: publishedAt,
+    }),
+    [viewsCreator, categoryId, publishedAt],
+  );
 
+  const videoReactor = useMemo(
+    () => ({
+      averageViewsPerCategory: viewsReactor,
+      last_view_count: viewsReactor,
+      duration_seconds: 600,
+      category_id: categoryId,
+    }),
+    [viewsReactor, categoryId],
+  );
+
+  const prices = useMemo(
+    () => getPrices(videoReactor, videoCreator, algorithmSettings),
+    [videoReactor, videoCreator, algorithmSettings],
+  );
+
+  const platformFeePercent =
+    algorithmSettings?.pricingConfig.platform_fee_percent ?? 0.1;
+  const overriddenRpm = algorithmSettings?.nicheRpmOverrides?.[selectedNiche.id];
+  const baseRpm =
+    typeof overriddenRpm === "number" && Number.isFinite(overriddenRpm)
+      ? Math.max(0, overriddenRpm)
+      : selectedNiche.rpm;
+  const effectiveRpm = baseRpm * getSeasonalityFactor();
+
+  const creatorRevenue = (viewsCreator * effectiveRpm) / 1000;
+  const reactorRevenue = (viewsReactor * effectiveRpm) / 1000;
+
+  const price = prices.oneTime;
+  const sharePercent = Math.max(0, Math.min(1, prices.fairshareScore / 100));
   const stripeFee = price * STRIPE_PERCENT + STRIPE_FIXED;
-  const platformFee = price * PLATFORM_PERCENT;
+  const platformFee = price * platformFeePercent;
   const creatorNet = Math.max(price - stripeFee - platformFee, 0);
-
-  useEffect(() => {
-    // 2. SimpleShare calculation
-    const params: SimpleShareParams = {
-      viewsReactor: viewsReactor,
-      viewsCreator: viewsCreator,
-      durationReactorSeconds: 600, // 10 min
-      durationCreatorSeconds: 600, // 10 min
-      percentShown: 0.5, // 50% used
-      daysSinceUpload: daysSinceUpload,
-    };
-
-    const share = calculateSimpleShare(params);
-    setSharePercent(share);
-
-    // 3. Price Calculation (Buyout)
-    const calcPrice = Math.max((viewsReactor * share * customRpm) / 1000, 0.5);
-    setPrice(calcPrice);
-  }, [viewsCreator, viewsReactor, customRpm, daysSinceUpload]);
 
   return (
     <div className="bg-white/5 border border-white/10 rounded-3xl p-6 md:p-8 backdrop-blur-md shadow-2xl max-w-2xl mx-auto">
       <div className="flex flex-col gap-6">
-        {/* Header */}
         <div className="relative text-center">
           <h3 className="text-2xl font-bold bg-clip-text text-transparent bg-linear-to-r from-simple-purple to-simple-teal pr-8">
             Preiskalkulator (Beispiel)
@@ -67,12 +97,11 @@ export default function SimpleShareSimulator() {
             <IconSettings size={20} />
           </button>
           <p className="text-sm text-muted-foreground mt-2">
-            Dies ist ein fiktives Beispiel. Spiele mit den Werten, um zu sehen,
-            wie sich der Lizenzpreis zusammensetzen könnte.
+            Dieses Beispiel nutzt dieselbe Preislogik wie Checkout und
+            Video-Details.
           </p>
         </div>
 
-        {/* Settings Panel */}
         {showSettings && (
           <div className="bg-background/80 border border-white/10 rounded-2xl p-4 animate-in fade-in slide-in-from-top-2">
             <h4 className="text-sm font-semibold mb-4 text-foreground">
@@ -81,20 +110,20 @@ export default function SimpleShareSimulator() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-xs font-semibold flex justify-between">
-                  <span>Ø RPM / CPM (€)</span>
-                  <span className="text-simple-teal">
-                    {customRpm.toFixed(2)} €
-                  </span>
+                  <span>Branche</span>
+                  <span className="text-simple-teal">{selectedNiche.name_de}</span>
                 </label>
-                <input
-                  type="range"
-                  min="0.5"
-                  max="15"
-                  step="0.5"
-                  value={customRpm}
-                  onChange={(e) => setCustomRpm(Number(e.target.value))}
-                  className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-simple-teal"
-                />
+                <select
+                  value={selectedNicheId}
+                  onChange={(e) => setSelectedNicheId(e.target.value)}
+                  className="w-full rounded-md border border-white/10 bg-black/20 px-3 py-2 text-sm"
+                >
+                  {NICHE_DATA.map((niche) => (
+                    <option key={niche.id} value={niche.id}>
+                      {niche.name_de}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-semibold flex justify-between">
@@ -114,23 +143,31 @@ export default function SimpleShareSimulator() {
                 />
               </div>
             </div>
+            <div className="mt-3 text-xs text-muted-foreground">
+              Aktiver RPM fuer diese Branche:{" "}
+              <strong className="text-foreground">
+                {effectiveRpm.toLocaleString("de-DE", {
+                  style: "currency",
+                  currency: "EUR",
+                })}
+              </strong>{" "}
+              (inkl. Saisonfaktor)
+            </div>
           </div>
         )}
 
-        {/* Sliders */}
         <div className="space-y-6">
           <div className="space-y-2">
             <div className="flex justify-between">
               <label className="text-sm font-semibold flex items-center gap-1">
-                Ø Views Kanal A (Original)
+                O Views Kanal A (Original)
                 <div className="group relative">
                   <IconInfoCircle
                     size={14}
                     className="text-muted-foreground cursor-help"
                   />
                   <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:block w-48 p-2 bg-popover text-popover-foreground text-xs rounded shadow-lg">
-                    Wie viele Aufrufe das Video des Creators im Durchschnitt
-                    macht.
+                    Durchschnittliche Aufrufe des Creator-Videos.
                   </div>
                 </div>
               </label>
@@ -148,7 +185,7 @@ export default function SimpleShareSimulator() {
               className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-simple-teal"
             />
             <div className="text-xs text-muted-foreground text-right mt-1">
-              Geschätzte AdSense-Einnahmen: ~
+              Geschaetzte AdSense-Einnahmen: ~
               {creatorRevenue.toLocaleString("de-DE", {
                 style: "currency",
                 currency: "EUR",
@@ -159,15 +196,14 @@ export default function SimpleShareSimulator() {
           <div className="space-y-2">
             <div className="flex justify-between">
               <label className="text-sm font-semibold flex items-center gap-1">
-                Ø Views Kanal B (Reaction)
+                O Views Kanal B (Reaction)
                 <div className="group relative">
                   <IconInfoCircle
                     size={14}
                     className="text-muted-foreground cursor-help"
                   />
                   <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:block w-48 p-2 bg-popover text-popover-foreground text-xs rounded shadow-lg">
-                    Wie viele Aufrufe dein Kanal bei Reactions durchschnittlich
-                    erzielt.
+                    Durchschnittliche Aufrufe des Reaction-Kanals.
                   </div>
                 </div>
               </label>
@@ -185,7 +221,7 @@ export default function SimpleShareSimulator() {
               className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-simple-purple"
             />
             <div className="text-xs text-muted-foreground text-right mt-1">
-              Geschätzte AdSense-Einnahmen: ~
+              Geschaetzte AdSense-Einnahmen: ~
               {reactorRevenue.toLocaleString("de-DE", {
                 style: "currency",
                 currency: "EUR",
@@ -194,14 +230,13 @@ export default function SimpleShareSimulator() {
           </div>
         </div>
 
-        {/* Results */}
         <div className="mt-6 p-6 rounded-2xl bg-linear-to-br from-white/5 to-white/10 border border-white/5 flex flex-col gap-6 relative overflow-hidden">
           <div className="absolute inset-0 bg-linear-to-r from-simple-purple/10 to-simple-teal/10 blur-xl z-0"></div>
 
           <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex flex-col gap-1 w-full md:w-1/2">
               <span className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">
-                Geschätzter Preis (Total)
+                Geschaetzter Preis (Total)
               </span>
               <div className="flex items-baseline gap-2 flex-wrap">
                 <span className="text-4xl font-bold bg-clip-text text-transparent bg-linear-to-r from-simple-purple to-simple-teal">
@@ -212,7 +247,7 @@ export default function SimpleShareSimulator() {
                 </span>
                 {viewsReactor > 0 && (
                   <span className="text-sm font-semibold text-muted-foreground px-2 py-1 bg-white/5 rounded-md border border-white/10">
-                    ≈{" "}
+                    ~{" "}
                     {((price / viewsReactor) * 1000).toLocaleString("de-DE", {
                       style: "currency",
                       currency: "EUR",
@@ -222,11 +257,8 @@ export default function SimpleShareSimulator() {
                 )}
               </div>
               <span className="text-xs text-muted-foreground mt-2">
-                Pauschalpreis für{" "}
-                <strong className="text-foreground">
-                  1 Jahr unbegrenzte Nutzung
-                </strong>
-                . Ideal kalkulierbar – keine versehentlichen Abos.
+                Pauschalpreis fuer{" "}
+                <strong className="text-foreground">1 Jahr Nutzung</strong>.
               </span>
             </div>
 
@@ -235,7 +267,6 @@ export default function SimpleShareSimulator() {
                 <span className="text-simple-teal">Creator Share</span>
                 <span className="text-muted-foreground">Basis Abzug</span>
               </div>
-              {/* Progress Bar */}
               <div className="w-full h-3 bg-gray-800 rounded-full overflow-hidden flex">
                 <div
                   className="h-full bg-simple-teal transition-all duration-500 ease-out"
@@ -248,15 +279,14 @@ export default function SimpleShareSimulator() {
               </div>
               <div className="flex justify-between text-xs text-muted-foreground">
                 <span>{(sharePercent * 100).toFixed(1)}% berechnet</span>
-                <span>Für Fremd-Nutzung</span>
+                <span>Fuer Fremd-Nutzung</span>
               </div>
             </div>
           </div>
 
-          {/* Fee Breakdown */}
           <div className="relative z-10 pt-6 border-t border-white/10 space-y-3">
             <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
-              Transparente Gebühren-Aufteilung
+              Transparente Gebuehren-Aufteilung
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="p-3 rounded-xl bg-white/5 border border-white/5">
@@ -272,15 +302,14 @@ export default function SimpleShareSimulator() {
               </div>
               <div className="p-3 rounded-xl bg-white/5 border border-white/5">
                 <div className="text-[10px] text-muted-foreground uppercase font-bold mb-1 flex items-center gap-1">
-                  Stripe Gebühren
+                  Stripe Gebuehren
                   <div className="group/stripe relative">
                     <IconInfoCircle
                       size={12}
                       className="text-muted-foreground cursor-help"
                     />
                     <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover/stripe:block w-48 p-2 bg-popover text-popover-foreground text-[10px] rounded shadow-lg font-normal normal-case">
-                      Stripe ist unser sicherer Zahlungsdienstleister. Die
-                      Gebühren decken die Transaktionskosten ab.
+                      Als Richtwert nutzen wir 2.9% + 0.25 EUR pro Zahlung.
                     </div>
                   </div>
                 </div>
@@ -293,7 +322,7 @@ export default function SimpleShareSimulator() {
               </div>
               <div className="p-3 rounded-xl bg-white/5 border border-white/5">
                 <div className="text-[10px] text-muted-foreground uppercase font-bold mb-1">
-                  SimpleShare
+                  Plattform ({(platformFeePercent * 100).toFixed(1)}%)
                 </div>
                 <div className="text-lg font-bold text-simple-purple">
                   {platformFee.toLocaleString("de-DE", {
