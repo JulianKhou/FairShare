@@ -105,12 +105,13 @@ export const VideoDetails = ({
     isOpen,
     mode,
   );
+  const activeContracts = contracts.filter(
+    (c) => c.status === "PAID" || c.status === "ACTIVE",
+  );
 
   // Check for existing license of the current user
-  const myExistingLicense = contracts.find(
-    (c) =>
-      c.licensee_id === user?.id &&
-      ["PAID", "ACTIVE", "PENDING"].includes(c.status || ""),
+  const myExistingLicense = activeContracts.find(
+    (c) => c.licensee_id === user?.id,
   );
 
   const [licensedVideoMetadata, setLicensedVideoMetadata] = useState<{
@@ -314,14 +315,14 @@ export const VideoDetails = ({
                       </div>
                     </div>
 
-                    {contracts.length > 0 && (
+                    {activeContracts.length > 0 && (
                       <div className="flex items-center gap-2 text-sm">
                         <div className="p-2 rounded-lg bg-green-500/10">
                           <Users className="h-4 w-4 text-green-500" />
                         </div>
                         <div className="flex flex-col">
                           <span className="font-bold text-green-500">
-                            {contracts.length}
+                            {activeContracts.length}
                           </span>
                           <span className="text-[10px] uppercase tracking-tighter text-green-500/70">
                             Lizenzen
@@ -403,7 +404,7 @@ export const VideoDetails = ({
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <Users className="h-4 w-4 text-primary" />
-                    <span className="font-semibold">{contracts.length}</span>
+                    <span className="font-semibold">{activeContracts.length}</span>
                     <span className="text-muted-foreground">
                       Lizenzen verkauft
                     </span>
@@ -859,7 +860,7 @@ export const VideoDetails = ({
                           Lizenzen vergeben
                         </span>
                         <span className="font-semibold">
-                          {contracts.length}
+                          {activeContracts.length}
                         </span>
                       </div>
                       <div className="flex items-center justify-between text-sm">
@@ -993,12 +994,12 @@ export const VideoDetails = ({
                         <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
                           <Shield className="h-4 w-4" /> Lizenz Details
                         </h3>
-                        {contracts.length > 0 ? (
+                        {activeContracts.length > 0 ? (
                           <div className="space-y-2">
                             <p className="text-xs text-muted-foreground mb-2">
                               Lizenziert von:
                             </p>
-                            {contracts.map((contract) => (
+                            {activeContracts.map((contract) => (
                               <div
                                 key={contract.id}
                                 className="flex items-center justify-between p-2.5 bg-background rounded-lg border border-border/30"
@@ -1146,3 +1147,4 @@ export const VideoDetails = ({
     </>
   );
 };
+

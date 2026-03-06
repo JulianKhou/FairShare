@@ -36,6 +36,7 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
   const queryClient = useQueryClient();
   const [selectedPlan, setSelectedPlan] = useState<"fixed" | "views">("fixed");
   const [loading, setLoading] = useState(false);
+  const [usageConsentAccepted, setUsageConsentAccepted] = useState(false);
 
   // Fetch user's videos for selection
   const { videos: myVideos, isLoading: isLoadingVideos } = useVideos(
@@ -78,7 +79,12 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
     }
 
     if (!selectedReactionVideoId) {
-      toast.error("Bitte wähle ein Video für die Lizenz aus.");
+      toast.error("Bitte waehle ein Video fuer die Lizenz aus.");
+      return;
+    }
+
+    if (!usageConsentAccepted) {
+      toast.error("Bitte bestaetige zuerst die Zustimmung zur Nutzung dieses Videos.");
       return;
     }
 
@@ -124,7 +130,8 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
           parameter_dokumentation_url: "",
         },
         accepted_by_licensor: autoAccept, // Set based on profile
-        accepted_by_licensee: true,
+        accepted_by_licensee: usageConsentAccepted,
+        licensee_accepted_at: usageConsentAccepted ? new Date().toISOString() : undefined,
         contract_version: "1.0",
         status: "PENDING",
         reaction_video_id: selectedReactionVideoId,
@@ -289,6 +296,22 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
       {/* Main Action Area — hidden if already licensed for this base video */}
       {!hasAnyLicense && (
         <div className="mt-2">
+          {!checkingLicense && !isPaid && !isPending && !isRejected && (
+            <div className="mb-3 p-3 rounded-md border border-border/60 bg-muted/20">
+              <label className="flex items-start gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 h-4 w-4 rounded border-input"
+                  checked={usageConsentAccepted}
+                  onChange={(e) => setUsageConsentAccepted(e.target.checked)}
+                />
+                <span>
+                  Ich bestaetige, dass ich der Nutzung dieses Videos im Rahmen dieses Lizenzvertrags zustimme.
+                </span>
+              </label>
+            </div>
+          )}
+
           {checkingLicense ? (
             <Button disabled className="w-full">
               Checking Status...
@@ -326,6 +349,10 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
               </div>
               <Button
                 onClick={async () => {
+                  if (!usageConsentAccepted) {
+                    toast.error("Bitte bestaetige zuerst die Zustimmung zur Nutzung dieses Videos.");
+                    return;
+                  }
                   setLoading(true);
                   try {
                     const { url } = await createStripeCheckoutSession(
@@ -343,7 +370,7 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
                     setLoading(false);
                   }
                 }}
-                disabled={loading}
+                disabled={loading || !usageConsentAccepted}
                 className="w-full bg-green-600 hover:bg-green-700 text-white"
               >
                 {loading ? "Lade..." : "Jetzt bezahlen"}
@@ -366,7 +393,7 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
                 loading ||
                 isLoadingVideos ||
                 !selectedReactionVideoId ||
-                checkingLicense
+                checkingLicense || !usageConsentAccepted
               }
               className="w-full"
             >
