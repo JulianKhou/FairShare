@@ -244,10 +244,10 @@ export const VideoDetails = ({
 
       {/* Modal */}
       <div
-        className="fixed inset-4 md:inset-8 lg:inset-12 xl:inset-16 z-[70] flex items-center justify-center"
+        className="fixed inset-0 z-[70] overflow-y-auto p-4 md:p-8 lg:p-12 xl:p-16"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="relative w-full h-full max-w-6xl mx-auto bg-card rounded-2xl shadow-2xl border border-border/50 flex flex-col overflow-hidden">
+        <div className="relative w-full max-w-6xl mx-auto bg-card rounded-2xl shadow-2xl border border-border/50 flex flex-col overflow-hidden">
           {/* Close Button */}
           <button
             onClick={onClose}
@@ -256,8 +256,8 @@ export const VideoDetails = ({
             <X className="h-5 w-5" />
           </button>
 
-          {/* Scrollable Content - hidden scrollbar */}
-          <div className="flex-1 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          {/* Content */}
+          <div>
             {/* PUBLIC: Side-by-Side Hero (Optimized) */}
             {mode === "public" && (
               <div className="flex flex-col md:flex-row bg-card overflow-hidden border-b border-border/50">
@@ -1159,3 +1159,4 @@ export const VideoDetails = ({
     </>
   );
 };
+
