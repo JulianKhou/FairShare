@@ -141,6 +141,11 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
         throw new Error(usageValidationErrors[0]);
       }
 
+      const fairshareScoreForDb = Math.max(
+        0,
+        Math.min(1, rawPrices.fairshareScore / 100),
+      );
+
       const algorithmVersion = buildAlgorithmVersion(algorithmSettings);
       const algorithmInputSnapshot = buildAlgorithmInputSnapshot({
         videoCreator,
@@ -171,7 +176,7 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
         pricing_model_type: modelType,
         pricing_value: price,
         pricing_currency: "EUR",
-        fairshare_score: rawPrices.fairshareScore,
+        fairshare_score: fairshareScoreForDb,
         fairshare_metadata: {
           marktmacht_score: rawPrices.marktmachtScore,
           schoepferische_leistung: rawPrices.schoepferischeLeistungScore,

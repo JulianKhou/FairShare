@@ -35,6 +35,12 @@ import {
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 
+const toFairsharePercent = (score: number): number => {
+  if (!Number.isFinite(score)) return 0;
+  const normalized = score <= 1 ? score * 100 : score;
+  return Math.max(0, Math.min(100, normalized));
+};
+
 export default function AdminContracts() {
   const queryClient = useQueryClient();
   const { data: contracts = [], isLoading: loading } =
@@ -66,7 +72,7 @@ export default function AdminContracts() {
 
     if (
       !confirm(
-        `Soll der Vertrag ${selectedContract.id} wirklich gelöscht werden? Diese Aktion kann nicht rückgängig gemacht werden.`,
+        `Soll der Vertrag ${selectedContract.id} wirklich gelÃ¶scht werden? Diese Aktion kann nicht rÃ¼ckgÃ¤ngig gemacht werden.`,
       )
     ) {
       return;
@@ -79,11 +85,11 @@ export default function AdminContracts() {
       queryClient.invalidateQueries({ queryKey: ["adminDashboardStats"] });
 
       setIsDialogOpen(false);
-      toast.success("Vertrag wurde erfolgreich gelöscht.");
+      toast.success("Vertrag wurde erfolgreich gelÃ¶scht.");
     } catch (err: any) {
-      console.error("Fehler beim Löschen:", err);
+      console.error("Fehler beim LÃ¶schen:", err);
       toast.error(
-        `Fehler beim Löschen: ${err.message || "Unbekannter Fehler"}`,
+        `Fehler beim LÃ¶schen: ${err.message || "Unbekannter Fehler"}`,
       );
     } finally {
       setIsDeleting(false);
@@ -100,7 +106,7 @@ export default function AdminContracts() {
 
       const result = data as any;
       toast.success(
-        `Sync abgeschlossen: ${result.updated} aktualisiert, ${result.unchanged} unverändert, ${result.errors} Fehler`,
+        `Sync abgeschlossen: ${result.updated} aktualisiert, ${result.unchanged} unverÃ¤ndert, ${result.errors} Fehler`,
       );
 
       // Refresh contracts list if anything changed
@@ -124,7 +130,7 @@ export default function AdminContracts() {
             Vertragsverwaltung
           </h1>
           <p className="text-muted-foreground">
-            Übersicht aller abgeschlossenen, aktiven oder abgelehnten Lizenzen.
+            Ãœbersicht aller abgeschlossenen, aktiven oder abgelehnten Lizenzen.
           </p>
         </div>
         <Button variant="outline" onClick={handleSync} disabled={isSyncing}>
@@ -139,7 +145,7 @@ export default function AdminContracts() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Lizenz Verträge</CardTitle>
+          <CardTitle>Lizenz VertrÃ¤ge</CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -216,7 +222,7 @@ export default function AdminContracts() {
                       colSpan={6}
                       className="text-center text-muted-foreground py-8"
                     >
-                      Keine Verträge gefunden.
+                      Keine VertrÃ¤ge gefunden.
                     </TableCell>
                   </TableRow>
                 )}
@@ -235,7 +241,7 @@ export default function AdminContracts() {
                 Vertragsdetails
               </DialogTitle>
               <DialogDescription className="text-base mt-1">
-                Detailansicht für Vertrag{" "}
+                Detailansicht fÃ¼r Vertrag{" "}
                 <span className="font-mono text-sm bg-muted/60 px-2 py-1 rounded-md text-foreground">
                   {selectedContract?.id}
                 </span>
@@ -362,7 +368,7 @@ export default function AdminContracts() {
                   {selectedContract.reaction_video_id && (
                     <div className="pt-2 border-t">
                       <span className="text-xs text-muted-foreground block mb-0.5">
-                        Verknüpftes Video
+                        VerknÃ¼pftes Video
                       </span>
                       <code className="text-xs bg-muted px-1.5 py-0.5 rounded">
                         {selectedContract.reaction_video_id}
@@ -372,10 +378,10 @@ export default function AdminContracts() {
                 </div>
               </div>
 
-              {/* Vergütung — compact 3-col row */}
+              {/* VergÃ¼tung â€” compact 3-col row */}
               <div className="border rounded-lg p-4 space-y-3">
                 <h3 className="text-sm font-semibold flex items-center gap-2 text-muted-foreground">
-                  <CreditCard className="w-4 h-4" /> Vergütung & FairShare
+                  <CreditCard className="w-4 h-4" /> VergÃ¼tung & FairShare
                 </h3>
                 <div className="grid grid-cols-3 gap-4">
                   <div>
@@ -405,7 +411,7 @@ export default function AdminContracts() {
                     </span>
                     <div className="flex items-center gap-2">
                       <span className="text-xl font-bold font-mono text-emerald-600 dark:text-emerald-400">
-                        {selectedContract.fairshare_score}
+                        {toFairsharePercent(selectedContract.fairshare_score).toFixed(2)}
                         <span className="text-sm text-emerald-600/50">
                           /100
                         </span>
@@ -415,7 +421,7 @@ export default function AdminContracts() {
                       <div
                         className="h-full bg-emerald-500"
                         style={{
-                          width: `${Math.min(100, selectedContract.fairshare_score)}%`,
+                          width: `${toFairsharePercent(selectedContract.fairshare_score)}%`,
                         }}
                       />
                     </div>
@@ -433,7 +439,7 @@ export default function AdminContracts() {
                     </div>
                     <div>
                       <span className="text-xs text-muted-foreground">
-                        Schöpfung:
+                        SchÃ¶pfung:
                       </span>{" "}
                       <span className="font-medium">
                         {
@@ -456,8 +462,8 @@ export default function AdminContracts() {
                           }
                         >
                           {selectedContract.stripe_subscription_id
-                            ? `Sub: ${selectedContract.stripe_subscription_id.slice(0, 20)}…`
-                            : `Ses: ${selectedContract.stripe_session_id?.slice(0, 20)}…`}
+                            ? `Sub: ${selectedContract.stripe_subscription_id.slice(0, 20)}â€¦`
+                            : `Ses: ${selectedContract.stripe_session_id?.slice(0, 20)}â€¦`}
                         </code>
                       </div>
                     )}
@@ -482,7 +488,7 @@ export default function AdminContracts() {
               </div>
 
 
-              {/* Abo-Laufzeit — only for active subscriptions */}
+              {/* Abo-Laufzeit â€” only for active subscriptions */}
               {(selectedContract.status === "ACTIVE" ||
                 selectedContract.status === "PAID") &&
                 selectedContract.pricing_model_type !== 1 &&
@@ -515,7 +521,7 @@ export default function AdminContracts() {
                               : "text-blue-700 dark:text-blue-400"
                           }
                         >
-                          {warn ? "⚠️" : "📅"} Abo-Laufzeit
+                          {warn ? "âš ï¸" : "ðŸ“…"} Abo-Laufzeit
                         </span>
                         <span
                           className={
@@ -558,7 +564,7 @@ export default function AdminContracts() {
               {/* Admin Actions */}
               <div className="mt-2 flex items-center justify-between pt-4 border-t border-muted/20">
                 <div className="text-xs text-muted-foreground">
-                  Aktion kann nicht rückgängig gemacht werden
+                  Aktion kann nicht rÃ¼ckgÃ¤ngig gemacht werden
                 </div>
                 <div className="flex flex-wrap gap-3">
                   {selectedContract.status === "ACTIVE" &&
@@ -600,7 +606,7 @@ export default function AdminContracts() {
                     ) : (
                       <Trash2 className="w-4 h-4 mr-2" />
                     )}
-                    Vertrag Löschen
+                    Vertrag LÃ¶schen
                   </Button>
                 </div>
               </div>
