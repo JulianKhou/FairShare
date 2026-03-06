@@ -23,6 +23,7 @@ import { createStripeCheckoutSession } from "@/services/stripeFunctions";
 import { useExistingLicense } from "@/hooks/queries/useExistingLicense";
 import { useAnyExistingLicense } from "@/hooks/queries/useAnyExistingLicense";
 import { useCreatorMinPrice } from "@/hooks/queries/useCreatorMinPrice";
+import { useAlgorithmSettings } from "@/hooks/queries/useAlgorithmSettings";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -58,11 +59,12 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
   const { data: creatorMinPrice = 0 } = useCreatorMinPrice(
     videoCreator?.creator_id || videoCreator?.id,
   );
+  const { data: algorithmSettings } = useAlgorithmSettings();
 
   const selectedVideo =
     myVideos.find((v) => v.id === selectedReactionVideoId) || videoReactor;
 
-  const rawPrices = getPrices(selectedVideo, videoCreator);
+  const rawPrices = getPrices(selectedVideo, videoCreator, algorithmSettings);
   const prices = {
     ...rawPrices,
     oneTime: Math.max(rawPrices.oneTime, creatorMinPrice),
@@ -132,11 +134,11 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
         pricing_model_type: modelType,
         pricing_value: price,
         pricing_currency: "EUR",
-        fairshare_score: 0.5,
+        fairshare_score: rawPrices.fairshareScore,
         fairshare_metadata: {
-          marktmacht_score: 0,
-          schoepferische_leistung: 0,
-          parameter_dokumentation_url: "",
+          marktmacht_score: rawPrices.marktmachtScore,
+          schoepferische_leistung: rawPrices.schoepferischeLeistungScore,
+          parameter_dokumentation_url: "https://simpleshare.eu/how-it-works",
         },
         accepted_by_licensor: autoAccept,
         accepted_by_licensee: usageConsentAccepted,

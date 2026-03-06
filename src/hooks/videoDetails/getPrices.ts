@@ -1,83 +1,163 @@
-import { calculateSimpleShare } from "../../services/simpleShareAlgo";
-import { useEffect } from "react";
-import { useState } from "react";
-import { getNicheRPM } from "../../data/NicheData";
+import { calculateSimpleShare } from "@/services/simpleShareAlgo";
+import { getNicheRPM } from "@/data/NicheData";
+import {
+  normalizePricingConfig,
+  type PricingConfig,
+} from "@/types/algorithmSettings";
+import type { SimpleShareConfig } from "@/services/simpleShareAlgo";
 
-interface Price {
+export interface PriceResult {
   oneTime: number;
   payPerViews: number;
   payPerCpm: number;
-}
-interface VideoCreator {
-  views: number;
-  viewsCreator: number;
-  averageViewsPerCategory: number;
-  percentShown: number; //muss angepasst werden
-  durationCreatorMinutes: number;
-  daysSinceUpload: number;
-}
-interface VideoReactor {
-  averageViewsPerCategory: number;
-}
-interface VideoCreator {
-  averageViewsPerCategory: number;
-  durationCreatorMinutes: number;
-}
-interface simpleShareParams {
-  viewsReactor: number;
-  viewsCreator: number;
-  durationReactorSeconds: number;
-  durationCreatorSeconds: number;
-  percentShown: number;
-  daysSinceUpload: number;
+  fairshareScore: number;
+  marktmachtScore: number;
+  schoepferischeLeistungScore: number;
 }
 
-export function getPrices(videoReactor: any, videoCreator: any) {
-  const prices: Price = {
-    oneTime: 0,
-    payPerViews: 0,
-    payPerCpm: 0,
-  };
-  const simpleShareParams: simpleShareParams = {
-    viewsReactor: videoReactor.views || 0,
-    viewsCreator: videoCreator.views || 0,
-    durationReactorSeconds: videoReactor.duration_seconds || 10, // Fallback to 10 min to avoid div/0
-    durationCreatorSeconds: videoCreator.duration_seconds || 10,
-    percentShown: videoReactor.duration_seconds / videoCreator.duration_seconds || 1, // Default 50%
-    daysSinceUpload: videoCreator.daysSinceUpload || 0,
-  };
-  const nicheRPM = getNicheRPM(Number(videoReactor.category_id));
-  const simpleShare = calculateSimpleShare(simpleShareParams);
+interface PricingSettingsInput {
+  simpleShareConfig?: Partial<SimpleShareConfig>;
+  pricingConfig?: Partial<PricingConfig>;
+}
 
-  console.group("getPrices Debug");
-  console.log("Niche RPM:", nicheRPM);
-  console.log("SimpleShare:", simpleShare);
-  console.groupEnd();
-
-  try {
-    if (nicheRPM != null) {
-      // One Time Payment: Based on Creator's "Average" performance (Buyout Price)
-      // Fallback to current views or 10k if average is missing.
-      const baseViews = videoCreator.averageViewsPerCategory || videoCreator.views || 10000;
-
-      // Formula: (Estimated Views * SimpleShare * RPM) / 1000
-      const calculatedOneTime = (baseViews * simpleShare * nicheRPM) / 1000;
-      prices.oneTime = Math.max(calculatedOneTime, 0.50);
-
-      // PayPerView: Price per 1000 Views
-      // Formula: SimpleShare * RPM
-      prices.payPerViews = simpleShare * nicheRPM;
-
-      // CPM: Same as above (displayed differently or conceptually linked)
-      prices.payPerCpm = simpleShare * nicheRPM;
-    }
-    return prices;
-
-  } catch (error) {
-    console.log(error);
-    prices.oneTime = 0;
-    prices.payPerViews = 0;
-    prices.payPerCpm = 0;
-    return prices;
-  }
+const toFiniteNumber = (value: unknown): number | null => {
+  if (typeof value !== "number") return null;
+  return Number.isFinite(value) ? value : null;
 };
+
+const firstFiniteNumber = (...values: unknown[]): number | null => {
+  for (const value of values) {
+    const parsed = toFiniteNumber(value);
+    if (parsed !== null) return parsed;
+  }
+  return null;
+};
+
+const pickViews = (video: any): number => {
+  return Math.max(
+    0,
+    firstFiniteNumber(
+      video?.averageViewsPerCategory,
+      video?.last_view_count,
+      video?.view_count_at_listing,
+      video?.views,
+      video?.viewCount,
+    ) ?? 0,
+  );
+};
+
+const clamp = (value: number, min: number, max: number): number =>
+  Math.min(max, Math.max(min, value));
+
+const getDaysSinceUpload = (publishedAt: unknown): number => {
+  if (typeof publishedAt !== "string") return 0;
+  const timestamp = Date.parse(publishedAt);
+  if (Number.isNaN(timestamp)) return 0;
+  const diff = Date.now() - timestamp;
+  return Math.max(0, Math.floor(diff / (1000 * 60 * 60 * 24)));
+};
+
+const getPercentShown = (
+  reactionDuration: number,
+  creatorDuration: number,
+  pricingConfig: PricingConfig,
+): number => {
+  const assumed = clamp(
+    pricingConfig.assumed_percent_shown,
+    pricingConfig.min_percent_shown,
+    pricingConfig.max_percent_shown,
+  );
+
+  if (reactionDuration <= 0 || creatorDuration <= 0) {
+    return assumed;
+  }
+
+  const byDuration = clamp(
+    reactionDuration / creatorDuration,
+    pricingConfig.min_percent_shown,
+    pricingConfig.max_percent_shown,
+  );
+
+  return clamp(
+    (assumed + byDuration) / 2,
+    pricingConfig.min_percent_shown,
+    pricingConfig.max_percent_shown,
+  );
+};
+
+export function getPrices(
+  videoReactor: any,
+  videoCreator: any,
+  settings?: PricingSettingsInput | null,
+): PriceResult {
+  const pricingConfig = normalizePricingConfig(settings?.pricingConfig);
+
+  const creatorViews = pickViews(videoCreator);
+  const reactorViews = pickViews(videoReactor);
+
+  const creatorDuration = Math.max(
+    1,
+    firstFiniteNumber(videoCreator?.duration_seconds, videoCreator?.durationSeconds) ?? 1,
+  );
+  const reactorDuration = Math.max(
+    1,
+    firstFiniteNumber(videoReactor?.duration_seconds, videoReactor?.durationSeconds) ?? 1,
+  );
+
+  const daysSinceUpload = getDaysSinceUpload(videoCreator?.published_at);
+  const percentShown = getPercentShown(
+    reactorDuration,
+    creatorDuration,
+    pricingConfig,
+  );
+
+  const nicheCategory = Number(videoCreator?.category_id ?? videoReactor?.category_id);
+  const nicheRPM = getNicheRPM(Number.isFinite(nicheCategory) ? nicheCategory : -1);
+
+  const simpleShare = calculateSimpleShare(
+    {
+      viewsReactor: reactorViews,
+      viewsCreator: creatorViews,
+      durationReactorSeconds: reactorDuration,
+      durationCreatorSeconds: creatorDuration,
+      percentShown,
+      daysSinceUpload,
+    },
+    settings?.simpleShareConfig,
+  );
+
+  const baseViews = Math.max(
+    0,
+    firstFiniteNumber(
+      videoCreator?.averageViewsPerCategory,
+      videoCreator?.last_view_count,
+      videoCreator?.views,
+      pricingConfig.default_base_views,
+    ) ?? pricingConfig.default_base_views,
+  );
+
+  const oneTime = Math.max(
+    (baseViews * simpleShare * nicheRPM) / 1000,
+    pricingConfig.min_one_time_price,
+  );
+
+  const payPerViews = Math.max(0, simpleShare * nicheRPM);
+  const fairshareScore = Math.round(simpleShare * 10000) / 100;
+
+  const sizeRatio = reactorViews / Math.max(creatorViews, 1);
+  const marktmachtScore = Math.round(
+    clamp((1 / (1 + Math.log10(Math.max(sizeRatio, 1)))) * 100, 0, 100) * 100,
+  ) / 100;
+
+  const schoepferischeLeistungScore =
+    Math.round(clamp((1 - percentShown) * 100, 0, 100) * 100) / 100;
+
+  return {
+    oneTime,
+    payPerViews,
+    payPerCpm: payPerViews,
+    fairshareScore,
+    marktmachtScore,
+    schoepferischeLeistungScore,
+  };
+}

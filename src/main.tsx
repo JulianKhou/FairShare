@@ -22,6 +22,7 @@ import AdminDashboard from "./pages/admin/AdminDashboard.tsx";
 import AdminUsers from "./pages/admin/AdminUsers.tsx";
 import AdminContracts from "./pages/admin/AdminContracts.tsx";
 import AdminSupport from "./pages/admin/AdminSupport.tsx";
+import AdminSettings from "./pages/admin/AdminSettings.tsx";
 import UserDashboard from "./pages/dashboard/UserDashboard.tsx";
 import Impressum from "./pages/legal/Impressum.tsx";
 import Datenschutz from "./pages/legal/Datenschutz.tsx";
@@ -94,14 +95,7 @@ const app = (
                             path="/admin/support"
                             element={<AdminSupport />}
                           />
-                          <Route
-                            path="/admin/settings"
-                            element={
-                              <div className="font-bold text-2xl">
-                                System-Relevante Parameter (WIP)
-                              </div>
-                            }
-                          />
+                          <Route path="/admin/settings" element={<AdminSettings />} />
                         </Route>
                       </Route>
                     </Routes>
