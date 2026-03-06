@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Loader2, Save, RotateCcw, SlidersHorizontal } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Loader2, RotateCcw, Save, SlidersHorizontal } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -13,15 +13,20 @@ import {
   FieldLegend,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { useAlgorithmSettings, useUpdateAlgorithmSettings } from "@/hooks/queries/useAlgorithmSettings";
+import {
+  useAlgorithmSettings,
+  useUpdateAlgorithmSettings,
+} from "@/hooks/queries/useAlgorithmSettings";
 import {
   DEFAULT_PRICING_CONFIG,
+  type NicheRpmOverrides,
   type PricingConfig,
 } from "@/types/algorithmSettings";
 import {
   DEFAULT_SIMPLE_SHARE_CONFIG,
   type SimpleShareConfig,
 } from "@/services/simpleShareAlgo";
+import { NICHE_DATA } from "@/data/NicheData";
 
 const toNumber = (value: string, fallback: number) => {
   const parsed = Number.parseFloat(value);
@@ -36,11 +41,18 @@ export default function AdminSettings() {
     useState<SimpleShareConfig>(DEFAULT_SIMPLE_SHARE_CONFIG);
   const [pricingConfig, setPricingConfig] =
     useState<PricingConfig>(DEFAULT_PRICING_CONFIG);
+  const [nicheRpmOverrides, setNicheRpmOverrides] =
+    useState<NicheRpmOverrides>({});
+
+  const nicheRows = useMemo(() => {
+    return [...NICHE_DATA].sort((a, b) => a.name_de.localeCompare(b.name_de));
+  }, []);
 
   useEffect(() => {
     if (!data) return;
     setSimpleShareConfig(data.simpleShareConfig);
     setPricingConfig(data.pricingConfig);
+    setNicheRpmOverrides(data.nicheRpmOverrides);
   }, [data]);
 
   const handleSimpleShareChange = (
@@ -60,9 +72,17 @@ export default function AdminSettings() {
     }));
   };
 
+  const handleNicheRpmChange = (nicheId: string, value: string, fallback: number) => {
+    setNicheRpmOverrides((prev) => ({
+      ...prev,
+      [nicheId]: Math.max(0, toNumber(value, fallback)),
+    }));
+  };
+
   const handleReset = () => {
     setSimpleShareConfig(DEFAULT_SIMPLE_SHARE_CONFIG);
     setPricingConfig(DEFAULT_PRICING_CONFIG);
+    setNicheRpmOverrides({});
   };
 
   const handleSave = () => {
@@ -70,6 +90,7 @@ export default function AdminSettings() {
       {
         simpleShareConfig,
         pricingConfig,
+        nicheRpmOverrides,
       },
       {
         onSuccess: () => {
@@ -88,7 +109,7 @@ export default function AdminSettings() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Algorithmus Einstellungen</h1>
         <p className="text-muted-foreground mt-1">
-          Feintuning fuer FairShare-Score und Preisbildung im Lizenz-Checkout.
+          Feintuning fuer FairShare-Score, Plattform-Anteil und Branchen-CPM.
         </p>
       </div>
 
@@ -229,6 +250,21 @@ export default function AdminSettings() {
 
                 <Field>
                   <FieldContent>
+                    <FieldLabel>platform_fee_percent</FieldLabel>
+                    <FieldDescription>Anteil der Plattform (0.10 = 10%).</FieldDescription>
+                  </FieldContent>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={pricingConfig.platform_fee_percent}
+                    onChange={(e) =>
+                      handlePricingChange("platform_fee_percent", e.target.value)
+                    }
+                  />
+                </Field>
+
+                <Field>
+                  <FieldContent>
                     <FieldLabel>assumed_percent_shown</FieldLabel>
                     <FieldDescription>Baseline fuer Anteil des gezeigten Originals.</FieldDescription>
                   </FieldContent>
@@ -272,6 +308,42 @@ export default function AdminSettings() {
                   />
                 </Field>
               </FieldSet>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Branchen CPM / RPM</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                {nicheRows.map((niche) => {
+                  const override = nicheRpmOverrides[niche.id];
+                  const currentValue =
+                    typeof override === "number" && Number.isFinite(override)
+                      ? override
+                      : niche.rpm;
+
+                  return (
+                    <Field key={niche.id} className="rounded-lg border border-border/60 p-3">
+                      <FieldContent>
+                        <FieldLabel>{niche.name_de}</FieldLabel>
+                        <FieldDescription>
+                          Standard: {niche.rpm.toFixed(2)} EUR
+                        </FieldDescription>
+                      </FieldContent>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={currentValue}
+                        onChange={(e) =>
+                          handleNicheRpmChange(niche.id, e.target.value, niche.rpm)
+                        }
+                      />
+                    </Field>
+                  );
+                })}
+              </div>
             </CardContent>
           </Card>
 

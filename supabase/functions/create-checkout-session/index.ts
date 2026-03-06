@@ -80,7 +80,19 @@ serve(async (req) => {
 
     // 5) Calculate amounts & determine mode
     const amount = Math.round(contract.pricing_value * 100);
-    const APP_FEE_PERCENTAGE = 0.1;
+
+    const { data: algorithmSettings } = await supabaseClient
+      .from("algorithm_settings")
+      .select("pricing_config")
+      .eq("id", "default")
+      .maybeSingle();
+
+    const rawPlatformFee =
+      algorithmSettings?.pricing_config?.platform_fee_percent;
+    const APP_FEE_PERCENTAGE =
+      typeof rawPlatformFee === "number" && Number.isFinite(rawPlatformFee)
+        ? Math.min(0.95, Math.max(0, rawPlatformFee))
+        : 0.1;
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") ?? "", {
       httpClient: Stripe.createFetchHttpClient(),

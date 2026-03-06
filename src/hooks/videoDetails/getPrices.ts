@@ -1,7 +1,12 @@
 import { calculateSimpleShare } from "@/services/simpleShareAlgo";
-import { getNicheRPM } from "@/data/NicheData";
+import {
+  DEFAULT_NICHE_DATA,
+  findNicheByYouTubeId,
+  getSeasonalityFactor,
+} from "@/data/NicheData";
 import {
   normalizePricingConfig,
+  type NicheRpmOverrides,
   type PricingConfig,
 } from "@/types/algorithmSettings";
 import type { SimpleShareConfig } from "@/services/simpleShareAlgo";
@@ -18,6 +23,7 @@ export interface PriceResult {
 interface PricingSettingsInput {
   simpleShareConfig?: Partial<SimpleShareConfig>;
   pricingConfig?: Partial<PricingConfig>;
+  nicheRpmOverrides?: NicheRpmOverrides;
 }
 
 const toFiniteNumber = (value: unknown): number | null => {
@@ -112,7 +118,15 @@ export function getPrices(
   );
 
   const nicheCategory = Number(videoCreator?.category_id ?? videoReactor?.category_id);
-  const nicheRPM = getNicheRPM(Number.isFinite(nicheCategory) ? nicheCategory : -1);
+  const resolvedNiche = Number.isFinite(nicheCategory)
+    ? findNicheByYouTubeId(nicheCategory) || DEFAULT_NICHE_DATA
+    : DEFAULT_NICHE_DATA;
+  const overriddenRpm = settings?.nicheRpmOverrides?.[resolvedNiche.id];
+  const baseRpm =
+    typeof overriddenRpm === "number" && Number.isFinite(overriddenRpm)
+      ? Math.max(0, overriddenRpm)
+      : resolvedNiche.rpm;
+  const nicheRPM = baseRpm * getSeasonalityFactor();
 
   const simpleShare = calculateSimpleShare(
     {
