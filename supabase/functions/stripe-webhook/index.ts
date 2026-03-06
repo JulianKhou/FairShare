@@ -74,24 +74,64 @@ serve(async (req) => {
           if (typeof session.subscription === "string") {
             updatePayload.stripe_subscription_id = session.subscription;
 
-            // SCHEDULING 1-YEAR AUTO-CANCELLATION
+            // SCHEDULING CONFIG-DRIVEN AUTO-CANCELLATION
             try {
-              // Get current date, add exactly 1 year, and convert to unix timestamp (seconds).
-              const oneYearFromNow = new Date();
-              oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+              const { data: usagePolicySettings } = await supabaseClient
+                .from("algorithm_settings")
+                .select("usage_policy_config")
+                .eq("id", "default")
+                .maybeSingle();
+
+              const rawMaxBillingMonths =
+                usagePolicySettings?.usage_policy_config
+                  ?.max_subscription_billing_months;
+              const maxBillingMonths =
+                typeof rawMaxBillingMonths === "number" &&
+                Number.isFinite(rawMaxBillingMonths)
+                  ? Math.max(1, Math.round(rawMaxBillingMonths))
+                  : 12;
+
+              const { data: contractPolicyData } = await supabaseClient
+                .from("reaction_contracts")
+                .select("algorithm_input_snapshot")
+                .eq("id", contractId)
+                .maybeSingle();
+
+              const rawRequestedBillingMonths =
+                contractPolicyData?.algorithm_input_snapshot?.selected_usage
+                  ?.billing_duration_months;
+              const requestedBillingMonths =
+                typeof rawRequestedBillingMonths === "number" &&
+                Number.isFinite(rawRequestedBillingMonths)
+                  ? Math.round(rawRequestedBillingMonths)
+                  : maxBillingMonths;
+
+              const billingMonths = Math.min(
+                maxBillingMonths,
+                Math.max(1, requestedBillingMonths),
+              );
+
+              const cancelAtDate = new Date();
+              cancelAtDate.setMonth(cancelAtDate.getMonth() + billingMonths);
               const cancelAtUnixTimestamp = Math.floor(
-                oneYearFromNow.getTime() / 1000,
+                cancelAtDate.getTime() / 1000,
               );
 
               await stripe.subscriptions.update(session.subscription, {
                 cancel_at: cancelAtUnixTimestamp,
               });
               console.log(
-                `⏱️ Scheduled subscription ${session.subscription} to auto-cancel on ${oneYearFromNow.toISOString()}`,
+                "Scheduled subscription " +
+                  session.subscription +
+                  " to auto-cancel on " +
+                  cancelAtDate.toISOString() +
+                  " (" +
+                  billingMonths +
+                  " months)",
               );
             } catch (err: any) {
               console.error(
-                "❌ Failed to set cancel_at for subscription:",
+                "Failed to set cancel_at for subscription:",
                 err,
               );
             }

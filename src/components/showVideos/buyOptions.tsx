@@ -28,6 +28,10 @@ import {
   buildAlgorithmInputSnapshot,
   buildAlgorithmVersion,
 } from "@/services/algorithmAudit";
+import {
+  buildDefaultUsageSelection,
+  validateUsageSelection,
+} from "@/services/usagePolicy";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -123,6 +127,20 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
         price = prices.oneTime;
       }
 
+      const usageSelection = buildDefaultUsageSelection(
+        modelType,
+        algorithmSettings?.usagePolicyConfig,
+      );
+      const usageValidationErrors = validateUsageSelection(
+        usageSelection,
+        modelType,
+        algorithmSettings?.usagePolicyConfig,
+      );
+
+      if (usageValidationErrors.length > 0) {
+        throw new Error(usageValidationErrors[0]);
+      }
+
       const algorithmVersion = buildAlgorithmVersion(algorithmSettings);
       const algorithmInputSnapshot = buildAlgorithmInputSnapshot({
         videoCreator,
@@ -134,6 +152,7 @@ export const BuyOptions = ({ videoCreator, videoReactor }: BuyOptionsProps) => {
         creatorMinPrice,
         rawPrices,
         prices,
+        usageSelection,
         algorithmSettings,
       });
 

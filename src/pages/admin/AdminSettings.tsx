@@ -19,8 +19,10 @@ import {
 } from "@/hooks/queries/useAlgorithmSettings";
 import {
   DEFAULT_PRICING_CONFIG,
+  DEFAULT_USAGE_POLICY_CONFIG,
   type NicheRpmOverrides,
   type PricingConfig,
+  type UsagePolicyConfig,
 } from "@/types/algorithmSettings";
 import {
   DEFAULT_SIMPLE_SHARE_CONFIG,
@@ -33,6 +35,17 @@ const toNumber = (value: string, fallback: number) => {
   return Number.isFinite(parsed) ? parsed : fallback;
 };
 
+const toList = (value: string): string[] => {
+  const entries = value
+    .split(",")
+    .map((entry) => entry.trim().toLowerCase())
+    .filter((entry) => entry.length > 0);
+
+  return [...new Set(entries)];
+};
+
+const toListInput = (values: string[]) => values.join(", ");
+
 export default function AdminSettings() {
   const { data, isLoading, error } = useAlgorithmSettings();
   const updateMutation = useUpdateAlgorithmSettings();
@@ -43,6 +56,8 @@ export default function AdminSettings() {
     useState<PricingConfig>(DEFAULT_PRICING_CONFIG);
   const [nicheRpmOverrides, setNicheRpmOverrides] =
     useState<NicheRpmOverrides>({});
+  const [usagePolicyConfig, setUsagePolicyConfig] =
+    useState<UsagePolicyConfig>(DEFAULT_USAGE_POLICY_CONFIG);
 
   const nicheRows = useMemo(() => {
     return [...NICHE_DATA].sort((a, b) => a.name_de.localeCompare(b.name_de));
@@ -53,6 +68,7 @@ export default function AdminSettings() {
     setSimpleShareConfig(data.simpleShareConfig);
     setPricingConfig(data.pricingConfig);
     setNicheRpmOverrides(data.nicheRpmOverrides);
+    setUsagePolicyConfig(data.usagePolicyConfig);
   }, [data]);
 
   const handleSimpleShareChange = (
@@ -79,10 +95,43 @@ export default function AdminSettings() {
     }));
   };
 
+  const handleUsagePolicyListChange = (
+    key:
+      | "allowed_platform_scopes"
+      | "allowed_usage_modes"
+      | "allowed_license_durations",
+    value: string,
+    fallback: string[],
+  ) => {
+    const nextList = toList(value);
+    setUsagePolicyConfig((prev) => ({
+      ...prev,
+      [key]: nextList.length > 0 ? nextList : fallback,
+    }));
+  };
+
+  const handleUsagePolicyNumberChange = (
+    key: "max_subscription_billing_months",
+    value: string,
+  ) => {
+    setUsagePolicyConfig((prev) => ({
+      ...prev,
+      [key]: Math.max(1, Math.round(toNumber(value, prev[key]))),
+    }));
+  };
+
+  const handleUsagePolicyBooleanChange = (key: "allow_exclusive", value: boolean) => {
+    setUsagePolicyConfig((prev) => ({
+      ...prev,
+      [key]: value,
+    }));
+  };
+
   const handleReset = () => {
     setSimpleShareConfig(DEFAULT_SIMPLE_SHARE_CONFIG);
     setPricingConfig(DEFAULT_PRICING_CONFIG);
     setNicheRpmOverrides({});
+    setUsagePolicyConfig(DEFAULT_USAGE_POLICY_CONFIG);
   };
 
   const handleSave = () => {
@@ -91,6 +140,7 @@ export default function AdminSettings() {
         simpleShareConfig,
         pricingConfig,
         nicheRpmOverrides,
+        usagePolicyConfig,
       },
       {
         onSuccess: () => {
@@ -109,7 +159,7 @@ export default function AdminSettings() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Algorithmus Einstellungen</h1>
         <p className="text-muted-foreground mt-1">
-          Feintuning fuer FairShare-Score, Plattform-Anteil und Branchen-CPM.
+          Feintuning fuer FairShare-Score, Preislogik, Branchen-CPM und Nutzungs-Policy.
         </p>
       </div>
 
@@ -344,6 +394,107 @@ export default function AdminSettings() {
                   );
                 })}
               </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Nutzungs-Policy (config-driven)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <FieldSet className="grid gap-4 md:grid-cols-2">
+                <Field>
+                  <FieldContent>
+                    <FieldLabel>allowed_platform_scopes</FieldLabel>
+                    <FieldDescription>Erlaubte Plattform-Scope Tokens (kommagetrennt).</FieldDescription>
+                  </FieldContent>
+                  <Input
+                    value={toListInput(usagePolicyConfig.allowed_platform_scopes)}
+                    onChange={(e) =>
+                      handleUsagePolicyListChange(
+                        "allowed_platform_scopes",
+                        e.target.value,
+                        DEFAULT_USAGE_POLICY_CONFIG.allowed_platform_scopes,
+                      )
+                    }
+                  />
+                </Field>
+
+                <Field>
+                  <FieldContent>
+                    <FieldLabel>allowed_usage_modes</FieldLabel>
+                    <FieldDescription>Erlaubte Nutzungsmodi (kommagetrennt).</FieldDescription>
+                  </FieldContent>
+                  <Input
+                    value={toListInput(usagePolicyConfig.allowed_usage_modes)}
+                    onChange={(e) =>
+                      handleUsagePolicyListChange(
+                        "allowed_usage_modes",
+                        e.target.value,
+                        DEFAULT_USAGE_POLICY_CONFIG.allowed_usage_modes,
+                      )
+                    }
+                  />
+                </Field>
+
+                <Field>
+                  <FieldContent>
+                    <FieldLabel>allowed_license_durations</FieldLabel>
+                    <FieldDescription>Erlaubte Lizenzlaufzeiten (kommagetrennt).</FieldDescription>
+                  </FieldContent>
+                  <Input
+                    value={toListInput(usagePolicyConfig.allowed_license_durations)}
+                    onChange={(e) =>
+                      handleUsagePolicyListChange(
+                        "allowed_license_durations",
+                        e.target.value,
+                        DEFAULT_USAGE_POLICY_CONFIG.allowed_license_durations,
+                      )
+                    }
+                  />
+                </Field>
+
+                <Field>
+                  <FieldContent>
+                    <FieldLabel>max_subscription_billing_months</FieldLabel>
+                    <FieldDescription>Maximale abrechenbare Monate im Abo-Modell.</FieldDescription>
+                  </FieldContent>
+                  <Input
+                    type="number"
+                    step="1"
+                    value={usagePolicyConfig.max_subscription_billing_months}
+                    onChange={(e) =>
+                      handleUsagePolicyNumberChange(
+                        "max_subscription_billing_months",
+                        e.target.value,
+                      )
+                    }
+                  />
+                </Field>
+
+                <Field className="md:col-span-2">
+                  <FieldContent>
+                    <FieldLabel>allow_exclusive</FieldLabel>
+                    <FieldDescription>
+                      Wenn aktiviert, sind exklusive Lizenz-Optionen zulaessig.
+                    </FieldDescription>
+                  </FieldContent>
+                  <label className="inline-flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4"
+                      checked={usagePolicyConfig.allow_exclusive}
+                      onChange={(e) =>
+                        handleUsagePolicyBooleanChange(
+                          "allow_exclusive",
+                          e.target.checked,
+                        )
+                      }
+                    />
+                    Exklusive Lizenzen erlauben
+                  </label>
+                </Field>
+              </FieldSet>
             </CardContent>
           </Card>
 

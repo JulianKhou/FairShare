@@ -6,6 +6,7 @@ import {
   type NicheRpmOverrides,
   type PricingConfig,
   type ResolvedAlgorithmSettings,
+  type UsagePolicyConfig,
 } from "@/types/algorithmSettings";
 import type { SimpleShareConfig } from "@/services/simpleShareAlgo";
 
@@ -15,7 +16,7 @@ export const getAlgorithmSettings = async (): Promise<ResolvedAlgorithmSettings>
   const { data, error } = await supabase
     .from("algorithm_settings")
     .select(
-      "id, simple_share_config, pricing_config, niche_rpm_overrides, updated_at, updated_by",
+      "id, simple_share_config, pricing_config, niche_rpm_overrides, usage_policy_config, updated_at, updated_by",
     )
     .eq("id", DEFAULT_SETTINGS_ID)
     .maybeSingle();
@@ -39,6 +40,7 @@ export interface UpdateAlgorithmSettingsInput {
   simpleShareConfig: Partial<SimpleShareConfig>;
   pricingConfig: Partial<PricingConfig>;
   nicheRpmOverrides: NicheRpmOverrides;
+  usagePolicyConfig: Partial<UsagePolicyConfig>;
 }
 
 export const updateAlgorithmSettings = async (
@@ -48,6 +50,7 @@ export const updateAlgorithmSettings = async (
     simple_share_config: input.simpleShareConfig,
     pricing_config: input.pricingConfig,
     niche_rpm_overrides: input.nicheRpmOverrides,
+    usage_policy_config: input.usagePolicyConfig,
   };
 
   const { data, error } = await supabase
@@ -55,7 +58,7 @@ export const updateAlgorithmSettings = async (
     .update(payload)
     .eq("id", DEFAULT_SETTINGS_ID)
     .select(
-      "id, simple_share_config, pricing_config, niche_rpm_overrides, updated_at, updated_by",
+      "id, simple_share_config, pricing_config, niche_rpm_overrides, usage_policy_config, updated_at, updated_by",
     )
     .maybeSingle();
 

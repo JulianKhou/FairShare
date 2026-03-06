@@ -1,14 +1,8 @@
 import type { PriceResult } from "@/hooks/videoDetails/getPrices";
 import type { ResolvedAlgorithmSettings } from "@/types/algorithmSettings";
+import type { UsageSelection } from "@/services/usagePolicy";
 
 const ALGORITHM_BASE_VERSION = "simpleshare-v1";
-const BILLING_DURATION_MONTHS_SUBSCRIPTION = 12;
-const FIXED_USAGE_POLICY = {
-  platform_scope: "youtube_only",
-  usage_mode: "reaction_only",
-  exclusivity: false,
-  license_duration: "unlimited",
-} as const;
 
 interface BuildAlgorithmInputSnapshotParams {
   videoCreator: any;
@@ -24,6 +18,7 @@ interface BuildAlgorithmInputSnapshotParams {
     payPerViews: number;
     payPerCpm?: number;
   };
+  usageSelection: UsageSelection;
   algorithmSettings?: ResolvedAlgorithmSettings | null;
 }
 
@@ -85,6 +80,7 @@ export const buildAlgorithmInputSnapshot = ({
   creatorMinPrice,
   rawPrices,
   prices,
+  usageSelection,
   algorithmSettings,
 }: BuildAlgorithmInputSnapshotParams): Record<string, unknown> => {
   const monetizedHint = pickBooleanish(
@@ -94,10 +90,9 @@ export const buildAlgorithmInputSnapshot = ({
       videoReactor?.monetization_enabled ??
       videoReactor?.monetization,
   );
-  const isSubscriptionModel = pricingModelType !== 1;
 
   return {
-    schema_version: 2,
+    schema_version: 3,
     captured_at: new Date().toISOString(),
     settings_reference: {
       settings_id: algorithmSettings?.id ?? "default",
@@ -105,16 +100,10 @@ export const buildAlgorithmInputSnapshot = ({
       simple_share_config: algorithmSettings?.simpleShareConfig ?? null,
       pricing_config: algorithmSettings?.pricingConfig ?? null,
       niche_rpm_overrides: algorithmSettings?.nicheRpmOverrides ?? null,
+      usage_policy_config: algorithmSettings?.usagePolicyConfig ?? null,
     },
-    usage_policy: {
-      ...FIXED_USAGE_POLICY,
-      billing_duration_months: isSubscriptionModel
-        ? BILLING_DURATION_MONTHS_SUBSCRIPTION
-        : null,
-      billing_cap_rule: isSubscriptionModel
-        ? "max_12_months_billing"
-        : "one_time_payment",
-    },
+    usage_policy: algorithmSettings?.usagePolicyConfig ?? null,
+    selected_usage: usageSelection,
     variable_inputs_used_for_pricing: {
       selected_plan: selectedPlan,
       pricing_model_type: pricingModelType,

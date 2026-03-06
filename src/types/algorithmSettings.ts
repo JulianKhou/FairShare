@@ -13,6 +13,14 @@ export interface PricingConfig {
   platform_fee_percent: number;
 }
 
+export interface UsagePolicyConfig {
+  allowed_platform_scopes: string[];
+  allowed_usage_modes: string[];
+  allow_exclusive: boolean;
+  allowed_license_durations: string[];
+  max_subscription_billing_months: number;
+}
+
 export type NicheRpmOverrides = Record<string, number>;
 
 export interface AlgorithmSettingsRow {
@@ -20,6 +28,7 @@ export interface AlgorithmSettingsRow {
   simple_share_config: Partial<SimpleShareConfig> | null;
   pricing_config: Partial<PricingConfig> | null;
   niche_rpm_overrides: NicheRpmOverrides | null;
+  usage_policy_config: Partial<UsagePolicyConfig> | null;
   updated_at?: string;
   updated_by?: string | null;
 }
@@ -29,6 +38,7 @@ export interface ResolvedAlgorithmSettings {
   simpleShareConfig: SimpleShareConfig;
   pricingConfig: PricingConfig;
   nicheRpmOverrides: NicheRpmOverrides;
+  usagePolicyConfig: UsagePolicyConfig;
   updated_at?: string;
   updated_by?: string | null;
 }
@@ -42,9 +52,30 @@ export const DEFAULT_PRICING_CONFIG: PricingConfig = {
   platform_fee_percent: 0.1,
 };
 
+export const DEFAULT_USAGE_POLICY_CONFIG: UsagePolicyConfig = {
+  allowed_platform_scopes: ["youtube_only"],
+  allowed_usage_modes: ["reaction_only"],
+  allow_exclusive: false,
+  allowed_license_durations: ["unlimited"],
+  max_subscription_billing_months: 12,
+};
+
 const toFiniteNumber = (value: unknown, fallback: number): number => {
   if (typeof value !== "number") return fallback;
   return Number.isFinite(value) ? value : fallback;
+};
+
+const normalizeStringList = (
+  raw: unknown,
+  fallback: string[],
+): string[] => {
+  if (!Array.isArray(raw)) return fallback;
+
+  const normalized = raw
+    .map((item) => (typeof item === "string" ? item.trim().toLowerCase() : ""))
+    .filter((item) => item.length > 0);
+
+  return normalized.length > 0 ? [...new Set(normalized)] : fallback;
 };
 
 export const normalizePricingConfig = (
@@ -115,6 +146,40 @@ export const normalizePricingConfig = (
   };
 };
 
+export const normalizeUsagePolicyConfig = (
+  raw?: Partial<UsagePolicyConfig> | null,
+): UsagePolicyConfig => {
+  const config = raw ?? {};
+
+  return {
+    allowed_platform_scopes: normalizeStringList(
+      config.allowed_platform_scopes,
+      DEFAULT_USAGE_POLICY_CONFIG.allowed_platform_scopes,
+    ),
+    allowed_usage_modes: normalizeStringList(
+      config.allowed_usage_modes,
+      DEFAULT_USAGE_POLICY_CONFIG.allowed_usage_modes,
+    ),
+    allow_exclusive:
+      typeof config.allow_exclusive === "boolean"
+        ? config.allow_exclusive
+        : DEFAULT_USAGE_POLICY_CONFIG.allow_exclusive,
+    allowed_license_durations: normalizeStringList(
+      config.allowed_license_durations,
+      DEFAULT_USAGE_POLICY_CONFIG.allowed_license_durations,
+    ),
+    max_subscription_billing_months: Math.max(
+      1,
+      Math.round(
+        toFiniteNumber(
+          config.max_subscription_billing_months,
+          DEFAULT_USAGE_POLICY_CONFIG.max_subscription_billing_months,
+        ),
+      ),
+    ),
+  };
+};
+
 export const normalizeNicheRpmOverrides = (
   raw?: NicheRpmOverrides | null,
 ): NicheRpmOverrides => {
@@ -143,6 +208,9 @@ export const resolveAlgorithmSettings = (
     nicheRpmOverrides: normalizeNicheRpmOverrides(
       row?.niche_rpm_overrides ?? undefined,
     ),
+    usagePolicyConfig: normalizeUsagePolicyConfig(
+      row?.usage_policy_config ?? undefined,
+    ),
     updated_at: row?.updated_at,
     updated_by: row?.updated_by ?? null,
   };
@@ -153,6 +221,7 @@ export const DEFAULT_RESOLVED_ALGORITHM_SETTINGS: ResolvedAlgorithmSettings = {
   simpleShareConfig: DEFAULT_SIMPLE_SHARE_CONFIG,
   pricingConfig: DEFAULT_PRICING_CONFIG,
   nicheRpmOverrides: {},
+  usagePolicyConfig: DEFAULT_USAGE_POLICY_CONFIG,
   updated_at: undefined,
   updated_by: null,
 };
