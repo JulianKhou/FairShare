@@ -15,7 +15,7 @@ export const useFindVideo = () => {
       const { videoId } = getIDsFromLink({ videoUrl });
       if (!videoId) {
         setVideo(null);
-        setError("Ungültiger YouTube-Link.");
+        setError("Ung\u00fcltiger YouTube-Link.");
         return;
       }
 
