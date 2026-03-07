@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   getAlgorithmSettings,
+  getAlgorithmSettingsAudit,
   updateAlgorithmSettings,
   type UpdateAlgorithmSettingsInput,
 } from "@/services/supabaseCollum/algorithmSettings";
@@ -12,6 +13,13 @@ export const useAlgorithmSettings = () => {
   });
 };
 
+export const useAlgorithmSettingsAudit = (limit = 15) => {
+  return useQuery({
+    queryKey: ["algorithmSettingsAudit", limit],
+    queryFn: () => getAlgorithmSettingsAudit(limit),
+  });
+};
+
 export const useUpdateAlgorithmSettings = () => {
   const queryClient = useQueryClient();
 
@@ -20,6 +28,7 @@ export const useUpdateAlgorithmSettings = () => {
       updateAlgorithmSettings(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["algorithmSettings"] });
+      queryClient.invalidateQueries({ queryKey: ["algorithmSettingsAudit"] });
     },
   });
 };

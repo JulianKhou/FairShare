@@ -15,6 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import {
   useAlgorithmSettings,
+  useAlgorithmSettingsAudit,
   useUpdateAlgorithmSettings,
 } from "@/hooks/queries/useAlgorithmSettings";
 import {
@@ -46,8 +47,127 @@ const toList = (value: string): string[] => {
 
 const toListInput = (values: string[]) => values.join(", ");
 
+const AUDIT_FIELD_LABELS: Record<string, string> = {
+  simple_share_config: "SimpleShare-Konfiguration",
+  pricing_config: "Pricing-Konfiguration",
+  niche_rpm_overrides: "Branchen-CPM/RPM",
+  usage_policy_config: "Nutzungs-Policy",
+};
+
+const validateSettingsBeforeSave = (input: {
+  simpleShareConfig: SimpleShareConfig;
+  pricingConfig: PricingConfig;
+  nicheRpmOverrides: NicheRpmOverrides;
+  usagePolicyConfig: UsagePolicyConfig;
+}): string[] => {
+  const errors: string[] = [];
+
+  const {
+    simpleShareConfig,
+    pricingConfig,
+    nicheRpmOverrides,
+    usagePolicyConfig,
+  } = input;
+
+  if (simpleShareConfig.BASE_SHARE < 0 || simpleShareConfig.BASE_SHARE > 1) {
+    errors.push("BASE_SHARE muss zwischen 0 und 1 liegen.");
+  }
+
+  if (
+    simpleShareConfig.HYPE_DECAY_DAYS < 0 ||
+    simpleShareConfig.HYPE_DECAY_DAYS > 3650
+  ) {
+    errors.push("HYPE_DECAY_DAYS muss zwischen 0 und 3650 liegen.");
+  }
+
+  if (simpleShareConfig.HYPE_FACTOR < 0 || simpleShareConfig.HYPE_FACTOR > 10) {
+    errors.push("HYPE_FACTOR muss zwischen 0 und 10 liegen.");
+  }
+
+  if (
+    simpleShareConfig.EVERGREEN_DAYS < 0 ||
+    simpleShareConfig.EVERGREEN_DAYS > 3650
+  ) {
+    errors.push("EVERGREEN_DAYS muss zwischen 0 und 3650 liegen.");
+  }
+
+  if (
+    simpleShareConfig.EVERGREEN_FACTOR < 0 ||
+    simpleShareConfig.EVERGREEN_FACTOR > 10
+  ) {
+    errors.push("EVERGREEN_FACTOR muss zwischen 0 und 10 liegen.");
+  }
+
+  if (pricingConfig.min_one_time_price < 0) {
+    errors.push("min_one_time_price muss >= 0 sein.");
+  }
+
+  if (pricingConfig.default_base_views < 100) {
+    errors.push("default_base_views muss mindestens 100 sein.");
+  }
+
+  if (pricingConfig.min_percent_shown < 0 || pricingConfig.min_percent_shown > 1) {
+    errors.push("min_percent_shown muss zwischen 0 und 1 liegen.");
+  }
+
+  if (
+    pricingConfig.max_percent_shown < pricingConfig.min_percent_shown ||
+    pricingConfig.max_percent_shown > 1
+  ) {
+    errors.push(
+      "max_percent_shown muss zwischen min_percent_shown und 1 liegen.",
+    );
+  }
+
+  if (
+    pricingConfig.assumed_percent_shown < pricingConfig.min_percent_shown ||
+    pricingConfig.assumed_percent_shown > pricingConfig.max_percent_shown
+  ) {
+    errors.push(
+      "assumed_percent_shown muss zwischen min_percent_shown und max_percent_shown liegen.",
+    );
+  }
+
+  if (
+    pricingConfig.platform_fee_percent < 0 ||
+    pricingConfig.platform_fee_percent > 0.95
+  ) {
+    errors.push("platform_fee_percent muss zwischen 0 und 0.95 liegen.");
+  }
+
+  for (const [nicheId, value] of Object.entries(nicheRpmOverrides)) {
+    if (!Number.isFinite(value) || value < 0 || value > 1000) {
+      errors.push("Branchen-CPM/RPM für \"" + nicheId + "\" muss zwischen 0 und 1000 liegen.");
+      break;
+    }
+  }
+
+  if (usagePolicyConfig.allowed_platform_scopes.length === 0) {
+    errors.push("allowed_platform_scopes darf nicht leer sein.");
+  }
+
+  if (usagePolicyConfig.allowed_usage_modes.length === 0) {
+    errors.push("allowed_usage_modes darf nicht leer sein.");
+  }
+
+  if (usagePolicyConfig.allowed_license_durations.length === 0) {
+    errors.push("allowed_license_durations darf nicht leer sein.");
+  }
+
+  if (
+    usagePolicyConfig.max_subscription_billing_months < 1 ||
+    usagePolicyConfig.max_subscription_billing_months > 120
+  ) {
+    errors.push("max_subscription_billing_months muss zwischen 1 und 120 liegen.");
+  }
+
+  return errors;
+};
+
 export default function AdminSettings() {
   const { data, isLoading, error } = useAlgorithmSettings();
+  const { data: auditEntries = [], isLoading: isAuditLoading } =
+    useAlgorithmSettingsAudit(12);
   const updateMutation = useUpdateAlgorithmSettings();
 
   const [simpleShareConfig, setSimpleShareConfig] =
@@ -135,6 +255,18 @@ export default function AdminSettings() {
   };
 
   const handleSave = () => {
+    const validationErrors = validateSettingsBeforeSave({
+      simpleShareConfig,
+      pricingConfig,
+      nicheRpmOverrides,
+      usagePolicyConfig,
+    });
+
+    if (validationErrors.length > 0) {
+      toast.error(validationErrors[0]);
+      return;
+    }
+
     updateMutation.mutate(
       {
         simpleShareConfig,
@@ -519,6 +651,45 @@ export default function AdminSettings() {
                 )}
                 Speichern
               </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Änderungshistorie</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {isAuditLoading ? (
+                <p className="text-sm text-muted-foreground">Lade Änderungen...</p>
+              ) : auditEntries.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Noch keine Änderungen protokolliert.
+                </p>
+              ) : (
+                auditEntries.map((entry) => {
+                  const actor =
+                    entry.changed_by_profile?.full_name?.trim() ||
+                    entry.changed_by ||
+                    "System";
+                  const changedFields = (entry.changed_fields || [])
+                    .map((field) => AUDIT_FIELD_LABELS[field] || field)
+                    .join(", ");
+
+                  return (
+                    <div
+                      key={entry.id}
+                      className="rounded-lg border border-border/60 bg-muted/20 px-3 py-2"
+                    >
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(entry.changed_at).toLocaleString("de-DE")} · {actor}
+                      </p>
+                      <p className="text-sm font-medium">
+                        {changedFields || "Keine Feldänderungen erkannt"}
+                      </p>
+                    </div>
+                  );
+                })
+              )}
             </CardContent>
           </Card>
 

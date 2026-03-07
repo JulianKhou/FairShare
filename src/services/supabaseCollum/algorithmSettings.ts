@@ -43,6 +43,17 @@ export interface UpdateAlgorithmSettingsInput {
   usagePolicyConfig: Partial<UsagePolicyConfig>;
 }
 
+export interface AlgorithmSettingsAuditEntry {
+  id: number;
+  settings_id: string;
+  changed_at: string;
+  changed_by: string | null;
+  changed_fields: string[];
+  changed_by_profile?: {
+    full_name: string | null;
+  } | null;
+}
+
 export const updateAlgorithmSettings = async (
   input: UpdateAlgorithmSettingsInput,
 ): Promise<ResolvedAlgorithmSettings> => {
@@ -71,4 +82,32 @@ export const updateAlgorithmSettings = async (
   }
 
   return resolveAlgorithmSettings(data as AlgorithmSettingsRow);
+};
+
+export const getAlgorithmSettingsAudit = async (
+  limit = 15,
+): Promise<AlgorithmSettingsAuditEntry[]> => {
+  const safeLimit = Math.max(1, Math.min(100, Math.round(limit)));
+
+  const { data, error } = await supabase
+    .from("algorithm_settings_audit")
+    .select(
+      "id, settings_id, changed_at, changed_by, changed_fields, changed_by_profile:profiles!algorithm_settings_audit_changed_by_fkey(full_name)",
+    )
+    .order("changed_at", { ascending: false })
+    .limit(safeLimit);
+
+  if (error) {
+    console.warn("Could not load algorithm settings audit.", error);
+    return [];
+  }
+
+  const normalized = (data ?? []).map((entry: any) => ({
+    ...entry,
+    changed_by_profile: Array.isArray(entry.changed_by_profile)
+      ? entry.changed_by_profile[0] ?? null
+      : entry.changed_by_profile ?? null,
+  }));
+
+  return normalized as AlgorithmSettingsAuditEntry[];
 };
