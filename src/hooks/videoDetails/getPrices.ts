@@ -63,6 +63,18 @@ const getDaysSinceUpload = (publishedAt: unknown): number => {
   return Math.max(0, Math.floor(diff / (1000 * 60 * 60 * 24)));
 };
 
+const getLowViewDiscount = (
+  baseViews: number,
+  referenceViews: number,
+): number => {
+  const safeBaseViews = Math.max(0, baseViews);
+  const safeReferenceViews = Math.max(1, referenceViews);
+
+  // Damp low-view contracts so small channels are not priced too aggressively.
+  const normalized = safeBaseViews / safeReferenceViews;
+  return clamp(Math.pow(normalized, 0.35), 0.35, 1);
+};
+
 const getPercentShown = (
   reactionDuration: number,
   creatorDuration: number,
@@ -150,8 +162,13 @@ export function getPrices(
     ) ?? pricingConfig.default_base_views,
   );
 
+  const lowViewDiscount = getLowViewDiscount(
+    baseViews,
+    pricingConfig.default_base_views,
+  );
+
   const oneTime = Math.max(
-    (baseViews * simpleShare * nicheRPM) / 1000,
+    ((baseViews * simpleShare * nicheRPM) / 1000) * lowViewDiscount,
     pricingConfig.min_one_time_price,
   );
 
