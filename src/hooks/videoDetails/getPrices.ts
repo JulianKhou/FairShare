@@ -81,6 +81,7 @@ const LOW_VIEW_PRICE_CEILINGS = [
 ] as const;
 
 const HIGH_VIEW_GROWTH_EXPONENT = 0.72;
+const DEFAULT_MAX_REACTOR_REVENUE_SHARE = 0.45;
 
 const getScaledBaseViews = (
   baseViews: number,
@@ -94,6 +95,19 @@ const getScaledBaseViews = (
 
   const normalized = safeBaseViews / safeReferenceViews;
   return safeReferenceViews * Math.pow(normalized, HIGH_VIEW_GROWTH_EXPONENT);
+};
+
+const getMarketBalancedViews = (
+  scaledCreatorViews: number,
+  reactorViews: number,
+  referenceViews: number,
+): number => {
+  const safeCreatorViews = Math.max(0, scaledCreatorViews);
+  const safeReactorViews = Math.max(0, reactorViews);
+
+  // Ensure the pricing base follows both creator demand and reactor monetization potential.
+  const reactorFloor = Math.max(safeReactorViews, referenceViews * 0.25);
+  return Math.sqrt(safeCreatorViews * reactorFloor);
 };
 
 const getLowViewPriceCeiling = (baseViews: number, nicheRPM: number): number => {
@@ -195,19 +209,31 @@ export function getPrices(
   );
 
   const referenceViews = pricingConfig.default_base_views;
-  const scaledBaseViews = getScaledBaseViews(baseViews, referenceViews);
-
-  const lowViewDiscount = getLowViewDiscount(
-    baseViews,
+  const scaledCreatorViews = getScaledBaseViews(baseViews, referenceViews);
+  const marketBalancedViews = getMarketBalancedViews(
+    scaledCreatorViews,
+    reactorViews,
     referenceViews,
   );
 
+  const lowViewDiscount = getLowViewDiscount(baseViews, referenceViews);
+
   const oneTimeRaw =
-    ((scaledBaseViews * simpleShare * nicheRPM) / 1000) * lowViewDiscount;
+    ((marketBalancedViews * simpleShare * nicheRPM) / 1000) * lowViewDiscount;
   const lowViewCeiling = getLowViewPriceCeiling(baseViews, nicheRPM);
+  const estimatedReactorRevenue = (reactorViews * nicheRPM) / 1000;
+  const reactorRevenueShare = clamp(
+    pricingConfig.max_reactor_revenue_share ?? DEFAULT_MAX_REACTOR_REVENUE_SHARE,
+    0.05,
+    0.95,
+  );
+  const reactorRevenueCap = Math.max(
+    pricingConfig.min_one_time_price,
+    estimatedReactorRevenue * reactorRevenueShare,
+  );
 
   const oneTime = Math.max(
-    Math.min(oneTimeRaw, lowViewCeiling),
+    Math.min(oneTimeRaw, lowViewCeiling, reactorRevenueCap),
     pricingConfig.min_one_time_price,
   );
 

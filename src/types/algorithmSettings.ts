@@ -11,6 +11,7 @@ export interface PricingConfig {
   max_percent_shown: number;
   assumed_percent_shown: number;
   platform_fee_percent: number;
+  max_reactor_revenue_share: number;
 }
 
 export interface UsagePolicyConfig {
@@ -50,6 +51,7 @@ export const DEFAULT_PRICING_CONFIG: PricingConfig = {
   max_percent_shown: 1,
   assumed_percent_shown: 0.5,
   platform_fee_percent: 0.1,
+  max_reactor_revenue_share: 0.45,
 };
 
 export const DEFAULT_USAGE_POLICY_CONFIG: UsagePolicyConfig = {
@@ -140,6 +142,16 @@ export const normalizePricingConfig = (
         toFiniteNumber(
           config.platform_fee_percent,
           DEFAULT_PRICING_CONFIG.platform_fee_percent,
+        ),
+      ),
+    ),
+    max_reactor_revenue_share: Math.max(
+      0.05,
+      Math.min(
+        0.95,
+        toFiniteNumber(
+          config.max_reactor_revenue_share,
+          DEFAULT_PRICING_CONFIG.max_reactor_revenue_share,
         ),
       ),
     ),

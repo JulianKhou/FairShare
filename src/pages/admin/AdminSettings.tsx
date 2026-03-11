@@ -135,6 +135,13 @@ const validateSettingsBeforeSave = (input: {
     errors.push("platform_fee_percent muss zwischen 0 und 0.95 liegen.");
   }
 
+  if (
+    pricingConfig.max_reactor_revenue_share < 0.05 ||
+    pricingConfig.max_reactor_revenue_share > 0.95
+  ) {
+    errors.push("max_reactor_revenue_share muss zwischen 0.05 und 0.95 liegen.");
+  }
+
   for (const [nicheId, value] of Object.entries(nicheRpmOverrides)) {
     if (!Number.isFinite(value) || value < 0 || value > 1000) {
       errors.push("Branchen-CPM/RPM für \"" + nicheId + "\" muss zwischen 0 und 1000 liegen.");
@@ -441,6 +448,23 @@ export default function AdminSettings() {
                     value={pricingConfig.platform_fee_percent}
                     onChange={(e) =>
                       handlePricingChange("platform_fee_percent", e.target.value)
+                    }
+                  />
+                </Field>
+
+                <Field>
+                  <FieldContent>
+                    <FieldLabel>max_reactor_revenue_share</FieldLabel>
+                    <FieldDescription>Maximaler Anteil der geschaetzten Reaction-Einnahmen als Deckel.</FieldDescription>
+                  </FieldContent>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0.05"
+                    max="0.95"
+                    value={pricingConfig.max_reactor_revenue_share}
+                    onChange={(e) =>
+                      handlePricingChange("max_reactor_revenue_share", e.target.value)
                     }
                   />
                 </Field>

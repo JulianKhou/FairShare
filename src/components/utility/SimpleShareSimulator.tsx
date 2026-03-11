@@ -8,6 +8,7 @@ import {
 } from "@/data/NicheData";
 import { useAlgorithmSettings } from "@/hooks/queries/useAlgorithmSettings";
 import { getPrices } from "@/hooks/videoDetails/getPrices";
+import { DEFAULT_PRICING_CONFIG } from "@/types/algorithmSettings";
 
 const STRIPE_PERCENT = 0.029;
 const STRIPE_FIXED = 0.25;
@@ -83,7 +84,17 @@ export default function SimpleShareSimulator() {
   const creatorRevenue = (viewsCreator * effectiveRpm) / 1000;
   const reactorRevenue = (viewsReactor * effectiveRpm) / 1000;
 
+  const maxReactorRevenueShare =
+    algorithmSettings?.pricingConfig.max_reactor_revenue_share ??
+    DEFAULT_PRICING_CONFIG.max_reactor_revenue_share;
+  const reactorRevenueCap = Math.max(
+    algorithmSettings?.pricingConfig.min_one_time_price ??
+      DEFAULT_PRICING_CONFIG.min_one_time_price,
+    reactorRevenue * maxReactorRevenueShare,
+  );
+
   const price = prices.oneTime;
+  const isReactorCapBinding = viewsReactor > 0 && price >= reactorRevenueCap - 0.01;
   const sharePercent = Math.max(0, Math.min(1, prices.fairshareScore / 100));
   const stripeFee = price * STRIPE_PERCENT + STRIPE_FIXED;
   const platformFee = price * platformFeePercent;
@@ -330,6 +341,13 @@ export default function SimpleShareSimulator() {
               <span className="text-xs text-muted-foreground mt-2">
                 Pauschalpreis für{" "}
                 <strong className="text-foreground">1 Jahr Nutzung</strong>.
+              </span>
+              <span className={`text-[11px] ${isReactorCapBinding ? "text-simple-teal" : "text-muted-foreground"}`}>
+                Deckel: max {(maxReactorRevenueShare * 100).toFixed(0)}% der geschaetzten
+                Reaction-Einnahmen (~{reactorRevenueCap.toLocaleString("de-DE", {
+                  style: "currency",
+                  currency: "EUR",
+                })}){isReactorCapBinding ? " - greift aktuell." : "."}
               </span>
             </div>
 
