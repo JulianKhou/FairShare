@@ -80,6 +80,22 @@ const LOW_VIEW_PRICE_CEILINGS = [
   { maxViews: 20000, maxOneTimeBase: 18 },
 ] as const;
 
+const HIGH_VIEW_GROWTH_EXPONENT = 0.72;
+
+const getScaledBaseViews = (
+  baseViews: number,
+  referenceViews: number,
+): number => {
+  const safeBaseViews = Math.max(0, baseViews);
+  const safeReferenceViews = Math.max(1, referenceViews);
+
+  // Keep low-view behavior unchanged, but damp growth above the reference level.
+  if (safeBaseViews <= safeReferenceViews) return safeBaseViews;
+
+  const normalized = safeBaseViews / safeReferenceViews;
+  return safeReferenceViews * Math.pow(normalized, HIGH_VIEW_GROWTH_EXPONENT);
+};
+
 const getLowViewPriceCeiling = (baseViews: number, nicheRPM: number): number => {
   const safeBaseViews = Math.max(0, baseViews);
 
@@ -178,13 +194,16 @@ export function getPrices(
     ) ?? pricingConfig.default_base_views,
   );
 
+  const referenceViews = pricingConfig.default_base_views;
+  const scaledBaseViews = getScaledBaseViews(baseViews, referenceViews);
+
   const lowViewDiscount = getLowViewDiscount(
     baseViews,
-    pricingConfig.default_base_views,
+    referenceViews,
   );
 
   const oneTimeRaw =
-    ((baseViews * simpleShare * nicheRPM) / 1000) * lowViewDiscount;
+    ((scaledBaseViews * simpleShare * nicheRPM) / 1000) * lowViewDiscount;
   const lowViewCeiling = getLowViewPriceCeiling(baseViews, nicheRPM);
 
   const oneTime = Math.max(
