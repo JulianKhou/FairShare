@@ -75,6 +75,22 @@ const getLowViewDiscount = (
   return clamp(Math.pow(normalized, 0.35), 0.35, 1);
 };
 
+const LOW_VIEW_PRICE_CEILINGS = [
+  { maxViews: 5000, maxOneTimeBase: 6 },
+  { maxViews: 20000, maxOneTimeBase: 18 },
+] as const;
+
+const getLowViewPriceCeiling = (baseViews: number, nicheRPM: number): number => {
+  const safeBaseViews = Math.max(0, baseViews);
+
+  const tier = LOW_VIEW_PRICE_CEILINGS.find((item) => safeBaseViews <= item.maxViews);
+  if (!tier) return Number.POSITIVE_INFINITY;
+
+  // Keep niche spread, but avoid extreme low-view prices in high-RPM niches.
+  const rpmScale = clamp(nicheRPM / 3.3, 0.7, 2.2);
+  return tier.maxOneTimeBase * rpmScale;
+};
+
 const getPercentShown = (
   reactionDuration: number,
   creatorDuration: number,
@@ -167,8 +183,12 @@ export function getPrices(
     pricingConfig.default_base_views,
   );
 
+  const oneTimeRaw =
+    ((baseViews * simpleShare * nicheRPM) / 1000) * lowViewDiscount;
+  const lowViewCeiling = getLowViewPriceCeiling(baseViews, nicheRPM);
+
   const oneTime = Math.max(
-    ((baseViews * simpleShare * nicheRPM) / 1000) * lowViewDiscount,
+    Math.min(oneTimeRaw, lowViewCeiling),
     pricingConfig.min_one_time_price,
   );
 
