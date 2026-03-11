@@ -13,13 +13,6 @@ import { DEFAULT_PRICING_CONFIG } from "@/types/algorithmSettings";
 const STRIPE_PERCENT = 0.029;
 const STRIPE_FIXED = 0.25;
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
-const PRICE_GUIDANCE_BANDS = [
-  { label: "0-5k", maxViews: 5000, targetMinBase: 1, targetMaxBase: 6 },
-  { label: "5k-20k", maxViews: 20000, targetMinBase: 3, targetMaxBase: 18 },
-  { label: "20k-100k", maxViews: 100000, targetMinBase: 8, targetMaxBase: 60 },
-  { label: "100k+", maxViews: Number.POSITIVE_INFINITY, targetMinBase: 15, targetMaxBase: 180 },
-] as const;
-
 
 export default function SimpleShareSimulator() {
   const { data: algorithmSettings } = useAlgorithmSettings();
@@ -99,28 +92,6 @@ export default function SimpleShareSimulator() {
   const stripeFee = price * STRIPE_PERCENT + STRIPE_FIXED;
   const platformFee = price * platformFeePercent;
   const creatorNet = Math.max(price - stripeFee - platformFee, 0);
-
-  const guidanceRows = useMemo(() => {
-    const rpmScale = Math.min(2.2, Math.max(0.7, effectiveRpm / 3.3));
-
-    return PRICE_GUIDANCE_BANDS.map((band) => ({
-      ...band,
-      targetMin: band.targetMinBase * rpmScale,
-      targetMax: band.targetMaxBase * rpmScale,
-    }));
-  }, [effectiveRpm]);
-
-  const activeGuidanceBand = useMemo(() => {
-    return guidanceRows.find((band) => viewsCreator <= band.maxViews) || guidanceRows[guidanceRows.length - 1];
-  }, [guidanceRows, viewsCreator]);
-
-  const guidanceStatus = useMemo(() => {
-    if (!activeGuidanceBand) return "inside" as const;
-
-    if (price < activeGuidanceBand.targetMin) return "below" as const;
-    if (price > activeGuidanceBand.targetMax) return "above" as const;
-    return "inside" as const;
-  }, [activeGuidanceBand, price]);
 
   return (
     <div className="bg-white/5 border border-white/10 rounded-3xl p-6 md:p-8 backdrop-blur-md shadow-2xl max-w-2xl mx-auto">
@@ -268,48 +239,6 @@ export default function SimpleShareSimulator() {
               })}
             </div>
           </div>
-        </div>
-
-        <div className="rounded-2xl border border-white/10 bg-black/20 p-4 md:p-5 space-y-3">
-          <div className="flex items-center justify-between gap-2">
-            <h4 className="text-sm font-semibold">Preis-Sollbereiche (Creator-Views)</h4>
-            <span className="text-xs text-muted-foreground">RPM-skalierte Orientierung</span>
-          </div>
-
-          <div className="space-y-2">
-            {guidanceRows.map((band) => {
-              const isActive = band.label === activeGuidanceBand?.label;
-
-              return (
-                <div
-                  key={band.label}
-                  className={`flex items-center justify-between rounded-lg border px-3 py-2 text-xs ${
-                    isActive ? "border-simple-teal/60 bg-simple-teal/10" : "border-white/10 bg-white/5"
-                  }`}
-                >
-                  <span className="font-medium">{band.label}</span>
-                  <span>
-                    {band.targetMin.toLocaleString("de-DE", { style: "currency", currency: "EUR" })}
-                    {" - "}
-                    {band.targetMax.toLocaleString("de-DE", { style: "currency", currency: "EUR" })}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-
-          <p className="text-xs text-muted-foreground">
-            Aktueller Preis liegt {" "}
-            <strong className="text-foreground">
-              {guidanceStatus === "below"
-                ? "unter"
-                : guidanceStatus === "above"
-                  ? "ueber"
-                  : "im"}{" "}
-              Zielbereich
-            </strong>{" "}
-            fuer die aktuelle Creator-View-Klasse.
-          </p>
         </div>
 
         <div className="mt-6 p-6 rounded-2xl bg-linear-to-br from-white/5 to-white/10 border border-white/5 flex flex-col gap-6 relative overflow-hidden">

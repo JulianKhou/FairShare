@@ -63,18 +63,8 @@ export const calculateSimpleShare = (
   const safeReactViews = Math.max(viewsReactor, 0);
   const safePercentShown = Math.max(0, Math.min(1, percentShown));
 
-  let timeFactor = 1;
-  if (daysSinceUpload < config.HYPE_DECAY_DAYS) {
-    const decayProgress = daysSinceUpload / config.HYPE_DECAY_DAYS;
-    timeFactor = config.HYPE_FACTOR - decayProgress * (config.HYPE_FACTOR - 1);
-  } else if (daysSinceUpload > config.EVERGREEN_DAYS) {
-    timeFactor = config.EVERGREEN_FACTOR;
-  }
-
   const transformFactor = safeCreatorDuration / safeReactDuration;
-
-  const contentScore =
-    config.BASE_SHARE * safePercentShown * transformFactor * timeFactor;
+  const contentScore = config.BASE_SHARE * safePercentShown * transformFactor;
 
   const ratio = safeReactViews / safeCreatorViews;
   let discountFactor = 1;
@@ -83,7 +73,17 @@ export const calculateSimpleShare = (
     discountFactor = 1 / (1 + Math.log10(ratio));
   }
 
-  const finalShare = contentScore * discountFactor;
+  const safeDaysSinceUpload = Math.max(0, daysSinceUpload);
+  let timeFactor = 1;
+  if (safeDaysSinceUpload < config.HYPE_DECAY_DAYS) {
+    const decayProgress = safeDaysSinceUpload / config.HYPE_DECAY_DAYS;
+    timeFactor = config.HYPE_FACTOR - decayProgress * (config.HYPE_FACTOR - 1);
+  } else if (safeDaysSinceUpload > config.EVERGREEN_DAYS) {
+    timeFactor = config.EVERGREEN_FACTOR;
+  }
+
+  // Apply release timing multiplier as the final step.
+  const finalShare = contentScore * discountFactor * timeFactor;
 
   return Math.min(Math.max(finalShare, 0), 1);
 };
